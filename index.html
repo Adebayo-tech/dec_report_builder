@@ -10,56 +10,143 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
-:root{--bg:#f5f6f8;--fg:#1b1f27;--cd:#fff;--mu:#667085;--ac:#1f5fbf;--bd:#d8dce3;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#14171c;--fg:#e8eaee;--cd:#1e222a;--mu:#9aa3b2;--ac:#7aa9f7;--bd:#343b47}}
-:root[data-theme=dark]{--bg:#14171c;--fg:#e8eaee;--cd:#1e222a;--mu:#9aa3b2;--ac:#7aa9f7;--bd:#343b47}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,Segoe UI,Arial,sans-serif}
-header{background:var(--ac);color:#fff;padding:10px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-header b{font-size:16px}header span{opacity:.85;font-size:12px}
-nav{display:flex;gap:4px;padding:8px 10px;flex-wrap:wrap;background:var(--cd);border-bottom:1px solid var(--bd)}
-nav button{border:0;background:none;color:var(--fg);padding:7px 12px;border-radius:6px;cursor:pointer;font:inherit}
-nav button.on{background:var(--ac);color:#fff}
-main{padding:12px;max-width:1200px;margin:auto}
-.box{background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:12px}
-.sc{overflow-x:auto}
-table{border-collapse:collapse;width:100%}th,td{border:1px solid var(--bd);padding:4px 6px;text-align:left}th{background:var(--bg);font-size:12px}
-td.c,th.c{text-align:center}
-input,select,textarea,button{font:inherit;color:var(--fg);background:var(--cd);border:1px solid var(--bd);border-radius:6px;padding:5px 8px}
-input[type=number]{width:58px;text-align:center}textarea{width:100%;min-height:60px}
-.b{background:var(--ac);color:#fff;border-color:var(--ac);cursor:pointer}.w{border-color:#c0392b;color:#c0392b;cursor:pointer}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}.row label{display:flex;flex-direction:column;font-size:12px;color:var(--mu);gap:2px}
-.mu{color:var(--mu);font-size:12px}.warn{background:#fff3cd;color:#664d03;padding:8px;border-radius:6px;margin-bottom:10px}
-.tag{background:var(--ac);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:6px}
+/* ===== MODERN SHARP UI ===== */
+:root {
+  --bg: #f1f5f9; 
+  --fg: #0f172a; 
+  --cd: #ffffff; 
+  --mu: #64748b; 
+  --ac: #4f46e5; 
+  --ac-hover: #4338ca;
+  --bd: #e2e8f0; 
+  --sh: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+  --sh-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --sh-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme=light]) {
+    --bg: #0f172a; 
+    --fg: #f8fafc; 
+    --cd: #1e293b; 
+    --mu: #94a3b8; 
+    --ac: #6366f1; 
+    --ac-hover: #818cf8;
+    --bd: #334155; 
+    --sh: 0 1px 3px rgba(0,0,0,0.3);
+    --sh-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+    --sh-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
+  }
+}
+:root[data-theme=dark] {
+  --bg: #0f172a; --fg: #f8fafc; --cd: #1e293b; --mu: #94a3b8; --ac: #6366f1; 
+  --ac-hover: #818cf8; --bd: #334155; --sh: 0 1px 3px rgba(0,0,0,0.3); 
+  --sh-md: 0 4px 6px -1px rgba(0,0,0,0.4); --sh-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
+}
 
-/* REPORT CARD CSS */
-.rc{background:#fff;color:#111;border:1px solid #bbb;padding:0 8px 0;margin:0 auto 14px;max-width:780px;font-size:var(--fs,12px);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-padding-top: env(safe-area-inset-top,0px); }
+body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; -webkit-font-smoothing: antialiased; padding-top: env(safe-area-inset-top,0px); padding-bottom: env(safe-area-inset-bottom,0px); }
+
+header { background: var(--cd); color: var(--fg); padding: 14px 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--bd); box-shadow: var(--sh); position: relative; z-index: 20; }
+header b { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+header span { color: var(--mu); font-size: 13px; font-weight: 500; }
+header a { color: var(--ac); text-decoration: none; font-weight: 600; font-size: 14px; padding: 6px 12px; border-radius: 6px; transition: background 0.2s; }
+header a:hover { background: rgba(79,70,229,0.1); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) header a:hover { background: rgba(99,102,241,0.15); } }
+
+nav { display: flex; gap: 6px; padding: 12px 20px; flex-wrap: wrap; background: var(--bg); border-bottom: 1px solid var(--bd); position: sticky; top: 0; z-index: 10; }
+nav button { border: 1px solid transparent; background: transparent; color: var(--mu); padding: 8px 16px; border-radius: 8px; cursor: pointer; font: inherit; font-weight: 600; transition: all 0.2s; }
+nav button:hover { background: var(--cd); color: var(--fg); box-shadow: var(--sh); }
+nav button.on { background: var(--ac); color: #fff; box-shadow: var(--sh-md); border-color: var(--ac); }
+
+main { padding: 24px 20px; max-width: 1200px; margin: auto; }
+.box { background: var(--cd); border: 1px solid var(--bd); border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: var(--sh); }
+.box > b:first-child { font-size: 15px; font-weight: 700; color: var(--fg); margin-bottom: 12px; display: inline-block; }
+
+.sc { overflow-x: auto; border-radius: 8px; border: 1px solid var(--bd); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { border-bottom: 1px solid var(--bd); padding: 10px 12px; text-align: left; }
+th { background: var(--bg); color: var(--fg); font-weight: 600; white-space: nowrap; border-top: none; }
+td { background: var(--cd); color: var(--fg); }
+tr:last-child td { border-bottom: none; }
+td.c, th.c { text-align: center; }
+
+input, select, textarea, button { font: inherit; color: var(--fg); background: var(--cd); border: 1px solid var(--bd); border-radius: 8px; padding: 8px 12px; transition: all 0.15s; box-sizing: border-box; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--ac); box-shadow: 0 0 0 3px rgba(79,70,229,0.15); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) input:focus, :root:not([data-theme=light]) select:focus, :root:not([data-theme=light]) textarea:focus { box-shadow: 0 0 0 3px rgba(99,102,241,0.25); } }
+input[type=number] { width: 70px; text-align: center; }
+textarea { width: 100%; min-height: 80px; font-family: monospace; font-size: 13px; line-height: 1.6; }
+
+.b { background: var(--ac); color: #fff; border-color: var(--ac); font-weight: 600; cursor: pointer; box-shadow: var(--sh); }
+.b:hover { background: var(--ac-hover); border-color: var(--ac-hover); }
+.w { border-color: #ef4444; color: #ef4444; font-weight: 600; cursor: pointer; }
+.w:hover { background: #ef4444; color: #fff; }
+
+.row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
+.row label { display: flex; flex-direction: column; font-size: 12px; font-weight: 600; color: var(--mu); gap: 6px; }
+.mu { color: var(--mu); font-size: 13px; }
+.warn { background: #fffbeb; color: #b45309; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #fde68a; font-size: 13px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) .warn { background: rgba(217,119,6,0.15); color: #fcd34d; border-color: rgba(217,119,6,0.3); } }
+
+.tag { background: var(--ac); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 12px; margin-left: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle; }
+
+/* Toast Notification */
+#toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: #10b981; color: #fff; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; box-shadow: var(--sh-lg); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 999; display: flex; align-items: center; gap: 8px; }
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+#toast svg { width: 18px; height: 18px; }
+
+/* =========================================
+   REPORT CARD LAYOUT (Ensure crisp printing)
+   ========================================= */
+.rc {
+  --fs:12px;--py:4px;--acp:6px;--tm:12px;--tm2:10px;--bm:9px;--rsm:7px;--rh:26px;--sgm:22px;--sgh:56px;--lgh:78px;--h2:21px;--srm:10px;--ftm:15px;--tp:6px;
+  background:#fff;color:#111;border:1px solid #bbb;padding:12px 16px;margin:0 auto 14px;
+  width:780px;max-width:100%;font-size:var(--fs);box-sizing:border-box;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact; box-shadow: var(--sh-lg);
+}
 .rc table{border-collapse:collapse;width:100%}
-.rc td,.rc th{border:1px solid #cfd6df;padding:var(--py,3px) 6px;color:#111;background:none;font-size:var(--fs,12px)}
-.rc .top{display:flex;align-items:center;border-top:3px solid #538135;border-bottom:3px solid #538135;padding:var(--tp,6px) 0}
-.lg{width:110px;height:var(--lgh,80px);flex:none;display:flex;align-items:center;justify-content:center}.lg img{max-width:100%;max-height:100%}
-.hd{flex:1;text-align:center}.hd h2{margin:0;color:#1f3864;font-size:var(--h2,21px)}.hd .ad{color:#2f6db5}.hd .srs{font-weight:700;color:#1f3864;margin-top:var(--srm,10px)}
-
-/* Replaced flexbox with table layout for perfect PDF rendering */
-.inf{display:table;width:100%;table-layout:fixed;margin-top:2px}.inf table{display:table-cell;width:50%;vertical-align:top;border-spacing:0}.inf th{background:#d9e4f0;color:#1f3864;text-align:left;width:40%}.inf td{text-align:center;background:#fff}.inf .rt th{text-align:right}.inf .rt td{text-align:left}
-
-.bar{background:#1f3864;color:#fff;text-align:center;font-weight:700;padding:var(--py,3px);margin-top:var(--bm,8px)}
-.ac th{background:#c9a84c;color:#fff;text-align:center}.ac td{text-align:center;padding:var(--acp,7px) 6px}.ac td:nth-child(2){text-align:left}.ac tr:nth-child(even) td{background:#f2f2f2}.ac td:nth-child(6){font-weight:700;font-style:italic}.ac .tt td{background:#d0d0d0!important;font-weight:700;font-size:calc(var(--fs,12px) + 2px)}
-
-/* Replaced flexbox with table layout for perfect PDF rendering */
-.tri{display:flex;gap:12px;align-items:flex-start;margin-top:var(--tm,14px)}.tri table{flex:1;min-width:0}
-.rc th.h{background:#2f3b4c;color:#fff;text-align:center}.tri td{text-align:center}
-.dm th{background:#d9e4f0;color:#1f3864;text-align:left;font-weight:400}.dm th.r{text-align:right}.dm td{width:18%;background:#fff;text-align:center}
-.rs{text-align:center;margin:var(--rsm,6px) auto;width:46%}.rs div{padding:var(--py,3px);font-style:italic;background:#d0d0d0}.rs div+div{background:#c6e0b4}
-.rm th{background:#d9e4f0;color:#1f3864;width:22%}.rm td{height:var(--rh,24px)}
-.sg{text-align:center;margin-top:var(--sgm,30px)}.ft{background:#f8e6c0;color:#555;text-align:right;font-style:italic;font-size:10px;padding:4px 8px;border-top:3px solid #c9a84c;margin:var(--ftm,16px) -8px 0}
-.cm th{background:#c9a84c;color:#fff;text-align:center}.cm td{text-align:center}.cm tr:last-child td{font-weight:700;background:#d0d0d0}
+.rc td,.rc th{border:1px solid #cfd6df;padding:var(--py) 6px;color:#111;background:none;font-size:var(--fs)}
+.rc .top{display:flex;align-items:center;border-top:3px solid #538135;border-bottom:3px solid #538135;padding:var(--tp) 0}
+.lg{width:110px;height:var(--lgh);flex:none;display:flex;align-items:center;justify-content:center}
+.lg img{max-width:100%;max-height:100%}
+.hd{flex:1;text-align:center}
+.hd h2{margin:0;color:#1f3864;font-size:var(--h2)}
+.hd .ad{color:#2f6db5;font-size:11px;margin-top:2px}
+.hd .srs{font-weight:700;color:#1f3864;margin-top:8px;font-size:var(--fs);letter-spacing:1px}
+.inf{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:var(--tm)}
+.inf table{width:100%;table-layout:fixed}
+.inf th{background:#d9e4f0;color:#1f3864;text-align:left;width:40%;padding:3px 5px;font-weight:600}
+.inf td{text-align:center;background:#fff;padding:3px 5px;font-weight:600}
+.inf .rt th{text-align:right}
+.bar{background:#1f3864;color:#fff;text-align:center;font-weight:700;padding:4px;margin-top:var(--bm);font-size:calc(var(--fs) - 1px);letter-spacing:1px}
+.ac th{background:#c9a84c;color:#fff;text-align:center;font-size:11px}
+.ac td{text-align:center;padding:var(--acp)}
+.ac td:nth-child(2){text-align:left;padding-left:8px}
+.ac tr:nth-child(even) td{background:#f7f7f7}
+.ac td:nth-child(6){font-weight:700}
+.ac .tt td{background:#e0e0e0 !important;font-weight:700;font-size:13px}
+.ac th:nth-child(1){width:5%}.ac th:nth-child(2){width:35%}.ac th:nth-child(3){width:10%}.ac th:nth-child(4){width:10%}.ac th:nth-child(5){width:10%}.ac th:nth-child(6){width:10%}.ac th:nth-child(7){width:20%}
+.tri{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:var(--tm2);align-items:stretch}
+.tri table{height:100%}
+.tri th.h{background:#2f3b4c;color:#fff;text-align:center;font-size:11px;padding:3px}
+.tri th{text-align:left;background:#d9e4f0;color:#1f3864;font-weight:600;padding:2px 5px}
+.tri td{text-align:center;padding:2px 5px}
+.dm th{background:#d9e4f0;color:#1f3864;text-align:left;font-weight:600}
+.dm th.r{text-align:right}
+.dm td{width:18%;background:#fff;text-align:center}
+.rs{text-align:center;margin:var(--rsm) auto;width:46%}
+.rs div{padding:3px;font-style:italic;background:#d0d0d0;font-size:11px}
+.rs div+div{background:#c6e0b4}
+.rm th{background:#d9e4f0;color:#1f3864;width:22%;font-weight:600}
+.rm td{height:var(--rh);font-style:italic;padding-left:8px}
+.sg{text-align:center;margin-top:var(--sgm);font-size:calc(var(--fs) - 1px)}
+.ft{background:#f8e6c0;color:#555;text-align:right;font-style:italic;font-size:10px;padding:4px 8px;border-top:3px solid #c9a84c;margin-top:var(--ftm)}
 
 @media print{
-  header,nav,.np{display:none!important}
+  header,nav,.np{display:none !important}
   body{background:#fff}
   main{padding:0;max-width:none;margin:0}
-  .rc{border:0;margin:0 auto;padding-top:2mm;width:780px;max-width:none;break-inside:avoid}
+  .rc{border:0;margin:0 auto;padding-top:5mm;width:780px;max-width:none;break-inside:avoid; box-shadow:none;}
   .rc+.rc{break-before:page}
   @page{size:A4;margin:0}
 }
@@ -70,6 +157,10 @@ input[type=number]{width:58px;text-align:center}textarea{width:100%;min-height:6
 <header><b id="sn">Smart Report Builder</b><span id="ps"></span><span id="rl"></span><span id="sstat" style="margin-left:8px;font-size:12px"></span></header>
 <nav class="np" id="nv"></nav>
 <main id="m"></main>
+<div id="toast">
+  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+  <span id="toastMsg">Saved successfully!</span>
+</div>
 
 <script>
 /* ===== CLOUD CONFIG ===== */
@@ -101,7 +192,7 @@ const ready=(async()=>{
     MYCLASSES=Array.isArray(data.classes)?data.classes:[];
     break;
   }
-  Q('header').insertAdjacentHTML('beforeend','<a href="#" id="so" style="color:#fff;margin-left:auto">Sign out</a>');
+  Q('header').insertAdjacentHTML('beforeend','<a href="#" id="so">Sign out</a>');
   Q('#so').onclick=async e=>{e.preventDefault();await sb.auth.signOut();location.reload()};
 })();
 window.claude={use:async n=>{await ready;return n=='db'?DB:n=='user'?{canEdit:()=>ROLE=='admin',isOwner:()=>ROLE=='admin',role:ROLE,classes:MYCLASSES}:null}};
@@ -111,7 +202,7 @@ window.claude={use:async n=>{await ready;return n=='db'?DB:n=='user'?{canEdit:()
 const T=['First Term','Second Term','Third Term'];
 const TR=['Relationship with Peers','Neatness','Honesty','Punctuality','Respect','Handwriting','Games and Sport','Clubs'];
 const core=['Mathematics','English Studies','Civic Education'];
-const DEF={name:'DEC INTERNATIONAL SCHOOL',address:'Avenue Street, Kano, Nigeria',motto:'Education is the key to success',principal:'',pfx:'DEC',ses:'2025-2026',t:0,days:60,resume:'',fees:'',ca:40,ex:60,passMark:40,
+const DEF={name:'DEC INTERNATIONAL SCHOOL',address:'Avenue Street, Kano, Nigeria',motto:'Education is the key to success',principal:'',pname:'',secPfx:'JSS, SS',pfx:'DEC',ses:'2025-2026',t:0,days:60,resume:'',fees:{},ca:40,ex:60,promoPass:35,
 types:['Day','Boarding'],
 bands:[{m:70,g:'A',r:'Excellent'},{m:60,g:'B',r:'Very Good'},{m:50,g:'C',r:'Good'},{m:40,g:'D',r:'Pass'},{m:0,g:'F',r:'Fail'}],
 classes:['Creche','Pre Nursery 1','Pre Nursery 2','Nursery 1','Nursery 2','Basic 1','Basic 2','Basic 3','Basic 4','Basic 5'].map(n=>({n,s:n=='Creche'?['Mathematics','English Studies','Rhymes','Social Studies']:core}))};
@@ -124,39 +215,56 @@ const gr=v=>C.bands.find(b=>v>=b.m)||C.bands[C.bands.length-1],ord=n=>n+(['th','
 const act=c=>ST.filter(s=>s.on!==false&&s.cls==c);
 const NB={g:'—',r:''},bl=v=>v===undefined||v===null||v==='';
 function calc(d,subs){const rows=subs.map(s=>{const[a,e]=(d&&d.sc&&d.sc[s])||[];const ca=+a||0,ex=+e||0,t=ca+ex,em=bl(a)&&bl(e);return{s,ca,ex,t,b:em?NB:gr(t),e:em}});const tot=rows.reduce((x,r)=>x+r.t,0),avg=subs.length?tot/subs.length:0,has=rows.some(r=>!r.e);return{rows,tot,avg,has,b:has?gr(avg):NB}}
+
+/* Single-position lookup (kept for edge cases; prefer posMap in render loops). */
 function pos(reg,c){const subs=cd(c).s,all=act(c).map(s=>calc(SC[s.reg],subs)).filter(k=>k.has).map(k=>k.tot),k0=calc(SC[reg],subs);return{p:k0.has?1+all.filter(x=>x>k0.tot).length:0,n:all.length}}
+
+/* Snapshot positions for a whole class — call once per render. */
+function posMap(c){
+  const subs=cd(c).s;
+  const list=act(c).map(s=>({reg:s.reg,tot:calc(SC[s.reg],subs)})).filter(x=>x.tot.has);
+  const n=list.length,m={};
+  list.forEach(a=>{m[a.reg]={p:1+list.filter(b=>b.tot.tot>a.tot.tot).length,n}});
+  return m;
+}
 const ordp=p=>p.p?ord(p.p):'—';
 
-/* Cumulative Average & Auto-Promotion logic */
-const lvOf=x=>x.lv||x.n,levels=()=>[...new Set(C.classes.map(lvOf))];let ptt={};
-function nextOf(n){const cl=C.classes.find(x=>x.n==n);if(!cl)return'Graduated';const L=levels(),i=L.indexOf(lvOf(cl));if(i<0||i+1>=L.length)return'Graduated';const cands=C.classes.filter(y=>lvOf(y)==L[i+1]),same=cl.arm&&cands.find(y=>cl.arm==y.arm);return(same||cands[0]).n}
-function getCumData(student) {
-  let sumAvg = 0, count = 0;
-  for(let j=0; j<C.t; j++) {
-    const d = PV[j] ? PV[j][student.reg] : null;
-    if(d) {
-      const k = calc(d, d.subs || cd(d.cls).s);
-      if(k.has) { sumAvg += k.avg; count++; }
-    }
-  }
-  const dCur = SC[student.reg];
-  if(dCur) {
-    const kCur = calc(dCur, cd(dCur.cls).s);
-    if(kCur.has) { sumAvg += kCur.avg; count++; }
-  }
-  const cumAvg = count > 0 ? sumAvg / count : 0;
-  let targetCls = nextOf(student.cls);
-  let autoTarget = targetCls;
-  if (cumAvg < C.passMark) { autoTarget = student.cls; }
-  return { cumAvg, autoTarget };
-}
+const parseC=n=>{const m=/^(.*?\d+)\s*(.*)$/.exec(String(n));return m?{lv:m[1].trim(),arm:m[2].trim()}:{lv:String(n).trim(),arm:''}},lvOf=x=>x.lv||parseC(x.n).lv,armOf=x=>x.arm!=null?x.arm:parseC(x.n).arm,levels=()=>[...new Set(C.classes.map(lvOf))];let ptt={};
+
+/* Promotion path: Creche>Nursery 1>Nursery 2>Basic 1..5>JSS 1..3>SS 1..3>Graduate */
+const lkey=x=>String(x).replace(/\s+/g,'').toUpperCase(),nrmSS=k=>k.replace(/^SSS/,'SS');
+function nextLevelKey(lv){const k=lkey(lv),T0={CRECHE:'NURSERY1',PRENURSERY1:'PRENURSERY2',PRENURSERY2:'NURSERY1',NURSERY1:'NURSERY2',NURSERY2:'BASIC1'};if(T0[k])return T0[k];const m=/^(BASIC|JSS|SSS|SS)(\d+)$/.exec(k);if(!m)return undefined;const n=+m[2],p=m[1];if(p=='BASIC')return n<5?'BASIC'+(n+1):'JSS1';if(p=='JSS')return n<3?'JSS'+(n+1):'SS1';return n<3?p+(n+1):'GRAD'}
+function nextOf(n){const cl=C.classes.find(x=>x.n==n);if(!cl)return null;const nk=nextLevelKey(lvOf(cl));let cands;
+  if(nk===undefined){const L=levels(),i=L.indexOf(lvOf(cl));if(i<0)return null;if(i+1>=L.length)return'Graduated';cands=C.classes.filter(y=>lvOf(y)==L[i+1])}
+  else if(nk=='GRAD')return'Graduated';
+  else cands=C.classes.filter(y=>nrmSS(lkey(lvOf(y)))==nrmSS(nk));
+  if(!cands.length)return null;if(cands.length==1)return cands[0].n;
+  const arm=armOf(cl),same=arm&&cands.find(y=>armOf(y).toLowerCase()==arm.toLowerCase());if(same)return same.n;
+  const cur=C.classes.filter(y=>lvOf(y)==lvOf(cl));if(cur.length==cands.length)return cands[cur.findIndex(y=>y.n==n)].n;return null}
+function cumAvgOf(s){let sum=0,n=0;for(let j=0;j<=C.t;j++){const d=j==C.t?SC[s.reg]:(PV[j]||{})[s.reg];if(!d)continue;const k=calc(d,d.subs&&d.subs.length?d.subs:cd(s.cls).s);if(k.has){sum+=k.avg;n++}}return n?{avg:sum/n,n}:null}
+let POV={};
+function decide(s){const c=cumAvgOf(s),ov=POV[s.reg],pass=C.promoPass??35,out=ov=='repeat'?'repeat':ov=='promote'?'promote':(c&&c.avg>=pass?'promote':'repeat');return{c,out,noscore:!c,to:out=='repeat'?s.cls:(ptt[s.reg]||nextOf(s.cls))}}
 
 const PEND={},INF={},_saveT={},_busy={},TF=['sc','pres','dom'];
+let _saveStatusT=null;
 function applyPend(reg,d){[...(INF[reg]||[]),...(PEND[reg]||[])].forEach(f=>f(d));return d}
 function setSaveState(s){const el=document.getElementById('sstat');if(!el)return;
+  clearTimeout(_saveStatusT);
   if(s=='pending'){el.textContent='● saving…';el.style.color='#d98b00'}
-  else if(s=='saved'){el.textContent='● saved';el.style.color='#2e8b57';setTimeout(()=>{if(el.textContent=='● saved')el.textContent=''},2000)}
+  else if(s=='saved'){el.textContent='● saved';el.style.color='#2e8b57';_saveStatusT=setTimeout(()=>{if(el.textContent=='● saved')el.textContent=''},2000)}
   else{el.textContent='● NOT saved';el.style.color='#c0392b'}}
+
+/* Toast Notification handler */
+let _toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  if(!t)return;
+  document.getElementById('toastMsg').textContent=msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
 function save(reg,fn,kind){
   const s=ST.find(x=>x.reg==reg);if(!s)return;
   if(!admin){
@@ -201,7 +309,7 @@ function draw(soft){
   }
   $('#m').innerHTML=(db?'':'<div class="warn np">Connecting to the database. If this message stays, sign in again or reload the page.</div>')+
     ({info:vInfo,scores:vScores,reports:vReports,board:vBoard,students:vStudents,past:vPast,import:vImport,admin:vAdmin}[view]||vScores)();
-  if(view=='reports')fitCards($('#m'))
+  if(view=='reports')setTimeout(()=>fitCards($('#m')),50);
 }
 const clsSel=()=>{
   const a=allowedClasses();
@@ -210,81 +318,106 @@ const clsSel=()=>{
 }
 function vScores(){
   const c=curC(),subs=cd(c).s,L=act(c);
+  if(!subs||!subs.length)return `<div class="warn">The class <b>${esc(c)}</b> has no subjects yet. Go to Settings to add subjects for this class.</div>`;
+  const pm=posMap(c);
   let h=`<div class="box"><div class="row">${clsSel()}<span class="mu">CA max ${C.ca} · Exam max ${C.ex} · scores save automatically. Press Enter / arrows to move down a column.</span><button class="b" data-act="csv">Export CSV</button></div><div class="sc"><table><tr><th rowspan=2>Reg No.</th><th rowspan=2>Name</th>${subs.map(s=>`<th class="c" colspan=2>${esc(s)}</th>`).join('')}<th rowspan=2 class="c">Total</th><th rowspan=2 class="c">Avg</th><th rowspan=2 class="c">Grade</th><th rowspan=2 class="c">Pos.</th></tr><tr>${subs.map(()=>`<th class="c">CA</th><th class="c">Exam</th>`).join('')}</tr>`;
-  for(const s of L){const d=SC[s.reg],k=calc(d,subs),p=pos(s.reg,c);h+=`<tr data-r="${esc(s.reg)}"><td>${esc(s.reg)}</td><td>${esc(s.name)}</td>${subs.map(j=>{const v=(d&&d.sc&&d.sc[j])||[];return[0,1].map(i=>`<td class="c"><input type="number" min="0" step="0.5" max="${i?C.ex:C.ca}" data-sc="${esc(j)}" data-k="${i}" value="${v[i]??''}"></td>`).join('')}).join('')}<td class="c tot">${k.tot}</td><td class="c avg">${k.avg.toFixed(1)}</td><td class="c gd">${k.b.g}</td><td class="c ps">${ordp(p)}</td></tr>`}
+  for(const s of L){
+    const d=SC[s.reg],k=calc(d,subs),p=pm[s.reg]||{p:0,n:0};
+    h+=`<tr data-r="${esc(s.reg)}"><td>${esc(s.reg)}</td><td>${esc(s.name)}</td>${subs.map(j=>{const v=(d&&d.sc&&d.sc[j])||[];return[0,1].map(i=>`<td class="c"><input type="number" min="0" step="0.5" max="${i?C.ex:C.ca}" data-sc="${esc(j)}" data-k="${i}" value="${v[i]??''}"></td>`).join('')}).join('')}<td class="c tot">${k.tot}</td><td class="c avg">${k.avg.toFixed(1)}</td><td class="c gd">${k.b.g}</td><td class="c ps">${ordp(p)}</td></tr>`
+  }
   return h+`</table></div>${L.length?'':'<p class="mu">No students in this class yet.</p>'}</div>`
 }
-function card(s){
-  const c=s.cls,subs=cd(c).s,d=SC[s.reg]||{},k=calc(d,subs),p=pos(s.reg,c),pres=+d.pres||0,ab=Math.max(0,C.days-pres),pc=C.days?(pres/C.days*100).toFixed(2):'0.00',dm=d.dom||{},R=remarks(s,k,d,p),B=C.bands,ca=k.rows.reduce((a,r)=>a+r.ca,0),ex=k.rows.reduce((a,r)=>a+r.ex,0),kv=(l,v)=>`<tr><th>${l}</th><td>${v}</td></tr>`,dr=(a,b)=>`<tr><th>${a}</th><td>${esc(dm[a]??'')}</td><th class="r">${b}</th><td>${esc(dm[b]??'')}</td></tr>`;
-  
-  // Automatically activate compact mode if subjects > 9
-  const cclass = 'rc';
-
-  return`<div class="${cclass}"><div class="top"><div class="lg">${C.logo?`<img src="${C.logo}">`:''}</div><div class="hd"><h2>${esc(C.name)}</h2><div class="ad">${esc(C.address)}</div><i>${esc(C.motto)}</i><div class="srs">STUDENT REPORT SHEET</div></div><div class="lg"></div></div>
+const isSec=n=>{const N=String(n).replace(/[\s.]/g,'').toUpperCase();return String(C.secPfx??'JSS, SS').split(',').map(x=>x.replace(/[\s.]/g,'').toUpperCase()).filter(Boolean).some(p=>N.startsWith(p)&&/\d/.test(N[p.length]||''))};
+const headOf=c=>isSec(c)?{role:'Principal',name:C.pname,sig:C.psig}:{role:'Headmaster',name:C.principal,sig:C.sig};
+function card(s,pm){
+  const c=s.cls,hd=headOf(s.cls),subs=cd(c).s,d=SC[s.reg]||{},k=calc(d,subs),p=pm?(pm[s.reg]||{p:0,n:0}):pos(s.reg,c),pres=+d.pres||0,ab=Math.max(0,C.days-pres),pc=C.days?(pres/C.days*100).toFixed(2):'0.00',dm=d.dom||{},R=remarks(s,k,d,p),B=C.bands,ca=k.rows.reduce((a,r)=>a+r.ca,0),ex=k.rows.reduce((a,r)=>a+r.ex,0),kv=(l,v)=>`<tr><th>${l}</th><td>${v}</td></tr>`,dr=(a,b)=>`<tr><th>${a}</th><td>${esc(dm[a]??'')}</td><th class="r">${b}</th><td>${esc(dm[b]??'')}</td></tr>`;
+  const fee=(C.fees&&C.fees[c])?C.fees[c]:'—';
+  return`<div class="rc"><div class="top"><div class="lg">${C.logo?`<img src="${C.logo}">`:''}</div><div class="hd"><h2>${esc(C.name)}</h2><div class="ad">${esc(C.address)}</div><i>${esc(C.motto)}</i><div class="srs">STUDENT REPORT SHEET</div></div><div class="lg"></div></div>
 <div class="inf"><table>${kv('Student Name:',esc(s.name))}${kv('Class:',esc(c))}${kv('Academic Session:',sesL(C.ses))}${kv('Days Present:',pres)}${kv('Attendance %:',pc)}</table><table class="rt">${kv('Admission Number:',esc(s.reg))}${kv('Gender:',esc(s.g||''))}${kv('Term:',T[C.t])}${kv('Grade:',k.b.g)}${kv('Position:',p.p?ord(p.p)+' of '+p.n:'—')}</table></div>
 <div class="bar">ACADEMIC PERFORMANCE</div><table class="ac"><tr><th>S/N</th><th>Subject</th><th>CA Score</th><th>Exam Score</th><th>Total (${C.ca+C.ex})</th><th>Grade</th><th>Remark</th></tr>${k.rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.s)}</td><td>${r.e?'':r.ca}</td><td>${r.e?'':r.ex}</td><td>${r.e?'':r.t}</td><td>${esc(r.b.g)}</td><td>${esc(r.b.r)}</td></tr>`).join('')}<tr class="tt"><td></td><td>Total</td><td>${ca}</td><td>${ex}</td><td>${k.tot}</td><td>${k.b.g}</td><td>${k.b.r}</td></tr></table>
 ${cum(s,k)}<div class="tri"><table><tr><th colspan=2 class="h">Summary</th></tr>${kv('Total Obtainable',subs.length*(C.ca+C.ex))}${kv('Marks Obtained',k.tot)}${kv('Average','<b>'+k.avg.toFixed(1)+'</b>')}${kv('Grade','<b>'+k.b.g+'</b>')}</table><table><tr><th colspan=3 class="h">Grade Equivalent</th></tr>${B.map((b,i)=>`<tr><td>${b.g}</td><td>${b.m}-${i?B[i-1].m-1:100}</td><td>${b.r}</td></tr>`).join('')}</table><table><tr><th colspan=2 class="h">ATTENDANCE</th></tr>${kv('Days Open',C.days)}${kv('Days Present',pres)}${kv('Days Absent',ab)}${kv('Attendance %',pc)}</table></div>
-<div class="bar" style="margin-top:var(--tm,14px)">Domain (Affective/Psychomotor)</div><table class="dm">${dr(TR[0],TR[4])}${dr(TR[1],TR[5])}${dr(TR[2],TR[6])}${dr(TR[3],TR[7])}</table>
-<div class="bar" style="margin-top:var(--tm,14px)">REMARKS</div><div class="rs"><div>Next Term Resumes: ${esc(C.resume)}</div><div>Next Term School Fees is ${esc(C.fees)}</div></div><table class="rm"><tr><th>Class Teacher's Remark:</th><td>${esc(d.tr||R.t)}</td></tr><tr><th>Headmaster's Remark:</th><td>${esc(d.pr||R.p)}</td></tr></table>
-<div class="sg">${C.sig?`<img src="${C.sig}" style="height:var(--sgh,56px);max-width:220px">`:'<br><br>'}<br>______________________________________<br>${esc(C.principal||'Headmaster')}'s Signature</div><div class="ft">Built and Designed by Bayo Analytics</div></div>`
+<div class="bar" style="margin-top:10px">Domain (Affective/Psychomotor)</div><table class="dm">${dr(TR[0],TR[4])}${dr(TR[1],TR[5])}${dr(TR[2],TR[6])}${dr(TR[3],TR[7])}</table>
+<div class="bar" style="margin-top:10px">REMARKS</div><div class="rs"><div>Next Term Resumes: ${esc(C.resume)}</div><div>Next Term School Fees is ${esc(fee)}</div></div><table class="rm"><tr><th>Class Teacher's Remark:</th><td>${esc(d.tr||R.t)}</td></tr><tr><th>${hd.role}'s Remark:</th><td>${esc(d.pr||R.p)}</td></tr></table>
+<div class="sg">${hd.sig?`<img src="${hd.sig}" style="height:var(--sgh);max-width:200px">`:'<br><br>'}<br>______________________________________<br>${hd.name?esc(hd.name)+' — ':''}${hd.role}'s Signature</div><div class="ft">Built and Designed by Bayo Analytics</div></div>`
 }
 function vReports(){
-  const c=curC(),L=act(c);
+  const c=curC(),L=act(c),pm=posMap(c);
   if(sel.r!='ALL'&&!L.some(s=>s.reg==sel.r))sel.r='ALL';
   const one=L.find(s=>s.reg==sel.r),d=one&&SC[one.reg]||{};
   let h=`<div class="box np"><div class="row">${clsSel()}<label>Student<select data-sel="r"><option value="ALL">All students (print whole class)</option>${L.map(s=>`<option value="${esc(s.reg)}" ${s.reg==sel.r?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label><button class="b" data-act="print">Print</button><button class="b" data-act="pdf">Download PDF</button><span id="pst" class="mu">If Print does nothing in this view, use Download PDF.</span></div>`;
   if(one){
     h+=`<div class="row"><label>Days present (of ${C.days})<input type="number" data-f="pres" data-r="${esc(one.reg)}" value="${d.pres??''}" min="0" max="${C.days}"></label>${TR.map(t=>`<label>${t}<input type="number" min="1" max="5" data-f="dom" data-t="${t}" data-r="${esc(one.reg)}" value="${(d.dom||{})[t]??''}"></label>`).join('')}</div>`;
-    if(admin)h+=rmkBox(one,d);
+    if(admin)h+=rmkBox(one,d,pm);
   }
-  h+=`</div>`+(one?card(one)+'<div class="box np" id="hist"><b>Previous terms</b><div class="mu">Loading…</div></div>':L.map(card).join(''));
+  h+=`</div>`+(one?card(one,pm)+'<div class="box np" id="hist"><b>Previous terms</b><div class="mu">Loading…</div></div>':L.map(s=>card(s,pm)).join(''));
   if(one)setTimeout(()=>hist(one),0);
   return h
 }
 async function hist(s){const el=$('#hist');if(!db||!el)return;try{const q=await db.collection('scores').where('reg','==',s.reg).get();const rows=q.docs.map(x=>x.data()).filter(x=>x.p!==pid()).sort((a,b)=>a.p<b.p?-1:1);el.innerHTML='<b>Previous terms</b><table><tr><th>Session</th><th>Term</th><th>Class</th><th>Total</th><th>Average</th><th>Grade</th></tr>'+rows.map(r=>{const[se,t]=r.p.split('_'),k=calc(r,r.subs||Object.keys(r.sc||{}));return`<tr><td>${sesL(se)}</td><td>${T[t]}</td><td>${esc(r.cls)}</td><td>${k.tot}</td><td>${k.avg.toFixed(1)}</td><td>${k.b.g}</td></tr>`}).join('')+'</table>'}catch(e){el.innerHTML='History unavailable.'}}
-function vBoard(){const c=curC(),subs=cd(c).s,L=act(c).map(s=>({s,k:calc(SC[s.reg],subs)})).sort((a,b)=>b.k.tot-a.k.tot);const W=L.filter(x=>x.k.has),cnt={};L.forEach(x=>cnt[x.k.b.g]=(cnt[x.k.b.g]||0)+1);
-return`<div class="box"><div class="row">${clsSel()}<span class="mu">Class average ${W.length?(W.reduce((a,x)=>a+x.k.avg,0)/W.length).toFixed(1):0}% · ${C.bands.map(b=>b.g+': '+(cnt[b.g]||0)).join(' · ')}</span><button class="b" data-act="bprint">Print</button><button class="b" data-act="bxl">Export Excel</button></div><div class="po"><b>${esc(C.name)}</b><br>${esc(c)} broadsheet · ${sesL(C.ses)} · ${T[C.t]}</div><div class="sc"><table><tr><th>Pos.</th><th>Name</th>${subs.map(s=>`<th class="c">${esc(s)}</th>`).join('')}<th class="c">Total</th><th class="c">Avg</th><th class="c">Grade</th></tr>${L.map(x=>`<tr><td>${ordp(pos(x.s.reg,c))}</td><td>${esc(x.s.name)}</td>${x.k.rows.map(r=>`<td class="c">${r.e?'':r.t}</td>`).join('')}<td class="c">${x.k.has?x.k.tot:''}</td><td class="c">${x.k.has?x.k.avg.toFixed(1):''}</td><td class="c">${x.k.b.g}</td></tr>`).join('')}</table></div></div>`}
+function vBoard(){
+  const c=curC(),subs=cd(c).s;
+  if(!subs||!subs.length)return `<div class="warn">The class <b>${esc(c)}</b> has no subjects yet.</div>`;
+  const pm=posMap(c);
+  const L=act(c).map(s=>({s,k:calc(SC[s.reg],subs)})).sort((a,b)=>b.k.tot-a.k.tot);
+  const W=L.filter(x=>x.k.has),cnt={};
+  L.forEach(x=>cnt[x.k.b.g]=(cnt[x.k.b.g]||0)+1);
+  return`<div class="box"><div class="row">${clsSel()}<span class="mu">Class average ${W.length?(W.reduce((a,x)=>a+x.k.avg,0)/W.length).toFixed(1):0}% · ${C.bands.map(b=>b.g+': '+(cnt[b.g]||0)).join(' · ')}</span><button class="b" data-act="bprint">Print</button><button class="b" data-act="bxl">Export Excel</button></div><div class="po"><b>${esc(C.name)}</b><br>${esc(c)} broadsheet · ${sesL(C.ses)} · ${T[C.t]}</div><div class="sc"><table><tr><th>Pos.</th><th>Name</th>${subs.map(s=>`<th class="c">${esc(s)}</th>`).join('')}<th class="c">Total</th><th class="c">Avg</th><th class="c">Grade</th></tr>${L.map(x=>`<tr><td>${ordp(pm[x.s.reg]||{p:0})}</td><td>${esc(x.s.name)}</td>${x.k.rows.map(r=>`<td class="c">${r.e?'':r.t}</td>`).join('')}<td class="c">${x.k.has?x.k.tot:''}</td><td class="c">${x.k.has?x.k.avg.toFixed(1):''}</td><td class="c">${x.k.b.g}</td></tr>`).join('')}</table></div></div>`}
 function vPast(){const grads=ST.filter(s=>s.on===false);return`<div class="box"><b>Past students (${grads.length})</b><p class="mu">Graduated or withdrawn. Records are still in the database; reactivate a student to edit them or print an old report card.</p><div class="sc"><table><tr><th>Reg No.</th><th>Name</th><th>Last class</th><th>Last session</th><th>Outcome</th><th></th></tr>${grads.map(s=>{const h=(s.hist||[]).slice(-1)[0]||{};return`<tr><td>${esc(s.reg)}</td><td>${esc(s.name)}</td><td>${esc(h.cls||s.cls)}</td><td>${esc(h.ses||'')}</td><td>${esc(h.out||'—')}</td><td><button data-act="rea" data-r="${esc(s.reg)}">Reactivate</button></td></tr>`}).join('')}</table></div>${grads.length?'':'<p class="mu">No past students yet.</p>'}</div>`}
 function vStudents(){const c=curC(),all=ST.filter(s=>s.cls==c);return`<div class="box"><b>Add student <span class="tag">ADMIN</span></b><div class="row"><label>Full name<input id="an"></label>${clsSel()}<label>Gender<select id="ag"><option>Male</option><option>Female</option></select></label><label>Class Type<select id="at">${(C.types||['Day','Boarding']).map(t=>`<option>${esc(t)}</option>`).join('')}</select></label><label>House<input id="ah" size=8></label><label>Parent phone<input id="ap" size=12></label><label>Parent email<input id="ae"></label><button class="b" data-act="add">Add</button></div>
 <b>Bulk import</b> <span class="mu">one per line: Name, Class, Gender, Type, House, Phone, Email</span><textarea id="bi"></textarea><button class="b" data-act="imp">Import</button></div>
-<div class="box"><b>${esc(c)} (${all.length})</b><div class="sc"><table><tr><th>Reg No.</th><th>Name</th><th>Gender</th><th>Type</th><th>House</th><th>Phone</th><th>Status</th><th>Move to</th><th></th></tr>${all.map(s=>`<tr><td>${esc(s.reg)}</td><td>${esc(s.name)}</td><td>${esc(s.g)}</td><td>${esc(s.type||'')}</td><td>${esc(s.house||'')}</td><td>${esc(s.phone||'')}</td><td>${s.on===false?'Withdrawn':'Active'}</td><td><select data-mv="${esc(s.reg)}">${C.classes.map(x=>`<option ${x.n==s.cls?'selected':''}>${esc(x.n)}</option>`).join('')}</select></td><td><button data-act="tog" data-r="${esc(s.reg)}">${s.on===false?'Reactivate':'Withdraw'}</button> <button class="w" data-act="del" data-r="${esc(s.reg)}">Delete</button></td></tr>`).join('')}</table></div></div>`}
-function vAdmin(){const f=(k,l,t='text')=>`<label>${l}<input type="${t}" data-cfg="${k}" value="${esc(C[k])}"></label>`,idx=C.classes.map(x=>x.n),L=ST.filter(s=>s.on!==false);
-return`<div class="box"><b>Headmaster's signature <span class="tag">ADMIN</span></b><div class="row">${C.sig?`<img src="${C.sig}" style="height:60px;background:#fff;border:1px solid var(--bd);border-radius:6px">`:'<span class="mu">No signature yet.</span>'}<input type="file" id="sg" accept="image/*">${C.sig?'<button class="w" data-act="rmsig">Remove</button>':''}</div><span class="mu">Upload a photo or scan of the signature, ideally on a plain white background or as a transparent PNG.</span></div>
-<div class="box"><b>School logo</b><div class="row">${C.logo?`<img src="${C.logo}" style="height:70px;background:#fff;border:1px solid var(--bd);border-radius:6px">`:'<span class="mu">No logo yet.</span>'}<input type="file" id="lg" accept="image/*">${C.logo?'<button class="w" data-act="rmlogo">Remove</button>':''}</div><span class="mu">Upload once: it appears on every report card and in the header.</span></div>
-<div class="box"><b>School & term</b><div class="row">${f('name','School name')}${f('address','Address')}${f('motto','Motto')}${f('principal','Headmaster name')}${f('pfx','Reg prefix')}${f('ses','Session (e.g. 2025-2026)')}<label>Term<select data-cfg="t">${T.map((t,i)=>`<option value="${i}" ${i==C.t?'selected':''}>${t}</option>`).join('')}</select></label>${f('days','School days','number')}${f('ca','CA max','number')}${f('ex','Exam max','number')}${f('passMark','Pass Mark (Cum. Avg)','number')}${f('resume','Next term resumes')}${f('fees','Next term fees')}</div>
+<div class="box"><b>${esc(c)} (${all.length})</b><div class="sc"><table><tr><th>Reg No.</th><th>Name</th><th>Gender</th><th>Type</th><th>House</th><th>Phone</th><th>Status</th><th>Move to</th><th></th></tr>${all.map(s=>`<tr><td>${esc(s.reg)}</td><td>${esc(s.name)}</td><td>${esc(s.g)}</td><td>${esc(s.type||'')}</td><td>${esc(s.house||'')}</td><td>${esc(s.phone||'')}</td><td>${s.on===false?'Withdrawn':'Active'}</td><td><select data-mv="${esc(s.reg)}"${s.on===false?' disabled title="Reactivate first"':''}>${C.classes.map(x=>`<option ${x.n==s.cls?'selected':''}>${esc(x.n)}</option>`).join('')}</select></td><td><button data-act="tog" data-r="${esc(s.reg)}">${s.on===false?'Reactivate':'Withdraw'}</button> <button class="w" data-act="del" data-r="${esc(s.reg)}">Delete</button></td></tr>`).join('')}</table></div></div>`}
+function vAdmin(){
+  const f=(k,l,t='text')=>`<label>${l}<input type="${t}" data-cfg="${k}" value="${esc(C[k])}"></label>`,idx=C.classes.map(x=>x.n),L=ST.filter(s=>s.on!==false);
+  const feeRows=C.classes.map(x=>`<div class="row"><label style="width:150px;font-weight:600">${esc(x.n)}</label><input style="flex:1" data-fee="${esc(x.n)}" value="${esc((C.fees||{})[x.n]||'')}" placeholder="e.g. ₦50,000"></div>`).join('');
+  
+  return`<div class="box"><b>Headmaster's signature <span class="tag">ADMIN</span></b> <span class="mu">signs Creche, Pre Nursery, Nursery and Basic sheets</span><div class="row" style="margin-top:12px">${C.sig?`<img src="${C.sig}" style="height:60px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:4px">`:'<span class="mu">No signature yet.</span>'}<input type="file" id="sg" accept="image/*">${C.sig?'<button class="w" data-act="rmsig">Remove</button>':''}</div><span class="mu">Upload a photo or scan of the signature, ideally on a plain white background or as a transparent PNG.</span></div>
+<div class="box"><b>Principal's signature <span class="tag">ADMIN</span></b> <span class="mu">signs JSS and SS sheets</span><div class="row" style="margin-top:12px">${C.psig?`<img src="${C.psig}" style="height:60px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:4px">`:'<span class="mu">No signature yet.</span>'}<input type="file" id="psg" accept="image/*">${C.psig?'<button class="w" data-act="rmpsig">Remove</button>':''}</div><span class="mu">Applies to: ${esc(C.classes.filter(x=>isSec(x.n)).map(x=>x.n).join(', ')||'no classes yet')}. These sheets say "Principal" and use the principal's name and signature above; all other classes say "Headmaster".</span></div>
+<div class="box"><b>School logo</b><div class="row" style="margin-top:12px">${C.logo?`<img src="${C.logo}" style="height:70px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:4px">`:'<span class="mu">No logo yet.</span>'}<input type="file" id="lg" accept="image/*">${C.logo?'<button class="w" data-act="rmlogo">Remove</button>':''}</div><span class="mu">Upload once: it appears on every report card and in the header.</span></div>
+<div class="box"><b>School & term</b><div class="row" style="margin-top:12px">${f('name','School name')}${f('address','Address')}${f('motto','Motto')}${f('principal','Headmaster name')}${f('pname','Principal name (JSS & SS)')}${f('secPfx','Principal signs classes starting with')}${f('pfx','Reg prefix')}${f('ses','Session (e.g. 2025-2026)')}<label>Term<select data-cfg="t">${T.map((t,i)=>`<option value="${i}" ${i==C.t?'selected':''}>${t}</option>`).join('')}</select></label>${f('days','School days','number')}${f('ca','CA max','number')}${f('ex','Exam max','number')}${f('resume','Next term resumes')}</div>
 <b>Grading</b> <span class="mu">one per line: min, grade, remark</span><textarea id="bd">${esc(C.bands.map(b=>[b.m,b.g,b.r].join(', ')).join('\n'))}</textarea>
-<b>Classes &amp; subjects</b> <span class="mu">comma separated, in report order. Arms such as White/Blue or Science/Commerce are separate classes under one level. Click Save settings after editing subjects.</span>
-${C.classes.map((x,i)=>{const first=C.classes.findIndex(y=>lvOf(y)==lvOf(x))==i;return`<div class="row"><label style="width:170px">${esc(x.n)}</label><input style="flex:1" data-sj="${i}" value="${esc(x.s.join(', '))}"><button data-act="rncls" data-i="${i}" title="Set or change the arm/stream name">Rename arm</button>${first?`<button data-act="lvup" data-i="${i}" title="Move this level up">↑</button><button data-act="lvdn" data-i="${i}" title="Move this level down">↓</button>`:''}<button class="w" data-act="rmcls" data-i="${i}">Remove</button></div>`}).join('')}
-<div style="margin-top:15px;border-top:1px dashed var(--bd);padding-top:10px;">
+<div style="margin-top:20px;border-top:1px dashed var(--bd);padding-top:15px;">
+  <b>Next Term Fees by Class</b> <span class="mu">Set the specific fee for each class. Leave blank to hide.</span>
+  ${feeRows}
+</div>
+<div style="margin-top:20px;border-top:1px dashed var(--bd);padding-top:15px;">
+  <b>Classes &amp; subjects</b> <span class="mu">comma separated, in report order. Arms such as White/Blue or Science/Commerce are separate classes under one level. Click Save settings after editing subjects.</span>
+  ${C.classes.map((x,i)=>{const first=C.classes.findIndex(y=>lvOf(y)==lvOf(x))==i;return`<div class="row" style="margin-top:8px"><label style="width:170px">${esc(x.n)}</label><input style="flex:1" data-sj="${i}" value="${esc(x.s.join(', '))}"><button data-act="rncls" data-i="${i}" title="Set or change the arm/stream name">Rename arm</button>${first?`<button data-act="lvup" data-i="${i}" title="Move this level up">↑</button><button data-act="lvdn" data-i="${i}" title="Move this level down">↓</button>`:''}<button class="w" data-act="rmcls" data-i="${i}">Remove</button></div>`}).join('')}
+</div>
+<div style="margin-top:20px;border-top:1px dashed var(--bd);padding-top:15px;">
   <label>Class Types (comma separated)<input data-cfg="types" value="${esc((C.types||['Day','Boarding']).join(', '))}"></label>
 </div>
-<button class="b" data-act="cfg">Save settings</button></div>
+<button class="b" style="margin-top:20px" data-act="cfg">Save settings</button></div>
 <div class="box"><b>Add classes</b><p class="mu">Level is the year group, e.g. Basic 1 or SS1. Leave Arms empty for a single class, or list them to create one class per arm, e.g. White, Blue or Science, Commerce, Art. Each arm gets the subjects below; edit them per class afterwards. Save any pending settings changes first.</p><div class="row"><label>Level<input id="cl_l" placeholder="SS1"></label><label>Arms (optional)<input id="cl_a" placeholder="Science, Commerce, Art" size="28"></label><label>Place after<select id="cl_p"><option value="">Auto (with its level, or at the end)</option>${levels().map(l=>`<option>${esc(l)}</option>`).join('')}</select></label></div><label class="mu">Subjects<input id="cl_s" style="width:100%" placeholder="Mathematics, English Language, ..."></label><div class="row" style="margin-top:8px"><button class="b" data-act="addcls">Add class(es)</button></div></div>
 <div class="box"><b>Backup &amp; restore <span class="tag">ADMIN</span></b><p class="mu">Downloads every student, score and setting as one file. Do this before promotion and at the end of each term.</p><div class="row"><button class="b" data-act="bak">Download backup</button><input type="file" id="rf" accept=".json"><button class="w" data-act="rst">Restore from file</button></div></div>
-<div class="box"><b>End-of-session promotion <span class="tag">ADMIN</span></b><p class="mu">Promotion is automatically calculated based on <b>Cumulative Average</b> across all terms. Students below the Pass Mark (${C.passMark}) will repeat. Use the dropdown to override if necessary. Students keep their arm (White stays White, Science stays Science) when the next level has it.</p>
-<div class="sc"><table><tr><th>Name</th><th>Class</th><th class="c">Cum. Avg</th><th>Moves to (Target)</th><th class="c">Repeat</th></tr>${L.map(s=>{
-  const cd = getCumData(s);
-  const isRepeat = cd.cumAvg < C.passMark;
-  const to = promo[s.reg] ? s.cls : (ptt[s.reg] || cd.autoTarget);
-  return `<tr><td>${esc(s.name)}</td><td>${esc(s.cls)}</td>
-          <td class="c"><b>${cd.cumAvg.toFixed(1)}</b> ${isRepeat?'<span style="color:#c0392b;font-size:10px">(Repeat)</span>':''}</td>
-          <td>${promo[s.reg]?esc(s.cls):`<select data-pto="${esc(s.reg)}">${[...idx,'Graduated'].map(n=>`<option ${n==to?'selected':''}>${esc(n)}</option>`).join('')}</select>`}</td>
-          <td class="c"><input type="checkbox" data-rep="${esc(s.reg)}" ${promo[s.reg]?'checked':''}></td></tr>`
-}).join('')}</table></div>
-${C.t<2?'<div class="warn">It is currently '+T[C.t]+'. Promotion is normally run after Third Term.</div>':''}<button class="w" data-act="promo">Run promotion</button></div>`}
+<div class="box"><b>End-of-session promotion <span class="tag">ADMIN</span></b><p class="mu">Automatic, class by class, from each student's <b>cumulative average</b> (the average of all terms this session). Path: Creche → Nursery 1 → Nursery 2 → Basic 1–5 → JSS 1–3 → SS 1–3 → graduate.</p>
+<div class="row" style="background:var(--bg);padding:12px;border-radius:8px;border:1px solid var(--bd);margin-bottom:16px;">
+  <label>Promotion pass mark <input type="number" id="promoPassInput" value="${C.promoPass??35}" min="0" max="100"></label>
+  <button class="b" data-act="save-pass">Save Pass Mark</button>
+  <span class="mu" style="margin-left:auto;">Students below this cumulative avg will auto-repeat.</span>
+</div>
+${(()=>{const bad=L.filter(s=>!idx.includes(s.cls));return bad.length?`<div class="warn">${bad.length} active student(s) are in a class that is not in the class list and will be skipped: ${bad.slice(0,6).map(s=>esc(s.name)+' ('+esc(s.cls)+')').join(', ')}.</div>`:''})()}
+${(()=>{const un=[...new Set(L.filter(s=>idx.includes(s.cls)).filter(s=>{const p=decide(s);return p.out=='promote'&&!p.to}).map(s=>s.cls))];return un.length?`<div class="warn">${un.map(c=>`<div class="row" style="margin:4px 0">The next class for <b>${esc(c)}</b> is not in your class list. Move all its promoted students to: <select data-pbulk="${esc(c)}"><option value="">— choose —</option>${[...idx,'Graduated'].map(n=>`<option>${esc(n)}</option>`).join('')}</select></div>`).join('')}</div>`:''})()}
+<div class="sc"><table><tr><th>#</th><th>Name</th><th class="c">Cum. Avg</th><th>Result</th><th>Override</th><th>Moves to</th></tr>${C.classes.map(x=>{const ss=L.filter(s=>s.cls==x.n).sort((a,b)=>String(a.name).localeCompare(String(b.name)));if(!ss.length)return'';const ps=ss.map(decide),up=ps.filter(p=>p.out=='promote').length,dn=nextOf(x.n);return`<tr><td colspan="6" style="background:var(--bg);font-weight:700">${esc(x.n)} <span class="mu" style="font-weight:400">— ${ss.length} student${ss.length>1?'s':''} · ${up} promoted · ${ss.length-up} repeating · next class: ${esc(dn||'(choose below)')}</span></td></tr>`+ss.map((s,i)=>{const p=ps[i],ov=POV[s.reg]||'auto';return`<tr><td>${i+1}</td><td>${esc(s.name)}</td><td class="c">${p.c?'<b>'+p.c.avg.toFixed(1)+'</b> <span class="mu">('+p.c.n+' term'+(p.c.n>1?'s':'')+')</span>':'<span class="mu">no scores</span>'}</td><td>${p.out=='promote'?'<b style="color:#2e8b57">Promote</b>':'<b style="color:#c0392b">Repeat</b>'+(p.noscore?' <span class="mu">(no scores)</span>':'')}</td><td><select data-pov="${esc(s.reg)}">${[['auto','Auto'],['promote','Promote'],['repeat','Repeat']].map(([v,l])=>`<option value="${v}" ${v==ov?'selected':''}>${l}</option>`).join('')}</select></td><td>${p.out=='repeat'?'<span class="mu">stays in</span> '+esc(s.cls):`<select data-pto="${esc(s.reg)}">${p.to?'':'<option value="">— choose —</option>'}${[...idx,'Graduated'].map(n=>`<option ${n==p.to?'selected':''}>${esc(n)}</option>`).join('')}</select>`}</td></tr>`}).join('')}).join('')}</table></div>
+${C.t<2?'<div class="warn">It is currently '+T[C.t]+'. Promotion is normally run after Third Term.</div>':''}<button class="w" data-act="promo" style="margin-top:16px;">Run promotion</button></div>`}
 
-/* ===== AUTO-FIT: every report card is shrunk (spacing first, then text) until it fits one A4 page ===== */
-const FITV={'--fs':[12,9],'--py':[3,1],'--acp':[7,1],'--tm':[14,4],'--tm2':[10,3],'--bm':[8,3],'--rsm':[6,2],'--rh':[24,14],'--sgm':[30,6],'--sgh':[56,30],'--lgh':[80,48],'--h2':[21,15],'--srm':[10,3],'--ftm':[16,4],'--tp':[6,2]};
+/* ===== AUTO-FIT: shrink spacing (and if still needed, zoom) until each card fits one A4 page ===== */
+const FITV={'--fs':[12,9],'--py':[4,1],'--acp':[6,1],'--tm':[12,3],'--tm2':[10,3],'--bm':[9,3],'--rsm':[7,2],'--rh':[26,14],'--sgm':[22,4],'--sgh':[56,28],'--lgh':[78,40],'--h2':[21,15],'--srm':[10,3],'--ftm':[15,4],'--tp':[6,2]};
 function setDensity(c,t){for(const k in FITV){const[a,b]=FITV[k];c.style.setProperty(k,(a+(b-a)*t).toFixed(2)+'px')}}
 function fitCards(root){
   (root||document).querySelectorAll('.rc').forEach(c=>{
-    const ow=c.style.width,om=c.style.maxWidth;c.style.width='780px';c.style.maxWidth='none';c.style.zoom='';
+    const ow=c.style.width,om=c.style.maxWidth;
+    c.style.width='780px';c.style.maxWidth='none';c.style.zoom='';
     const target=Math.floor(780*297/210)-10;
     setDensity(c,0);
+    void c.offsetHeight;
     if(c.offsetHeight>target){
-      let lo=0,hi=1;setDensity(c,1);
-      if(c.offsetHeight<=target){for(let i=0;i<9;i++){const m=(lo+hi)/2;setDensity(c,m);if(c.offsetHeight<=target)hi=m;else lo=m}setDensity(c,hi)}
-      else{const h=c.offsetHeight;c.style.zoom=(target/h).toFixed(4)}
+      let lo=0,hi=1;setDensity(c,1);void c.offsetHeight;
+      if(c.offsetHeight<=target){
+        for(let i=0;i<9;i++){const m=(lo+hi)/2;setDensity(c,m);void c.offsetHeight;if(c.offsetHeight<=target)hi=m;else lo=m}
+        setDensity(c,hi);
+      }else{
+        const h=c.offsetHeight;c.style.zoom=(target/h).toFixed(4);
+      }
     }
     c.style.width=ow;c.style.maxWidth=om;
   })
@@ -292,16 +425,46 @@ function fitCards(root){
 window.addEventListener('beforeprint',()=>fitCards());
 const csvq=v=>'"'+String(v).replace(/"/g,'""')+'"';
 async function addSt(n,c,g,t,h,p,e){if(!n||!C.classes.some(x=>x.n==c))return false;if(ST.some(s=>s.cls==c&&String(s.name).trim().toLowerCase()==n.trim().toLowerCase()))return false;const ab=(c.replace(/[^A-Za-z]/g,'').slice(0,3)+c.replace(/\D/g,'')).toUpperCase();let i=ST.filter(s=>s.cls==c).length+1,r;do r=C.pfx+ab+String(i++).padStart(3,'0');while(ST.some(s=>s.reg==r));const o={reg:r,name:n,cls:c,g:g||'',type:t||'Day',house:h||'',phone:p||'',email:e||'',on:true,hist:[]};ST.push(o);try{await db.doc('students/'+r).set(o)}catch(x){ST=ST.filter(y=>y!==o);alert('Could not save student: '+(x.message||x));return false}return true}
-$('#m').addEventListener('keydown',e=>{if(!['Enter','ArrowDown','ArrowUp'].includes(e.key))return;const c=e.target.closest&&e.target.closest('input[data-sc]');if(!c)return;e.preventDefault();const tr=c.closest('tr'),nx=e.key=='ArrowUp'?tr.previousElementSibling:tr.nextElementSibling,go=r=>{const t=r&&r.querySelector('input[data-sc="'+c.dataset.sc+'"][data-k="'+c.dataset.k+'"]');if(t){t.focus();t.select();return true}return false};if(go(nx))return;if(e.key=='Enter'){const subs=cd(curC()).s,ci=subs.indexOf(c.dataset.sc);if(ci>=0&&ci<subs.length-1){const first=document.querySelector('#m table tr[data-r]'),t=first&&[...first.querySelectorAll('input[data-sc]')].find(x=>x.dataset.sc===subs[ci+1]&&x.dataset.k==='0');if(t){t.focus();t.select()}}}});
+
+/* keyboard navigation: Enter/Arrow keys move within score grid */
+$('#m').addEventListener('keydown',e=>{
+  if(!['Enter','ArrowDown','ArrowUp'].includes(e.key))return;
+  const c=e.target.closest&&e.target.closest('input[data-sc]');if(!c)return;
+  e.preventDefault();
+  const tr=c.closest('tr'),subs=cd(curC()).s,sj=c.dataset.sc,kk=+c.dataset.k;
+  const focus=(r,s,k)=>{const t=r&&r.querySelector(`input[data-sc="${s}"][data-k="${k}"]`);if(t){t.focus();t.select();return true}return false};
+  if(e.key==='ArrowUp'){focus(tr.previousElementSibling,sj,String(kk));return}
+  if(e.key==='ArrowDown'){focus(tr.nextElementSibling,sj,String(kk));return}
+  if(kk===0){focus(tr,sj,'1');return}
+  const ci=subs.indexOf(sj);
+  if(ci>=0&&ci<subs.length-1){focus(tr,subs[ci+1],'0');return}
+  focus(tr.nextElementSibling,sj,'1');
+});
 $('#m').addEventListener('change',async e=>{const t=e.target,d=t.dataset;if(!db&&!d.sel)return;
 if(d.sel){sel[d.sel]=t.value;if(d.sel=='c')sel.r='ALL';draw();return}
 if(d.sc){const tr=t.closest('tr'),r=tr.dataset.r,sj=d.sc,kk=+d.k,x=Math.max(0,Math.min(+t.value||0,kk?C.ex:C.ca)),v=t.value===''?'':x;t.value=v;rowUp(tr);save(r,o=>{const n=[...((o.sc||{})[sj]||['',''])];n[kk]=v;o.sc={...(o.sc||{}),[sj]:n}},'sc');return}
 if(d.f){const r=d.r,f=d.f,tt=d.t,blank=t.value==='';if(f=='dom'){const v=blank?null:Math.max(1,Math.min(5,Math.round(+t.value)||1));if(v!==null)t.value=v;save(r,o=>{o.dom={...(o.dom||{})};if(v===null)delete o.dom[tt];else o.dom[tt]=v},'dom')}else if(f=='pres'){const v=blank?'':Math.max(0,Math.min(C.days,Math.round(+t.value)||0));t.value=v;save(r,o=>{o.pres=v},'pres')}else{const v=t.value;save(r,o=>{o[f]=v},f)}draw(1);return}
-if(d.rep!==undefined){promo[d.rep]=t.checked;draw()}
-if(d.pto!==undefined){ptt[d.pto]=t.value}
+if(d.pov!==undefined){if(t.value=='auto')delete POV[d.pov];else POV[d.pov]=t.value;draw()}
+if(d.pto!==undefined){ptt[d.pto]=t.value; draw()}
+if(d.pbulk!==undefined&&t.value){ST.filter(x=>x.on!==false&&x.cls==d.pbulk).forEach(x=>{const p=decide(x);if(p.out=='promote'&&!p.to)ptt[x.reg]=t.value});draw()}
 if(d.mv!==undefined){const r=d.mv,s=ST.find(x=>x.reg==r);if(!s||s.cls==t.value)return;const old=s.cls;s.cls=t.value;try{await db.doc('students/'+r).update({cls:t.value});const sd=await db.doc('scores/'+pid()+'_'+r).get();if(sd.exists)await db.doc('scores/'+pid()+'_'+r).set({...sd.data(),cls:t.value})}catch(x){s.cls=old;alert('Could not move student: '+(x.message||x))}draw()}
 });
-function rowUp(tr){const subs=cd(curC()).s,ins=[...tr.querySelectorAll('input')],tot=ins.reduce((a,i)=>a+(+i.value||0),0),av=subs.length?tot/subs.length:0;tr.querySelector('.tot').textContent=tot;tr.querySelector('.avg').textContent=av.toFixed(1);tr.querySelector('.gd').textContent=ins.some(i=>i.value!=='')?gr(av).g:'—'}
+function rowUp(tr){
+  const subs=cd(curC()).s,ins=[...tr.querySelectorAll('input')];
+  const tot=ins.reduce((a,i)=>a+(+i.value||0),0);
+  const av=subs.length?tot/subs.length:0;
+  tr.querySelector('.tot').textContent=tot;
+  tr.querySelector('.avg').textContent=av.toFixed(1);
+  tr.querySelector('.gd').textContent=ins.some(i=>i.value!=='')?gr(av).g:'—';
+  const reg=tr.dataset.r, rows=[...tr.parentNode.querySelectorAll('tr[data-r]')];
+  const allTotals=rows.map(r=>{
+    const i2=[...r.querySelectorAll('input')];
+    return {reg:r.dataset.r, has:i2.some(i=>i.value!==''), tot:i2.reduce((a,i)=>a+(+i.value||0),0)};
+  }).filter(x=>x.has);
+  const my=allTotals.find(x=>x.reg===reg);
+  const p=my?1+allTotals.filter(x=>x.tot>my.tot).length:0;
+  tr.querySelector('.ps').textContent=p?ord(p):'—';
+}
 $('#m').addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.sc)rowUp(t.closest('tr'))});
 $('#m').addEventListener('focusout',()=>{if(late)setTimeout(()=>{const a=document.activeElement;if(late&&!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)))draw()},400)});
 $('#m').addEventListener('click',async e=>{const a=e.target.dataset.act;if(!a)return;
@@ -318,8 +481,25 @@ if(a=='rncls'){const i=+e.target.dataset.i,x=C.classes[i];if(!x)return;const lv=
 if(a=='rmcls'){const i=+e.target.dataset.i,x=C.classes[i];if(!x)return;if(ST.some(s=>s.cls==x.n))return alert('Move or delete the students in '+x.n+' first.');if(C.classes.length<2)return alert('At least one class is required.');if(!confirm('Remove the class '+x.n+'?'))return;const o={...C,classes:C.classes.filter((_,j)=>j!=i)};try{await db.doc('cfg/school').set(o);C=o;sub();draw()}catch(y){alert('Could not remove class: '+(y.message||y))}}
 if(a=='bak'){try{const rows=[];for(let f=0;;f+=1000){const{data,error}=await sb.from('docs').select('col,id,data').order('col').order('id').range(f,f+999);if(error)throw error;rows.push(...data);if(data.length<1000)break}const b=new Blob([JSON.stringify({v:1,rows})],{type:'application/json'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='report-builder-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),5000)}catch(x){alert('Backup failed: '+(x.message||x))}}
 if(a=='rst'){const f=$('#rf').files[0];if(!f)return alert('Choose a backup file first.');try{const j=JSON.parse(await f.text());const rows=(j.rows||[]).filter(r=>r&&typeof r.col=='string'&&typeof r.id=='string'&&r.data);if(!rows.length)throw new Error('This is not a backup file');if(!confirm('Restore '+rows.length+' records? Matching records will be overwritten.'))return;const now=new Date().toISOString();for(let i=0;i<rows.length;i+=200){const{error}=await sb.from('docs').upsert(rows.slice(i,i+200).map(r=>({col:r.col,id:r.id,data:r.data,updated_at:now})));if(error)throw error}alert('Restore complete. The page will reload.');location.reload()}catch(x){alert('Restore failed: '+(x.message||x))}}
-if(a=='cfg'){const o={...C};document.querySelectorAll('[data-cfg]').forEach(i=>{const k=i.dataset.cfg;if(k==='types')o.types=i.value.split(',').map(x=>x.trim()).filter(Boolean);else o[k]=['t','days','ca','ex','passMark'].includes(k)?+i.value:i.value.trim()});o.bands=$('#bd').value.split('\n').map(l=>l.split(',').map(x=>x.trim())).filter(p=>p[1]).map(p=>({m:+p[0],g:p[1],r:p[2]||''})).sort((a,b)=>b.m-a.m);o.classes=C.classes.map((x,i)=>({...x,s:document.querySelector(`[data-sj="${i}"]`).value.split(',').map(z=>z.trim()).filter(Boolean)}));if(!/^\d{4}-\d{4}$/.test(o.ses))return alert('Session must look like 2025-2026.');if(!(o.days>0)||!(o.ca>=0)||!(o.ex>=0)||o.ca+o.ex!==100)return alert('CA max + Exam max must equal 100, and school days must be more than 0.');if(!o.bands.length||o.bands.some(b=>isNaN(b.m))||!o.bands.some(b=>b.m<=0))return alert('Grading: each line needs "min, grade, remark", and one band must start at 0.');if(o.classes.some(x=>!x.s.length))return alert('Every class needs at least one subject.');try{await db.doc('cfg/school').set(o);C=o;sub();draw();alert('Settings saved.')}catch(x){alert('Could not save settings: '+(x.message||x))}}
-if(a=='promo'){if(!/^\d{4}-\d{4}$/.test(C.ses))return alert('Fix the session format (e.g. 2025-2026) in Settings first.');if(C.t<2&&prompt('Promotion is normally run after Third Term. It is currently '+T[C.t]+'. Type the session name ('+C.ses+') to confirm:')!==C.ses)return;if(!confirm('Promote all active students and open the next session?\n\nDownload a backup first (Settings → Backup). This cannot be undone automatically.'))return;const idx=C.classes.map(x=>x.n),done=h=>h.ses==C.ses&&['Promoted','Repeated','Graduated'].includes(h.out);try{for(const s of ST.filter(x=>x.on!==false&&idx.includes(x.cls)&&!(x.hist||[]).some(done))){const cd = getCumData(s);const rep=!!promo[s.reg],pt=ptt[s.reg];const to=rep?s.cls:(pt&&(idx.includes(pt)||pt=='Graduated')?pt:cd.autoTarget),u={cls:to,hist:[...(s.hist||[]),{ses:C.ses,cls:s.cls,out:rep?'Repeated':to=='Graduated'?'Graduated':'Promoted'}]};if(to=='Graduated')u.on=false;await db.doc('students/'+s.reg).update(u)}const o={...C,ses:C.ses.split('-').map(n=>+n+1).join('-'),t:0};await db.doc('cfg/school').set(o);C=o;promo={};ptt={};sub();draw();alert('Promotion complete. New session opened.')}catch(x){alert('Promotion stopped: '+(x.message||x)+'\nStudents already moved are skipped if you run it again.')}}});
+if(a=='cfg'){const o={...C,fees:{}};document.querySelectorAll('[data-cfg]').forEach(i=>{const k=i.dataset.cfg;if(k==='types')o.types=i.value.split(',').map(x=>x.trim()).filter(Boolean);else o[k]=['t','days','ca','ex','promoPass'].includes(k)?+i.value:i.value.trim()});if(!o.types||!o.types.length)o.types=['Day','Boarding'];if(!(o.promoPass>=0&&o.promoPass<=100))return alert('Promotion pass mark must be between 0 and 100.');document.querySelectorAll('[data-fee]').forEach(i=>{if(i.value.trim())o.fees[i.dataset.fee]=i.value.trim()});o.bands=$('#bd').value.split('\n').map(l=>l.split(',').map(x=>x.trim())).filter(p=>p[1]).map(p=>({m:+p[0],g:p[1],r:p[2]||''})).sort((a,b)=>b.m-a.m);o.classes=C.classes.map((x,i)=>({...x,s:document.querySelector(`[data-sj="${i}"]`).value.split(',').map(z=>z.trim()).filter(Boolean)}));if(!/^\d{4}-\d{4}$/.test(o.ses))return alert('Session must look like 2025-2026.');if(!(o.days>0)||!(o.ca>=0)||!(o.ex>=0)||o.ca+o.ex!==100)return alert('CA max + Exam max must equal 100, and school days must be more than 0.');if(!o.bands.length||o.bands.some(b=>isNaN(b.m))||!o.bands.some(b=>b.m<=0))return alert('Grading: each line needs "min, grade, remark", and one band must start at 0.');if(o.classes.some(x=>!x.s.length))return alert('Every class needs at least one subject.');try{await db.doc('cfg/school').set(o);C=o;sub();draw();alert('Settings saved.')}catch(x){alert('Could not save settings: '+(x.message||x))}}
+if(a=='save-pass'){
+  const input=document.getElementById('promoPassInput');
+  const val=+input.value;
+  if(!(val>=0&&val<=100))return alert('Pass mark must be between 0 and 100.');
+  try{
+    const o={...C, promoPass: val};
+    await db.doc('cfg/school').set(o);
+    C=o;
+    setSaveState('saved');
+    showToast(`Pass mark updated to ${val}`);
+    draw();
+  }catch(x){
+    alert('Could not save pass mark: '+(x.message||x));
+  }
+}
+if(a=='promo'){if(!/^\d{4}-\d{4}$/.test(C.ses))return alert('Fix the session format (e.g. 2025-2026) in Settings first.');if(C.t<2&&prompt('Promotion is normally run after Third Term. It is currently '+T[C.t]+'. Type the session name ('+C.ses+') to confirm:')!==C.ses)return;const idx=C.classes.map(x=>x.n),done=h=>h.ses==C.ses&&['Promoted','Repeated','Graduated'].includes(h.out),plan=ST.filter(x=>x.on!==false&&idx.includes(x.cls)&&!(x.hist||[]).some(done)).map(s=>({s,...decide(s)})),bad=plan.filter(p=>p.out=='promote'&&!p.to);if(bad.length)return alert(bad.length+' promoted student(s) have no next class yet (e.g. '+bad.slice(0,5).map(p=>p.s.name+' / '+p.s.cls).join(', ')+'). Choose their class in the yellow box or in the "Moves to" column first.');const up=plan.filter(p=>p.out=='promote').length;if(!confirm('Promote '+up+' student(s) and keep '+(plan.length-up)+' in their class (repeat, cumulative average below '+(C.promoPass??35)+')?\n\nDownload a backup first (Settings → Backup). This cannot be undone automatically.'))return;try{for(const p of plan){const s=p.s,rep=p.out=='repeat',to=p.to,u={cls:to,hist:[...(s.hist||[]),{ses:C.ses,cls:s.cls,out:rep?'Repeated':to=='Graduated'?'Graduated':'Promoted',avg:p.c?+p.c.avg.toFixed(1):null}]};if(to=='Graduated')u.on=false;await db.doc('students/'+s.reg).update(u)}const o={...C,ses:C.ses.split('-').map(n=>+n+1).join('-'),t:0};await db.doc('cfg/school').set(o);C=o;promo={};ptt={};POV={};sub();draw();alert('Promotion complete. New session opened.')}catch(x){alert('Promotion stopped: '+(x.message||x)+'\nStudents already moved are skipped if you run it again.')}}});
+
+/* image upload handlers: logo */
 $('#m').addEventListener('change',e=>{const t=e.target;if(t.id!='lg'||!db||!admin||!t.files[0])return;const im=new Image();im.onload=async()=>{const k=Math.min(1,300/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k)||1;cv.height=Math.round(im.height*k)||1;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);const o={...C,logo:cv.toDataURL('image/png')};try{await db.doc('cfg/school').set(o);C=o;draw()}catch(x){alert('Logo could not be saved: '+(x.message||x))}};im.onerror=()=>alert('Could not read that image.');im.src=URL.createObjectURL(t.files[0])});
 $('#m').addEventListener('click',async e=>{if(e.target.dataset.act=='rmlogo'&&db&&admin){const o={...C};delete o.logo;await db.doc('cfg/school').set(o);C=o;draw()}});
 const nz=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -335,37 +515,28 @@ function vInfo(){
 }
 function vImport(){return`<div class="box"><b>Import from Excel <span class="tag">ADMIN</span></b><p class="mu">In Google Sheets choose File → Download → Microsoft Excel (.xlsx), then upload it here. Sheets named "Info <Class>" and "Score_<Class>" (or just "<Class>") are read. Students are matched by Reg No., scores and attendance go into ${sesL(C.ses)} · ${T[C.t]}. Re-import updates instead of duplicating.</p><div class="row"><input type="file" id="xf" accept=".xlsx,.xlsm,.xls"><button class="b" data-act="xl">Import</button></div><label class="mu"><input type="checkbox" id="xs"> Also import school details, term and class subjects from the Settings sheet</label><div id="xst" class="mu" style="white-space:pre-wrap;margin-top:8px"></div></div>`}
 
-/* STRICT 1-PAGE PDF GENERATION */
+/* STRICT 1-PAGE PDF GENERATION — aspect-ratio preserved, vertically centred.
+   Two RAF ticks + a short timeout let the browser re-lay-out before html2canvas captures. */
 async function pdf(){
   const cs=[...document.querySelectorAll('#m .rc')],st=$('#pst');if(!cs.length)return;
   try{
     if(!window.jspdf||!window.html2canvas)throw new Error('PDF tools did not load, reload the page');
-    fitCards($('#m'));const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'});
-    
+    fitCards($('#m'));
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    await new Promise(r=>setTimeout(r,80));
+    const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'});
+    const PAGE_W=210,PAGE_H=297,MARGIN=10;
+    const MAX_W=PAGE_W-MARGIN*2,MAX_H=PAGE_H-MARGIN*2;
     for(let i=0;i<cs.length;i++){
       st.textContent='Building page '+(i+1)+' of '+cs.length+'…';
-      
-      // Render at scale 4 for crisp text, use PNG to prevent blurriness
-      const cv=await html2canvas(cs[i],{scale:4,backgroundColor:'#fff'}); 
-      const imgData = cv.toDataURL('image/png'); 
-      
-      if(i) doc.addPage();
-      
-      // Math: A4 is 210x297. Margins are 10mm. Max area is 190x277.
-      let w=190, h=cv.height*(190/cv.width);
-      if(h > 277) {
-        // Force it to fit exactly within the page height
-        h = 277;
-        w = cv.width*(277/cv.height);
-      }
-      
-      // Center the image perfectly
-      const x = (210 - w) / 2;
-      const y = 10;
-      
-      doc.addImage(imgData, 'PNG', x, y, w, h);
+      const cv=await html2canvas(cs[i],{scale:4,backgroundColor:'#fff'});
+      const imgData=cv.toDataURL('image/png');
+      if(i)doc.addPage();
+      let w=MAX_W,h=cv.height*(MAX_W/cv.width);
+      if(h>MAX_H){h=MAX_H;w=cv.width*(MAX_H/cv.height)}
+      const x=(PAGE_W-w)/2,y=(PAGE_H-h)/2;
+      doc.addImage(imgData,'PNG',x,y,w,h);
     }
-    
     const blob=doc.output('blob');
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${curC()}_${sel.r=='ALL'?'All':sel.r}_${pid()}.pdf`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);st.textContent='PDF ready.'
   }catch(e){st.textContent='PDF failed: '+(e.message||e)}
@@ -373,10 +544,80 @@ async function pdf(){
 
 async function xl(){const f=$('#xf').files[0],o=$('#xst');if(!f)return alert('Choose the .xlsx file first.');if(!window.XLSX)return alert('The spreadsheet reader did not load. Reload the page.');if(!db)return;const L=[];o.textContent='Reading…';
 try{const wb=XLSX.read(await f.arrayBuffer(),{type:'array'}),rows=n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}),find=n=>wb.SheetNames.find(x=>nz(x)==nz(n)),tr=x=>String(x??'').trim();let cfg={...C};
-if($('#xs').checked&&find('Settings')){const mp={schoolname:'name',schooladdress:'address',schoolmotto:'motto',headteacherproprietor:'principal',nexttermresumptiondate:'resume'},cl=[];rows(find('Settings')).forEach(r=>{const k=nz(r[1]),v=tr(r.slice(2).find(x=>tr(x)!==''));if(!v||v[0]=='[')return;if(mp[k])cfg[mp[k]]=v;else if(k=='academicsession')cfg.ses=v.replace('/','-');else if(k=='currentterm'&&T.includes(v))cfg.t=T.indexOf(v);else{const s=[...new Set(r.slice(3).map(tr).filter(Boolean))];if(tr(r[1])&&s.length&&Number(r[2])>0)cl.push({n:tr(r[1]),s})}});if(cl.length)cfg.classes=cl;await db.doc('cfg/school').set(cfg);C=cfg;sub();L.push('Settings imported ('+C.classes.length+' classes).')}
+if($('#xs').checked&&find('Settings')){
+  const mp={schoolname:'name',schooladdress:'address',schoolmotto:'motto',headteacherproprietor:'principal',nexttermresumptiondate:'resume'},cl=[];
+  rows(find('Settings')).forEach(r=>{
+    const k=nz(r[1]),v=tr(r.slice(2).find(x=>tr(x)!==''));
+    if(!v||v[0]=='[')return;
+    if(mp[k])cfg[mp[k]]=v;
+    else if(k=='academicsession')cfg.ses=v.replace('/','-');
+    else if(k=='currentterm'&&T.includes(v))cfg.t=T.indexOf(v);
+    else{
+      const subs=[...new Set(r.slice(3).map(tr).filter(Boolean))];
+      if(tr(r[1])&&subs.length&&Number(r[2])>0)cl.push({n:tr(r[1]),s:subs});
+    }
+  });
+  if(cl.length){
+    /* Merge with existing classes to preserve lv/arm for matching names. */
+    const byName=Object.fromEntries(C.classes.map(x=>[x.n.toLowerCase(),x]));
+    cfg.classes=cl.map(x=>{
+      const prev=byName[x.n.toLowerCase()];
+      return prev?{...prev,n:x.n,s:x.s}:{n:x.n,s:x.s};
+    });
+  }
+  await db.doc('cfg/school').set(cfg);C=cfg;sub();L.push('Settings imported ('+C.classes.length+' classes).');
+}
 const studs={},docs={},P=pid();
-for(const c of C.classes){const is=find('Info '+c.n)||find(c.n);if(is){const R=rows(is),hi=R.findIndex(r=>nz(r[0])=='regno');if(hi>=0){const H=R[hi].map(nz),ix=k=>H.indexOf(nz(k));R.slice(hi+1).forEach(r=>{const g=k=>tr(r[ix(k)]),reg=g('Reg No.'),nm=g('Full Name');if(!reg||!nm)return;const ex=ST.find(x=>x.reg==reg)||{hist:[]},o0=SC[reg]||{};studs[reg]={...ex,reg,name:nm,cls:c.n,g:g('Gender'),type:g('Class Type'),house:g('House'),phone:g('Parent Phone'),email:g('Parents Email'),on:ex.on!==false};const d=docs[reg]={...o0,p:P,reg,cls:c.n,subs:c.s,sc:{...(o0.sc||{})},dom:{...(o0.dom||{})}},pr=g('Days Present');if(pr!=='')d.pres=Math.min(+pr||0,C.days);TR.forEach(t=>{const v=+g(t);if(v>=1&&v<=5)d.dom[t]=v})})}}else L.push('No info sheet found for '+c.n);
-const ss=find('Score_'+c.n)||find(c.n);if(!ss){L.push('No score sheet found for '+c.n);continue}const R=rows(ss),hi=R.findIndex(r=>r.some((x,i)=>i>1&&/test$/i.test(tr(x))));if(hi<0){L.push('Sheet "'+ss+'" has no Test columns — skipped.');continue}const pairs=[];R[hi].forEach((x,i)=>{if(i>1&&/test$/i.test(tr(x))){const m=c.s.find(y=>nz(y)==nz(tr(x).replace(/\s*test$/i,'')));if(m&&!pairs.some(p=>p.s==m))pairs.push({s:m,i})}});R.slice(hi+1).forEach(r=>{const reg=tr(r[0]);let d=docs[reg];if(!d&&reg){const ex=ST.find(x=>x.reg==reg&&x.cls==c.n);if(ex){const o0=SC[reg]||{};d=docs[reg]={...o0,p:P,reg,cls:c.n,subs:c.s,sc:{...(o0.sc||{})},dom:{...(o0.dom||{})}}}}if(!reg||!d)return;pairs.forEach(p=>{const a=tr(r[p.i]),b=tr(r[p.i+1]);if(a===''&&b==='')return;d.sc[p.s]=[a===''?'':Math.min(+a||0,C.ca),b===''?'':Math.min(+b||0,C.ex)]})})}
+for(const c of C.classes){
+  const is=find('Info '+c.n)||find(c.n);
+  if(is){
+    const R=rows(is),hi=R.findIndex(r=>nz(r[0])=='regno');
+    if(hi>=0){
+      const H=R[hi].map(nz),ix=k=>H.indexOf(nz(k));
+      R.slice(hi+1).forEach(r=>{
+        const g=k=>tr(r[ix(k)]),reg=g('Reg No.'),nm=g('Full Name');
+        if(!reg||!nm)return;
+        const ex=ST.find(x=>x.reg==reg)||{hist:[]},o0=SC[reg]||{};
+        studs[reg]={...ex,reg,name:nm,cls:c.n,g:g('Gender'),type:g('Class Type'),house:g('House'),phone:g('Parent Phone'),email:g('Parents Email'),on:ex.on!==false};
+        const d=docs[reg]={...o0,p:P,reg,cls:c.n,subs:c.s,sc:{...(o0.sc||{})},dom:{...(o0.dom||{})}},pr=g('Days Present');
+        if(pr!=='')d.pres=Math.min(+pr||0,C.days);
+        TR.forEach(t=>{const v=+g(t);if(v>=1&&v<=5)d.dom[t]=v});
+      });
+    }
+  }else L.push('No info sheet found for '+c.n);
+  /* Prefer Score_<class> / <class>_scores over bare <class> (which may be the Info sheet). */
+  const ss=find('Score_'+c.n)||find(c.n+'_scores')||(!find('Info '+c.n)?find(c.n):null);
+  if(!ss){L.push('No score sheet found for '+c.n);continue}
+  const R=rows(ss);
+  /* Header row: any cell in col>1 matching Test / CA / Class Assessment */
+  const hi=R.findIndex(r=>r.some((x,i)=>i>1&&/^(test|ca|class\s*assessment)$/i.test(tr(x))));
+  if(hi<0){L.push('Sheet "'+ss+'" has no Test/CA columns — skipped.');continue}
+  const pairs=[];
+  R[hi].forEach((x,i)=>{
+    if(i>1&&/^(test|ca|class\s*assessment)$/i.test(tr(x))){
+      const m=c.s.find(y=>nz(y)==nz(tr(x).replace(/^(test|ca|class\s*assessment)$/i,'')));
+      if(m&&!pairs.some(p=>p.s==m))pairs.push({s:m,i});
+    }
+  });
+  R.slice(hi+1).forEach(r=>{
+    const reg=tr(r[0]);
+    let d=docs[reg];
+    if(!d&&reg){
+      const ex=ST.find(x=>x.reg==reg&&x.cls==c.n);
+      if(ex){const o0=SC[reg]||{};d=docs[reg]={...o0,p:P,reg,cls:c.n,subs:c.s,sc:{...(o0.sc||{})},dom:{...(o0.dom||{})}}}
+    }
+    if(!reg||!d)return;
+    pairs.forEach(p=>{
+      const a=tr(r[p.i]),b=tr(r[p.i+1]);
+      if(a===''&&b==='')return;
+      const na=(a===''||a==null)?'':+a, nb=(b===''||b==null)?'':+b;
+      /* Skip garbage cells; never overwrite with 0 from a non-numeric entry */
+      if(a!=='' && (isNaN(na)||na<0))return;
+      if(b!=='' && (isNaN(nb)||nb<0))return;
+      d.sc[p.s]=[a===''?'':Math.min(na||0,C.ca), b===''?'':Math.min(nb||0,C.ex)];
+    });
+  });
+}
 const S=Object.values(studs),D=Object.values(docs);let n=0;const par=async(a,fn)=>{for(let i=0;i<a.length;i+=8){await Promise.all(a.slice(i,i+8).map(fn));n+=Math.min(8,a.length-i);o.textContent='Saving… '+n+' of '+(S.length+D.length)}};await par(S,s=>db.doc('students/'+s.reg).set(s));await par(D,d=>db.doc('scores/'+P+'_'+d.reg).set(d));
 o.textContent=L.concat(`Done: ${S.length} students and ${D.length} records imported into ${sesL(C.ses)} · ${T[C.t]}.`).join('\n')}catch(e){o.textContent='Import failed: '+(e.message||e)}}
 $('#m').addEventListener('click',e=>{const a=e.target.dataset.act;if(a=='print'){try{window.print()}catch(x){}}else if(a=='pdf')pdf();else if(a=='xl'&&admin)xl();else if(a=='bprint')bprint();else if(a=='bxl')bxl()});
@@ -390,13 +631,13 @@ if(da!==null)t+=' '+(da>=4.5?pk(['Conduct is exemplary.','Behaviour and characte
 if(pc!==null)t+=' '+(pc>=95?'Attendance is excellent.':pc>=85?'Attendance is good.':pc>=70?'Attendance is fair; regular coming to school will help.':`Poor attendance (${pc.toFixed(0)}%) is hurting progress.`);
 const PO=[['An excellent result.','Outstanding work.','Highly commendable.'],['A very good performance.','Very good work.','A strong result.'],['A good result.','Good effort.','A fair, encouraging result.'],['A fair pass.','A modest result.','A pass, with much room to improve.'],['A weak result.','Performance is below standard.','A poor result.']],AD=[['Keep up this standard.','Well done; continue to aim higher.','A model for others.'],['Aim for the top next term.','Keep working hard towards excellence.','Commendable; keep pushing.'],['More consistent effort will lift this result.','Extra reading and practice are advised.','There is potential for much better.'],['Parents should supervise homework closely.','Extra practice and focus are needed.','Greater commitment is required.'],['Parents are advised to meet the class teacher.','Urgent improvement and close supervision at home are needed.','Remedial support is strongly recommended.']];
 let q=pk(PO[ti],h,1)+' '+pk(AD[ti],h,2);if(p&&p.p&&p.n>1&&p.p<=3)q+=` Well done on finishing ${ord(p.p)} in class.`;if(pc!==null&&pc<75)q+=' Regular attendance is strongly advised.';if(da!==null&&da<2.5)q+=' Parents should help improve conduct.';else if(da!==null&&da>=4.5&&ti<=1)q+=' Exemplary conduct is appreciated.';return{t,p:q}}
-function rmkBox(one,d){const R=remarks(one,calc(d,cd(one.cls).s),d,pos(one.reg,one.cls));return`<label class="mu">Class teacher's remark (auto-written; type to override)<textarea placeholder="${esc(R.t)}" data-f="tr" data-r="${esc(one.reg)}">${esc(d.tr||'')}</textarea></label><label class="mu">Headmaster's remark (auto-written; type to override)<textarea placeholder="${esc(R.p)}" data-f="pr" data-r="${esc(one.reg)}">${esc(d.pr||'')}</textarea></label>`}
-$('#m').addEventListener('change',e=>{const t=e.target;if(t.id!='sg'||!db||!admin||!t.files[0])return;const im=new Image();im.onload=async()=>{const k=Math.min(1,400/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k)||1;cv.height=Math.round(im.height*k)||1;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);const o={...C,sig:cv.toDataURL('image/png')};try{await db.doc('cfg/school').set(o);C=o;draw()}catch(x){alert('Signature could not be saved: '+(x.message||x))}};im.onerror=()=>alert('Could not read that image.');im.src=URL.createObjectURL(t.files[0])});
-$('#m').addEventListener('click',async e=>{if(e.target.dataset.act=='rmsig'&&db&&admin){const o={...C};delete o.sig;await db.doc('cfg/school').set(o);C=o;draw()}});
+function rmkBox(one,d,pm){const R=remarks(one,calc(d,cd(one.cls).s),d,pm?(pm[one.reg]||{p:0,n:0}):pos(one.reg,one.cls));return`<label class="mu">Class teacher's remark (auto-written; type to override)<textarea placeholder="${esc(R.t)}" data-f="tr" data-r="${esc(one.reg)}">${esc(d.tr||'')}</textarea></label><label class="mu">${headOf(one.cls).role}'s remark (auto-written; type to override)<textarea placeholder="${esc(R.p)}" data-f="pr" data-r="${esc(one.reg)}">${esc(d.pr||'')}</textarea></label>`}
+$('#m').addEventListener('change',e=>{const t=e.target;if(!['sg','psg'].includes(t.id)||!db||!admin||!t.files[0])return;const fld=t.id=='psg'?'psig':'sig';const im=new Image();im.onload=async()=>{const k=Math.min(1,400/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k)||1;cv.height=Math.round(im.height*k)||1;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);const o={...C,[fld]:cv.toDataURL('image/png')};try{await db.doc('cfg/school').set(o);C=o;draw()}catch(x){alert('Signature could not be saved: '+(x.message||x))}};im.onerror=()=>alert('Could not read that image.');im.src=URL.createObjectURL(t.files[0])});
+$('#m').addEventListener('click',async e=>{const a0=e.target.dataset.act;if((a0=='rmsig'||a0=='rmpsig')&&db&&admin){const o={...C};delete o[a0=='rmpsig'?'psig':'sig'];await db.doc('cfg/school').set(o);C=o;draw()}});
 let PV={},UP=[];
-function cum(s,k){if(!C.t)return'';let sum=k.tot,av=k.avg,n=1;const row=(a,b,c,e)=>`<tr><td>${a}</td><td>${b}</td><td>${c}</td><td>${e}</td></tr>`,R=[];for(let j=0;j<C.t;j++){const d=(PV[j]||{})[s.reg],x=d?calc(d,d.subs||Object.keys(d.sc||{})):null;R.push(row(T[j],x?x.tot:'—',x?x.avg.toFixed(1):'—',x?x.b.g:'—'));if(x){sum+=x.tot;av+=x.avg;n++}}R.push(row(T[C.t]+' (this term)',k.tot,k.avg.toFixed(1),k.b.g));if(C.t==2)R.push(row('Cumulative ('+n+' terms)',sum,(av/n).toFixed(1),gr(av/n).g));return`<div class="bar" style="margin-top:var(--tm2,10px)">TERMLY RECORD</div><table class="cm"><tr><th>Term</th><th>Total Score</th><th>Average</th><th>Grade</th></tr>${R.join('')}</table>`}
+function cum(s,k){if(!C.t)return'';let sum=k.tot,av=k.avg,n=1;const row=(a,b,c,e)=>`<tr><td>${a}</td><td>${b}</td><td>${c}</td><td>${e}</td></tr>`,R=[];for(let j=0;j<C.t;j++){const d=(PV[j]||{})[s.reg],x=d?calc(d,d.subs||Object.keys(d.sc||{})):null;R.push(row(T[j],x?x.tot:'—',x?x.avg.toFixed(1):'—',x?x.b.g:'—'));if(x){sum+=x.tot;av+=x.avg;n++}}R.push(row(T[C.t]+' (this term)',k.tot,k.avg.toFixed(1),k.b.g));if(C.t==2)R.push(row('Cumulative ('+n+' terms)',sum,(av/n).toFixed(1),gr(av/n).g));return`<div class="bar" style="margin-top:10px">TERMLY RECORD</div><table class="cm"><tr><th>Term</th><th>Total Score</th><th>Average</th><th>Grade</th></tr>${R.join('')}</table>`}
 function bprint(){let st=document.getElementById('pg');if(!st){st=document.createElement('style');st.id='pg';document.head.append(st)}st.textContent='@media print{@page{size:A4 landscape;margin:10mm}}';const off=()=>{st.textContent='';window.removeEventListener('afterprint',off)};window.addEventListener('afterprint',off);try{window.print()}catch(x){}}
-function bxl(){if(!window.XLSX)return alert('The spreadsheet library did not load. Reload the page.');const c=curC(),subs=cd(c).s,L=act(c).map(s=>({s,k:calc(SC[s.reg],subs)})).sort((a,b)=>b.k.tot-a.k.tot),rows=[['Pos.','Reg No.','Name',...subs,'Total','Average','Grade']];L.forEach(x=>rows.push([pos(x.s.reg,c).p||'',x.s.reg,x.s.name,...x.k.rows.map(r=>r.e?'':r.t),x.k.has?x.k.tot:'',x.k.has?+x.k.avg.toFixed(1):'',x.k.b.g]));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),c.replace(/[\\\/?*\[\]:]/g,'').slice(0,31)||'Class');const b=new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/octet-stream'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='Broadsheet_'+c+'_'+pid()+'.xlsx';document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),5000)}
+function bxl(){if(!window.XLSX)return alert('The spreadsheet library did not load. Reload the page.');const c=curC(),subs=cd(c).s,pm=posMap(c),L=act(c).map(s=>({s,k:calc(SC[s.reg],subs)})).sort((a,b)=>b.k.tot-a.k.tot),rows=[['Pos.','Reg No.','Name',...subs,'Total','Average','Grade']];L.forEach(x=>rows.push([(pm[x.s.reg]||{p:0}).p||'',x.s.reg,x.s.name,...x.k.rows.map(r=>r.e?'':r.t),x.k.has?x.k.tot:'',x.k.has?+x.k.avg.toFixed(1):'',x.k.b.g]));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),c.replace(/[\\\/?*\[\]:]/g,'').slice(0,31)||'Class');const b=new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/octet-stream'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='Broadsheet_'+c+'_'+pid()+'.xlsx';document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),5000)}
 $('#nv').addEventListener('click',e=>{if(e.target.dataset.v){view=e.target.dataset.v;draw()}});
 (async()=>{try{draw();db=await claude.use('db');user=await claude.use('user');admin=!!(user&&user.canEdit());if(!db){draw();return}
 db.doc('cfg/school').onSnapshot(s=>{C=s.exists?{...DEF,...s.data()}:DEF;sub();draw(1)});db.collection('students').onSnapshot(q=>{ST=q.docs.map(d=>d.data()).sort((a,b)=>String(a.name).localeCompare(String(b.name)));draw(1)});sub();draw()}catch(e){$('#m').innerHTML='<div class="warn">Could not start: '+esc(e.message||e)+'. Reload the page.</div>'}})();
