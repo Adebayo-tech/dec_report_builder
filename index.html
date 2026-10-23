@@ -10,191 +10,533 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
-/* ===== MODERN SHARP UI ===== */
-:root {
-  --bg: #f1f5f9; 
-  --fg: #0f172a; 
-  --cd: #ffffff; 
-  --mu: #64748b; 
-  --ac: #4f46e5; 
-  --ac-hover: #4338ca;
-  --bd: #e2e8f0; 
-  --sh: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
-  --sh-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-  --sh-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+:root{
+  --bg:#faf8f5;
+  --bg-elevated:#ffffff;
+  --fg:#1c2422;
+  --fg-muted:#5b6663;
+  --fg-subtle:#8b9691;
+  --ac:#5b8a72;
+  --ac-hover:#4a7560;
+  --ac-soft:#e8f0eb;
+  --ac-ink:#2f4d3d;
+  --bd:#e6e2db;
+  --bd-strong:#d4cec4;
+  --danger:#c25a4f;
+  --danger-soft:#fbeeec;
+  --warn-bg:#fdf6e3;
+  --warn-fg:#8a6d2f;
+  --shadow-sm:0 1px 2px rgba(28,36,34,.04),0 1px 3px rgba(28,36,34,.06);
+  --shadow-md:0 2px 4px rgba(28,36,34,.05),0 4px 12px rgba(28,36,34,.08);
+  --shadow-lg:0 4px 8px rgba(28,36,34,.06),0 12px 32px rgba(28,36,34,.10);
+  --shadow-xl:0 8px 16px rgba(28,36,34,.08),0 24px 48px rgba(28,36,34,.12);
+  --radius-sm:8px;
+  --radius:12px;
+  --radius-lg:16px;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --dur:200ms;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media(prefers-color-scheme:dark){
-  :root:not([data-theme=light]) {
-    --bg: #0f172a; 
-    --fg: #f8fafc; 
-    --cd: #1e293b; 
-    --mu: #94a3b8; 
-    --ac: #6366f1; 
-    --ac-hover: #818cf8;
-    --bd: #334155; 
-    --sh: 0 1px 3px rgba(0,0,0,0.3);
-    --sh-md: 0 4px 6px -1px rgba(0,0,0,0.4);
-    --sh-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
+  :root:not([data-theme=light]){
+    --bg:#151a18;
+    --bg-elevated:#1e2521;
+    --fg:#e8ebe9;
+    --fg-muted:#a3aca8;
+    --fg-subtle:#6e7873;
+    --ac:#7aa98e;
+    --ac-hover:#8fbe9f;
+    --ac-soft:#243029;
+    --ac-ink:#c4e0d0;
+    --bd:#2a332e;
+    --bd-strong:#3a453f;
+    --danger:#e07a6e;
+    --danger-soft:#2e1e1c;
+    --warn-bg:#2a2518;
+    --warn-fg:#e0c87a;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+    --shadow-md:0 2px 4px rgba(0,0,0,.3),0 4px 12px rgba(0,0,0,.4);
+    --shadow-lg:0 4px 8px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.5);
+    --shadow-xl:0 8px 16px rgba(0,0,0,.5),0 24px 48px rgba(0,0,0,.6);
   }
 }
-:root[data-theme=dark] {
-  --bg: #0f172a; --fg: #f8fafc; --cd: #1e293b; --mu: #94a3b8; --ac: #6366f1; 
-  --ac-hover: #818cf8; --bd: #334155; --sh: 0 1px 3px rgba(0,0,0,0.3); 
-  --sh-md: 0 4px 6px -1px rgba(0,0,0,0.4); --sh-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
+:root[data-theme=dark]{
+  --bg:#151a18;--bg-elevated:#1e2521;--fg:#e8ebe9;--fg-muted:#a3aca8;--fg-subtle:#6e7873;
+  --ac:#7aa98e;--ac-hover:#8fbe9f;--ac-soft:#243029;--ac-ink:#c4e0d0;
+  --bd:#2a332e;--bd-strong:#3a453f;--danger:#e07a6e;--danger-soft:#2e1e1c;
+  --warn-bg:#2a2518;--warn-fg:#e0c87a;
 }
 
-*, *::before, *::after { box-sizing: border-box; }
-html { scroll-padding-top: env(safe-area-inset-top,0px); }
-body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; -webkit-font-smoothing: antialiased; padding-top: env(safe-area-inset-top,0px); padding-bottom: env(safe-area-inset-bottom,0px); }
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--fg);
+  font:15px/1.6 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  letter-spacing:-.005em;
+}
 
-header { background: var(--cd); color: var(--fg); padding: 14px 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--bd); box-shadow: var(--sh); position: relative; z-index: 20; }
-header b { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
-header span { color: var(--mu); font-size: 13px; font-weight: 500; }
-header a { color: var(--ac); text-decoration: none; font-weight: 600; font-size: 14px; padding: 6px 12px; border-radius: 6px; transition: background 0.2s; }
-header a:hover { background: rgba(79,70,229,0.1); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) header a:hover { background: rgba(99,102,241,0.15); } }
+header{
+  background:linear-gradient(135deg,var(--ac-ink) 0%,var(--ac) 100%);
+  color:#fff;
+  padding:16px 20px;
+  display:flex;
+  gap:14px;
+  align-items:center;
+  flex-wrap:wrap;
+  position:relative;
+  z-index:20;
+  box-shadow:var(--shadow-md);
+}
+header::after{
+  content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 0%,rgba(255,255,255,.12),transparent 60%);pointer-events:none;
+}
+header b{font-size:17px;font-weight:650;letter-spacing:-.02em;position:relative}
+header span{opacity:.92;font-size:12.5px;font-weight:500;position:relative}
+header a{color:#fff;text-decoration:none;font-weight:600;font-size:13px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.14);transition:background var(--dur) var(--ease);position:relative}
+header a:hover{background:rgba(255,255,255,.24)}
 
-nav { display: flex; gap: 6px; padding: 12px 20px; flex-wrap: wrap; background: var(--bg); border-bottom: 1px solid var(--bd); position: sticky; top: 0; z-index: 10; }
-nav button { border: 1px solid transparent; background: transparent; color: var(--mu); padding: 8px 16px; border-radius: 8px; cursor: pointer; font: inherit; font-weight: 600; transition: all 0.2s; }
-nav button:hover { background: var(--cd); color: var(--fg); box-shadow: var(--sh); }
-nav button.on { background: var(--ac); color: #fff; box-shadow: var(--sh-md); border-color: var(--ac); }
+nav{
+  display:flex;gap:4px;padding:10px 16px;flex-wrap:wrap;background:var(--bg-elevated);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:10;box-shadow:var(--shadow-sm);
+}
+nav button{
+  border:0;background:none;color:var(--fg-muted);padding:9px 16px;border-radius:10px;cursor:pointer;font:inherit;font-weight:600;font-size:13.5px;transition:all var(--dur) var(--ease);position:relative;
+}
+nav button:hover{background:var(--ac-soft);color:var(--ac-ink)}
+nav button.on{background:var(--ac);color:#fff;box-shadow:0 2px 8px rgba(91,138,114,.3)}
 
-main { padding: 24px 20px; max-width: 1200px; margin: auto; }
-.box { background: var(--cd); border: 1px solid var(--bd); border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: var(--sh); }
-.box > b:first-child { font-size: 15px; font-weight: 700; color: var(--fg); margin-bottom: 12px; display: inline-block; }
+main{padding:24px 20px;max-width:1240px;margin:auto;animation:fadeUp .28s cubic-bezier(.4,0,.2,1)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-.sc { overflow-x: auto; border-radius: 8px; border: 1px solid var(--bd); }
-table { border-collapse: collapse; width: 100%; font-size: 13px; }
-th, td { border-bottom: 1px solid var(--bd); padding: 10px 12px; text-align: left; }
-th { background: var(--bg); color: var(--fg); font-weight: 600; white-space: nowrap; border-top: none; }
-td { background: var(--cd); color: var(--fg); }
-tr:last-child td { border-bottom: none; }
-td.c, th.c { text-align: center; }
+.box{
+  background:var(--bg-elevated);border:1px solid var(--bd);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px;box-shadow:var(--shadow-sm);transition:box-shadow var(--dur) var(--ease),border-color var(--dur) var(--ease);
+}
+.box:hover{border-color:var(--bd-strong)}
+.box>b:first-child{
+  font-size:15.5px;font-weight:650;letter-spacing:-.015em;margin-bottom:16px;display:block;color:var(--fg);
+}
 
-input, select, textarea, button { font: inherit; color: var(--fg); background: var(--cd); border: 1px solid var(--bd); border-radius: 8px; padding: 8px 12px; transition: all 0.15s; box-sizing: border-box; }
-input:focus, select:focus, textarea:focus { outline: none; border-color: var(--ac); box-shadow: 0 0 0 3px rgba(79,70,229,0.15); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) input:focus, :root:not([data-theme=light]) select:focus, :root:not([data-theme=light]) textarea:focus { box-shadow: 0 0 0 3px rgba(99,102,241,0.25); } }
-input[type=number] { width: 70px; text-align: center; }
-textarea { width: 100%; min-height: 80px; font-family: monospace; font-size: 13px; line-height: 1.6; }
+.sc{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--bd);background:var(--bg-elevated)}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13.5px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--bd)}
+th{
+  background:var(--ac-soft);color:var(--ac-ink);font-weight:650;font-size:12.5px;letter-spacing:.01em;white-space:nowrap;border-top:none;
+}
+td{color:var(--fg)}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background 120ms var(--ease)}
+tbody tr:hover td{background:var(--ac-soft)}
+td.c,th.c{text-align:center}
 
-.b { background: var(--ac); color: #fff; border-color: var(--ac); font-weight: 600; cursor: pointer; box-shadow: var(--sh); }
-.b:hover { background: var(--ac-hover); border-color: var(--ac-hover); }
-.w { border-color: #ef4444; color: #ef4444; font-weight: 600; cursor: pointer; }
-.w:hover { background: #ef4444; color: #fff; }
+input,select,textarea,button{
+  font:inherit;color:var(--fg);background:var(--bg-elevated);border:1.5px solid var(--bd);border-radius:10px;padding:9px 12px;transition:all var(--dur) var(--ease);box-sizing:border-box;
+}
+input:hover,select:hover,textarea:hover{border-color:var(--bd-strong)}
+input:focus,select:focus,textarea:focus,button:focus-visible{
+  outline:none;border-color:var(--ac);box-shadow:0 0 0 4px var(--ac-soft);
+}
+input[type=number]{width:66px;text-align:center}
+input[type=checkbox]{width:auto;padding:0;border-radius:4px;accent-color:var(--ac)}
+textarea{width:100%;min-height:80px;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:13px;line-height:1.6}
 
-.row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
-.row label { display: flex; flex-direction: column; font-size: 12px; font-weight: 600; color: var(--mu); gap: 6px; }
-.mu { color: var(--mu); font-size: 13px; }
-.warn { background: #fffbeb; color: #b45309; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #fde68a; font-size: 13px; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) .warn { background: rgba(217,119,6,0.15); color: #fcd34d; border-color: rgba(217,119,6,0.3); } }
+button{cursor:pointer;font-weight:600;letter-spacing:-.005em;white-space:nowrap}
+button:hover{transform:translateY(-1px)}
+button:active{transform:translateY(0)}
+.b{
+  background:var(--ac);color:#fff;border-color:var(--ac);box-shadow:0 2px 6px rgba(91,138,114,.25);
+}
+.b:hover{background:var(--ac-hover);border-color:var(--ac-hover);box-shadow:0 4px 12px rgba(91,138,114,.35)}
+.w{border-color:var(--danger);color:var(--danger);background:var(--bg-elevated)}
+.w:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
 
-.tag { background: var(--ac); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 12px; margin-left: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle; }
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+.row label{display:flex;flex-direction:column;font-size:12px;font-weight:600;color:var(--fg-muted);gap:6px;letter-spacing:.01em}
+.mu{color:var(--fg-muted);font-size:13px;line-height:1.55}
+.warn{background:var(--warn-bg);color:var(--warn-fg);padding:14px 16px;border-radius:var(--radius);margin-bottom:14px;border:1px solid rgba(138,109,47,.15);font-size:13.5px;font-weight:500}
+.tag{
+  background:var(--ac);color:#fff;font-size:10.5px;padding:3px 9px;border-radius:999px;margin-left:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;vertical-align:middle;
+}
 
-/* Toast Notification */
-#toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: #10b981; color: #fff; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; box-shadow: var(--sh-lg); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 999; display: flex; align-items: center; gap: 8px; }
-#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-#toast svg { width: 18px; height: 18px; }
+/* ============================================================
+   GLOBAL LOADING / SIGN-IN / SIGN-OUT OVERLAY
+   ============================================================ */
+#ov {
+  position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;background:rgba(20,26,24,.55);backdrop-filter:blur(10px) saturate(120%);-webkit-backdrop-filter:blur(10px) saturate(120%);opacity:0;transition:opacity 220ms var(--ease);font-family:inherit;
+}
+#ov.show { display:flex; opacity:1; }
+#ov .ov-card {
+  background:var(--bg-elevated);border-radius:24px;padding:36px 40px 32px;min-width:320px;max-width:420px;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;align-items:center;text-align:center;transform:translateY(12px) scale(.97);animation:ovIn 320ms cubic-bezier(.34,1.56,.64,1) forwards;border:1px solid var(--bd);
+}
+@keyframes ovIn{to{transform:translateY(0) scale(1)}}
+#ov .ov-orb {
+  position:relative;width:72px;height:72px;margin-bottom:22px;display:flex;align-items:center;justify-content:center;
+}
+#ov .ov-orb::before,
+#ov .ov-orb::after {
+  content:'';position:absolute;inset:0;border-radius:50%;border:3px solid transparent;
+}
+#ov .ov-orb::before {
+  border-top-color:var(--ac);border-right-color:var(--ac);animation:ovSpin 1s linear infinite;
+}
+#ov .ov-orb::after {
+  inset:8px;border-bottom-color:var(--ac-soft);border-left-color:var(--ac-soft);animation:ovSpin 1.6s linear infinite reverse;
+}
+#ov .ov-icon {
+  position:relative;z-index:1;width:26px;height:26px;color:var(--ac-ink);
+}
+@keyframes ovSpin{to{transform:rotate(360deg)}}
+#ov .ov-title {
+  font-size:17px;font-weight:650;color:var(--fg);letter-spacing:-.015em;margin:0 0 6px;
+}
+#ov .ov-sub {
+  font-size:13.5px;color:var(--fg-muted);margin:0;max-width:280px;line-height:1.5;
+}
+#ov .ov-bar {
+  width:100%;height:4px;background:var(--ac-soft);border-radius:99px;margin-top:22px;overflow:hidden;position:relative;
+}
+#ov .ov-bar::after {
+  content:'';position:absolute;inset:0;width:40%;background:linear-gradient(90deg,transparent,var(--ac),transparent);animation:ovShimmer 1.4s ease-in-out infinite;
+}
+@keyframes ovShimmer{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+#ov.error .ov-orb::before { border-top-color:var(--danger); border-right-color:var(--danger); animation:none; border-color:var(--danger); }
+#ov.error .ov-orb::after { display:none; }
+#ov.error .ov-bar { display:none; }
+#ov.error .ov-icon { color:var(--danger); }
 
-/* =========================================
-   REPORT CARD LAYOUT (Ensure crisp printing)
-   ========================================= */
-.rc {
-  --fs:12px;--py:4px;--acp:6px;--tm:12px;--tm2:10px;--bm:9px;--rsm:7px;--rh:26px;--sgm:22px;--sgh:56px;--lgh:78px;--h2:21px;--srm:10px;--ftm:15px;--tp:6px;
-  background:#fff;color:#111;border:1px solid #bbb;padding:12px 16px;margin:0 auto 14px;
-  width:780px;max-width:100%;font-size:var(--fs);box-sizing:border-box;
-  -webkit-print-color-adjust:exact;print-color-adjust:exact; box-shadow: var(--sh-lg);
+/* ============================================================
+   SIGN-IN MODAL (uses the same overlay layer, styled separately)
+   ============================================================ */
+#signin {
+  position:fixed;inset:0;z-index:9998;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at top, var(--bg-elevated), var(--bg));font-family:inherit;
+}
+#signin.show { display:flex; }
+#signin .signin-card {
+  width:400px;max-width:calc(100vw - 32px);background:var(--bg-elevated);border-radius:24px;padding:40px 36px 32px;box-shadow:var(--shadow-xl);border:1px solid var(--bd);animation:ovIn 400ms cubic-bezier(.34,1.56,.64,1);
+}
+#signin .signin-brand {
+  display:flex;align-items:center;gap:12px;margin-bottom:24px;
+}
+#signin .signin-mark {
+  width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--ac-ink),var(--ac));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;box-shadow:0 4px 12px rgba(91,138,114,.35);
+}
+#signin .signin-brand-text b { display:block; font-size:17px; font-weight:650; color:var(--fg); letter-spacing:-.02em; }
+#signin .signin-brand-text span { display:block; font-size:12.5px; color:var(--fg-muted); margin-top:2px; }
+#signin h2 { margin:0 0 6px; font-size:22px; font-weight:680; color:var(--fg); letter-spacing:-.025em; }
+#signin .signin-sub { margin:0 0 24px; font-size:13.5px; color:var(--fg-muted); line-height:1.55; }
+#signin .field { margin-bottom:16px; }
+#signin .field label {
+  display:block;font-size:12.5px;font-weight:600;color:var(--fg-muted);margin-bottom:6px;letter-spacing:.005em;
+}
+#signin .field input {
+  width:100%;padding:13px 14px;font-size:14.5px;border-radius:12px;
+}
+#signin .signin-error {
+  background:var(--danger-soft);color:var(--danger);font-size:13px;padding:11px 14px;border-radius:10px;margin-bottom:16px;font-weight:500;display:none;animation:shake .4s ease;
+}
+#signin .signin-error.show { display:block; }
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%,60%{transform:translateX(-6px)}
+  40%,80%{transform:translateX(6px)}
+}
+#signin .signin-submit {
+  width:100%;padding:13px;font-size:15px;font-weight:650;border-radius:12px;margin-top:8px;position:relative;
+}
+#signin .signin-submit .spinner {
+  display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:ovSpin .7s linear infinite;margin-right:8px;vertical-align:middle;
+}
+#signin .signin-submit.loading .spinner { display:inline-block; }
+#signin .signin-submit.loading { pointer-events:none; opacity:.85; }
+#signin .signin-footer {
+  margin-top:22px;font-size:11.5px;color:var(--fg-subtle);text-align:center;line-height:1.55;
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+#toast {
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--fg);color:var(--bg-elevated);padding:12px 20px;border-radius:12px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow-xl);opacity:0;pointer-events:none;transition:all 260ms cubic-bezier(.34,1.56,.64,1);z-index:10000;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);
+}
+#toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+#toast.ok { background:#2f7d5b; color:#fff; }
+#toast.err { background:var(--danger); color:#fff; }
+#toast .ti { width:16px; height:16px; flex:none; }
+
+/* ============================================================
+   REPORT CARD (unchanged)
+   ============================================================ */
+.rc{
+  box-sizing:border-box;background:#fff;color:#111;border:1px solid #bbb;padding:0 8px 0;margin:0 auto 14px;max-width:780px;font-size:var(--fs,12px);-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:4px;box-shadow:var(--shadow-lg);
 }
 .rc table{border-collapse:collapse;width:100%}
-.rc td,.rc th{border:1px solid #cfd6df;padding:var(--py) 6px;color:#111;background:none;font-size:var(--fs)}
-.rc .top{display:flex;align-items:center;border-top:3px solid #538135;border-bottom:3px solid #538135;padding:var(--tp) 0}
-.lg{width:110px;height:var(--lgh);flex:none;display:flex;align-items:center;justify-content:center}
-.lg img{max-width:100%;max-height:100%}
-.hd{flex:1;text-align:center}
-.hd h2{margin:0;color:#1f3864;font-size:var(--h2)}
-.hd .ad{color:#2f6db5;font-size:11px;margin-top:2px}
-.hd .srs{font-weight:700;color:#1f3864;margin-top:8px;font-size:var(--fs);letter-spacing:1px}
-.inf{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:var(--tm)}
-.inf table{width:100%;table-layout:fixed}
-.inf th{background:#d9e4f0;color:#1f3864;text-align:left;width:40%;padding:3px 5px;font-weight:600}
-.inf td{text-align:center;background:#fff;padding:3px 5px;font-weight:600}
-.inf .rt th{text-align:right}
-.bar{background:#1f3864;color:#fff;text-align:center;font-weight:700;padding:4px;margin-top:var(--bm);font-size:calc(var(--fs) - 1px);letter-spacing:1px}
-.ac th{background:#c9a84c;color:#fff;text-align:center;font-size:11px}
-.ac td{text-align:center;padding:var(--acp)}
-.ac td:nth-child(2){text-align:left;padding-left:8px}
-.ac tr:nth-child(even) td{background:#f7f7f7}
-.ac td:nth-child(6){font-weight:700}
-.ac .tt td{background:#e0e0e0 !important;font-weight:700;font-size:13px}
-.ac th:nth-child(1){width:5%}.ac th:nth-child(2){width:35%}.ac th:nth-child(3){width:10%}.ac th:nth-child(4){width:10%}.ac th:nth-child(5){width:10%}.ac th:nth-child(6){width:10%}.ac th:nth-child(7){width:20%}
-.tri{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:var(--tm2);align-items:stretch}
-.tri table{height:100%}
-.tri th.h{background:#2f3b4c;color:#fff;text-align:center;font-size:11px;padding:3px}
-.tri th{text-align:left;background:#d9e4f0;color:#1f3864;font-weight:600;padding:2px 5px}
-.tri td{text-align:center;padding:2px 5px}
-.dm th{background:#d9e4f0;color:#1f3864;text-align:left;font-weight:600}
-.dm th.r{text-align:right}
-.dm td{width:18%;background:#fff;text-align:center}
-.rs{text-align:center;margin:var(--rsm) auto;width:46%}
-.rs div{padding:3px;font-style:italic;background:#d0d0d0;font-size:11px}
-.rs div+div{background:#c6e0b4}
-.rm th{background:#d9e4f0;color:#1f3864;width:22%;font-weight:600}
-.rm td{height:var(--rh);font-style:italic;padding-left:8px}
-.sg{text-align:center;margin-top:var(--sgm);font-size:calc(var(--fs) - 1px)}
-.ft{background:#f8e6c0;color:#555;text-align:right;font-style:italic;font-size:10px;padding:4px 8px;border-top:3px solid #c9a84c;margin-top:var(--ftm)}
+.rc td,.rc th{border:1px solid #cfd6df;padding:var(--pv,3px) var(--ph,6px);color:#111;background:none;font-size:var(--fs,12px)}
+.rc .top{display:flex;align-items:center;border-top:3px solid #538135;border-bottom:3px solid #538135;padding:var(--tp,6px) 0}
+.lg{width:var(--lw,110px);height:var(--lh,80px);flex:none;display:flex;align-items:center;justify-content:center}.lg img{max-width:100%;max-height:100%}
+.hd{flex:1;text-align:center}.hd h2{margin:0;color:#1f3864;font-size:var(--h2,21px)}.hd .ad{color:#2f6db5}.hd .srs{font-weight:700;color:#1f3864;margin-top:var(--sm,10px)}
+.inf{display:flex;gap:16px;margin-top:2px}.inf table{flex:1;min-width:0}.inf th{background:#d9e4f0;color:#1f3864;text-align:left;width:40%}.inf td{text-align:center;background:#fff}.inf .rt th{text-align:right}.inf .rt td{text-align:left}
+.bar{background:#1f3864;color:#fff;text-align:center;font-weight:700;padding:var(--bp,3px);margin-top:var(--bm,8px)}
+.ac th{background:#c9a84c;color:#fff;text-align:center}.ac td{text-align:center;padding:var(--rp,7px) var(--ph,6px)}.ac td:nth-child(2){text-align:left}.ac tr:nth-child(even) td{background:#f2f2f2}.ac td:nth-child(6){font-weight:700;font-style:italic}.ac .tt td{background:#d0d0d0!important;font-weight:700;font-size:var(--fs2,14px)}
+.tri{display:flex;gap:12px;align-items:flex-start;margin-top:var(--tm,14px)}.tri table{flex:1;min-width:0}
+.rc th.h{background:#2f3b4c;color:#fff;text-align:center}.tri td{text-align:center}
+.dm th{background:#d9e4f0;color:#1f3864;text-align:left;font-weight:400}.dm th.r{text-align:right}.dm td{width:18%;background:#fff;text-align:center}
+.rs{text-align:center;margin:var(--rsm,6px) auto;width:46%}.rs div{padding:3px;font-style:italic;background:#d0d0d0}.rs div+div{background:#c6e0b4}
+.rm th{background:#d9e4f0;color:#1f3864;width:22%}.rm td{height:var(--rh,24px)}
+.sg{text-align:center;margin-top:var(--sg,30px)}.ft{background:#f8e6c0;color:#555;text-align:right;font-style:italic;font-size:10px;padding:4px 8px;border-top:3px solid #c9a84c;margin:var(--fm,16px) -8px 0}
+.cm th{background:#c9a84c;color:#fff;text-align:center}.cm td{text-align:center}.cm tr:last-child td{font-weight:700;background:#d0d0d0}
+.bar.m2{margin-top:var(--bm2,14px)}
+.sg img{height:var(--si,56px)!important}
 
 @media print{
-  header,nav,.np{display:none !important}
+  header,nav,.np,#ov,#signin,#toast{display:none!important}
   body{background:#fff}
-  main{padding:0;max-width:none;margin:0}
-  /* Print: A4 with white margins like the Excel sheet. --pz scales the card (smaller = wider margins) */
-  .rc{border:0;margin:0 auto;padding:20mm 0 0;width:780px;max-width:none;zoom:.82;break-inside:avoid;box-shadow:none;}
+  main{padding:0;max-width:none;margin:0;animation:none}
+  .rc{border:0;margin:0 auto;padding-top:5mm;width:780px;max-width:none;break-inside:avoid;zoom:var(--pz,1);box-shadow:none;border-radius:0}
   .rc+.rc{break-before:page}
-  @page{size:A4;margin:0} /* margin 0 = browser prints no date/title/URL/page-number header or footer */
+  @page{size:A4;margin:0}
 }
-.po{display:none}@media print{.po{display:block;text-align:center;margin:0 0 8px}}input:disabled{opacity:.6}
+.po{display:none}@media print{.po{display:block;text-align:center;margin:0 0 8px}}
+input:disabled{opacity:.55;cursor:not-allowed}
+input.bad{border-color:var(--danger)!important;background:var(--danger-soft)!important;color:var(--danger)}
+
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+  button:hover{transform:none}
+}
+
+@media (max-width:640px){
+  main{padding:16px 12px}
+  .box{padding:18px;border-radius:14px}
+  nav{padding:8px 10px}
+  nav button{padding:8px 12px;font-size:13px}
+  header{padding:14px 16px}
+  .row{gap:10px}
+  .row label{flex:1;min-width:140px}
+  th,td{padding:8px 10px;font-size:13px}
+  #ov .ov-card{padding:28px 24px 24px;min-width:auto;width:calc(100vw - 32px)}
+  #signin .signin-card{padding:32px 24px 24px}
+}
 </style>
 </head>
 <body>
-<header><b id="sn">Smart Report Builder</b><span id="ps"></span><span id="rl"></span><span id="sstat" style="margin-left:8px;font-size:12px"></span></header>
+<header><b id="sn">Smart Report Builder</b><span id="ps"></span><span id="rl"></span><span id="sstat" style="margin-left:auto;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;transition:all .2s ease"></span></header>
 <nav class="np" id="nv"></nav>
 <main id="m"></main>
-<div id="toast">
-  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-  <span id="toastMsg">Saved successfully!</span>
+
+<!-- ============ GLOBAL LOADING OVERLAY ============ -->
+<div id="ov" aria-live="polite" aria-busy="true">
+  <div class="ov-card">
+    <div class="ov-orb" aria-hidden="true">
+      <svg class="ov-icon" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+      </svg>
+    </div>
+    <p class="ov-title" id="ovTitle">Working…</p>
+    <p class="ov-sub" id="ovSub">Please wait a moment.</p>
+    <div class="ov-bar"></div>
+  </div>
+</div>
+
+<!-- ============ SIGN-IN MODAL ============ -->
+<div id="signin" role="dialog" aria-modal="true" aria-labelledby="signinTitle">
+  <form class="signin-card" id="signinForm" novalidate>
+    <div class="signin-brand">
+      <div class="signin-mark">SR</div>
+      <div class="signin-brand-text">
+        <b>Smart Report Builder</b>
+        <span>Staff sign-in</span>
+      </div>
+    </div>
+    <h2 id="signinTitle">Welcome back</h2>
+    <p class="signin-sub" id="signinMsg">Sign in with your staff account to continue.</p>
+    <div class="signin-error" id="signinErr"></div>
+    <div class="field">
+      <label for="siEmail">Email</label>
+      <input id="siEmail" name="email" type="email" required autocomplete="username" placeholder="you@school.edu">
+    </div>
+    <div class="field">
+      <label for="siPass">Password</label>
+      <input id="siPass" name="password" type="password" required autocomplete="current-password" placeholder="Enter your password">
+    </div>
+    <button class="b signin-submit" type="submit" id="signinBtn">
+      <span class="spinner"></span>
+      <span id="signinBtnText">Sign in</span>
+    </button>
+    <p class="signin-footer">Forgot password? Ask your administrator to reset it from the Supabase dashboard.</p>
+  </form>
+</div>
+
+<!-- ============ TOAST ============ -->
+<div id="toast" role="status" aria-live="polite">
+  <svg class="ti" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" id="toastIcon">
+    <path d="M5 13l4 4L19 7"/>
+  </svg>
+  <span id="toastMsg"></span>
 </div>
 
 <script>
 /* ===== CLOUD CONFIG ===== */
 const CFG={url:'https://oatnmvgpyldjidupjnyx.supabase.co',key:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hdG5tdmdweWxkamlkdXBqbnl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzOTcwNjMsImV4cCI6MjEwNzk3MzA2M30.T2nuUSwMpnEhp6VvmAzJMx0020eIsjcfU6wuFNPhJmM'};
 /* ======================== */
-const Q=s=>document.querySelector(s);let sb,ROLE=null,MYCLASSES=[];
+
+/* ============ UI HELPERS (overlay, signin, toast) ============ */
+let _ovCount = 0;
+function overlay(title, sub) {
+  const o = document.getElementById('ov');
+  if (!o) return;
+  if (title) document.getElementById('ovTitle').textContent = title;
+  if (sub !== undefined) document.getElementById('ovSub').textContent = sub || '';
+  o.classList.remove('error');
+  o.classList.add('show');
+  _ovCount++;
+}
+function overlayHide() {
+  _ovCount = Math.max(0, _ovCount - 1);
+  if (_ovCount === 0) {
+    const o = document.getElementById('ov');
+    if (o) o.classList.remove('show', 'error');
+  }
+}
+function overlayForceHide() {
+  _ovCount = 0;
+  const o = document.getElementById('ov');
+  if (o) o.classList.remove('show', 'error');
+}
+function overlayError(title, sub) {
+  const o = document.getElementById('ov');
+  if (!o) return;
+  document.getElementById('ovTitle').textContent = title || 'Something went wrong';
+  document.getElementById('ovSub').textContent = sub || '';
+  o.classList.add('error', 'show');
+  setTimeout(() => { o.classList.remove('show', 'error'); _ovCount = 0; }, 2600);
+}
+
+let _toastT = null;
+function toast(msg, kind) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  document.getElementById('toastMsg').textContent = msg || '';
+  t.classList.remove('ok', 'err');
+  if (kind === 'ok') t.classList.add('ok');
+  else if (kind === 'err') t.classList.add('err');
+  document.getElementById('toastIcon').innerHTML = kind === 'err'
+    ? '<path d="M6 18L18 6M6 6l12 12"/>'
+    : '<path d="M5 13l4 4L19 7"/>';
+  t.classList.add('show');
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+let sb,ROLE=null,MYCLASSES=[];
+const Q=s=>document.querySelector(s);
 const rowDoc=r=>({id:r.id,exists:true,data:()=>r.data});
 function snap(get,col){return function(next,err){let on=1,t,last,first=1;const run=()=>get().then(r=>{if(!on)return;const g=JSON.stringify(r.docs?r.docs.map(d=>[d.id,d.data()]):[r.exists,r.data()]);if(g===last)return;last=g;next(r)}).catch(e=>err&&err(e));run();const cfg={event:'*',schema:'public',table:'docs'};if(col)cfg.filter='col=eq.'+col;
 const ch=sb.channel('c'+Math.random().toString(36).slice(2)).on('postgres_changes',cfg,()=>{clearTimeout(t);t=setTimeout(run,200)}).subscribe(st=>{if(st=='SUBSCRIBED'){if(first)first=0;else run()}});
 const poll=setInterval(()=>{if(!document.hidden)run()},60000);
 return()=>{on=0;clearInterval(poll);clearTimeout(t);sb.removeChannel(ch)}}}
 function query(col,flt){const q={where:(f,o,v)=>query(col,[...flt,[f,v]]),async get(){let all=[],from=0;for(;;){let r=sb.from('docs').select('id,data').eq('col',col).order('id').range(from,from+999);flt.forEach(([f,v])=>r=r.eq('data->>'+f,v));const{data,error}=await r;if(error)throw error;all=all.concat(data);if(data.length<1000)break;from+=1000}return{docs:all.map(rowDoc),size:all.length,empty:!all.length}}};q.onSnapshot=snap(()=>q.get(),col);return q}
-function ref(p){const[col,id]=p.split('/'),r={async get(){const{data,error}=await sb.from('docs').select('data').eq('col',col).eq('id',id).maybeSingle();if(error)throw error;return{id,exists:!!data,data:()=>data&&data.data}},async set(o){const{error}=await sb.from('docs').upsert({col,id,data:o,updated_at:new Date().toISOString()});if(error)throw error},async update(o){const s=await r.get();return r.set({...(s.data()||{}),...o})},async delete(){const{error}=await sb.from('docs').delete().eq('col',col).eq('id',id);if(error)throw error}};r.onSnapshot=snap(()=>r.get(),col);return r}
+function ref(p){const sl=p.indexOf('/'),col=p.slice(0,sl),id=p.slice(sl+1),r={async get(){const{data,error}=await sb.from('docs').select('data').eq('col',col).eq('id',id).maybeSingle();if(error)throw error;return{id,exists:!!data,data:()=>data&&data.data}},async set(o){const{error}=await sb.from('docs').upsert({col,id,data:o,updated_at:new Date().toISOString()});if(error)throw error},async update(o){const s=await r.get();return r.set({...(s.data()||{}),...o})},async delete(){const{error}=await sb.from('docs').delete().eq('col',col).eq('id',id);if(error)throw error}};r.onSnapshot=snap(()=>r.get(),col);return r}
 const DB={doc:ref,collection:c=>({...query(c,[]),doc:id=>ref(c+'/'+id)})};
-function login(msg){return new Promise(res=>{const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:99';o.innerHTML='<form class="box" style="width:320px"><b>Sign in</b><p class="mu" id="lm"></p><p><input name="e" type="email" placeholder="Email" style="width:100%;box-sizing:border-box" required autocomplete="username"></p><p><input name="p" type="password" placeholder="Password" style="width:100%;box-sizing:border-box" required autocomplete="current-password"></p><button class="b" style="width:100%">Sign in</button><p class="mu" style="margin-top:10px;font-size:11px">Forgot password? Ask your administrator to reset it from the Supabase dashboard.</p></form>';document.body.append(o);Q('#lm').textContent=msg||'Staff accounts only. Use the credentials your administrator gave you.';o.firstChild.onsubmit=async ev=>{ev.preventDefault();const f=ev.target,{error}=await sb.auth.signInWithPassword({email:f.e.value.trim(),password:f.p.value});if(error){Q('#lm').textContent=error.message;return}o.remove();res()}})}
-const ready=(async()=>{
-  if(CFG.url.startsWith('YOUR_')){document.body.innerHTML='<p style="padding:20px">Open this file in a text editor and paste your Supabase URL and anon key into CFG at the top of the first script.</p>';throw new Error('not configured')}
-  if(!window.supabase)throw new Error('The database library did not load. Check your connection and reload.');
-  sb=supabase.createClient(CFG.url,CFG.key);
+
+/* ============ SIGN-IN MODAL ============ */
+function showSignin(msg) {
+  return new Promise((resolve) => {
+    const ov = document.getElementById('signin');
+    const form = document.getElementById('signinForm');
+    const err = document.getElementById('signinErr');
+    const btn = document.getElementById('signinBtn');
+    const btnText = document.getElementById('signinBtnText');
+    document.getElementById('signinMsg').textContent = msg || 'Sign in with your staff account to continue.';
+    err.classList.remove('show');
+    form.reset();
+    ov.classList.add('show');
+    setTimeout(() => document.getElementById('siEmail').focus(), 80);
+
+    form.onsubmit = async (ev) => {
+      ev.preventDefault();
+      const email = document.getElementById('siEmail').value.trim();
+      const password = document.getElementById('siPass').value;
+      if (!email || !password) {
+        err.textContent = 'Enter your email and password.';
+        err.classList.add('show');
+        return;
+      }
+      err.classList.remove('show');
+      btn.classList.add('loading');
+      btnText.textContent = 'Signing in…';
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) {
+        btn.classList.remove('loading');
+        btnText.textContent = 'Sign in';
+        err.textContent = error.message;
+        err.classList.add('show');
+        return;
+      }
+      btn.classList.remove('loading');
+      btnText.textContent = 'Sign in';
+      ov.classList.remove('show');
+      resolve();
+    };
+  });
+}
+
+/* ============ BOOT / READY ============ */
+const ready = (async () => {
+  if (CFG.url.startsWith('YOUR_')) {
+    document.body.innerHTML = '<p style="padding:20px">Open this file in a text editor and paste your Supabase URL and anon key into CFG at the top of the first script.</p>';
+    throw new Error('not configured');
+  }
+  if (!window.supabase) throw new Error('The database library did not load. Check your connection and reload.');
+  sb = supabase.createClient(CFG.url, CFG.key);
+  overlay('Connecting…', 'Checking your session.');
   let msg;
-  for(;;){
-    const{data:{session}}=await sb.auth.getSession();
-    if(!session)await login(msg);
-    const{data,error}=await sb.from('staff').select('role,classes,status').maybeSingle();
-    if(error){msg='Could not read staff record: '+error.message;await sb.auth.signOut();continue}
-    if(!data){msg='This account is not on the staff list. Contact the administrator.';await sb.auth.signOut();continue}
-    if(data.status && data.status!=='active'){msg='This account has been disabled. Contact the administrator.';await sb.auth.signOut();continue}
-    ROLE=data.role;
-    MYCLASSES=Array.isArray(data.classes)?data.classes:[];
+  for (;;) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      overlayForceHide();
+      await showSignin(msg);
+      overlay('Signing in…', 'Verifying your account.');
+    }
+    const { data, error } = await sb.from('staff').select('role,classes,status').maybeSingle();
+    if (error) {
+      overlayError('Could not read staff record', error.message);
+      await new Promise(r => setTimeout(r, 400));
+      await sb.auth.signOut();
+      msg = 'Could not read staff record: ' + error.message;
+      overlayForceHide();
+      continue;
+    }
+    if (!data) {
+      await sb.auth.signOut();
+      msg = 'This account is not on the staff list. Contact the administrator.';
+      overlayForceHide();
+      continue;
+    }
+    if (data.status && data.status !== 'active') {
+      await sb.auth.signOut();
+      msg = 'This account has been disabled. Contact the administrator.';
+      overlayForceHide();
+      continue;
+    }
+    ROLE = data.role;
+    MYCLASSES = Array.isArray(data.classes) ? data.classes : [];
     break;
   }
-  Q('header').insertAdjacentHTML('beforeend','<a href="#" id="so">Sign out</a>');
-  Q('#so').onclick=async e=>{e.preventDefault();await sb.auth.signOut();location.reload()};
+  overlayForceHide();
+  Q('header').insertAdjacentHTML('beforeend', '<a href="#" id="so">Sign out</a>');
+  Q('#so').onclick = async e => {
+    e.preventDefault();
+    overlay('Signing out…', 'See you next time.');
+    await new Promise(r => setTimeout(r, 300));
+    await sb.auth.signOut();
+    location.reload();
+  };
+  toast('Signed in as ' + (ROLE === 'admin' ? 'administrator' : 'teacher'), 'ok');
 })();
 window.claude={use:async n=>{await ready;return n=='db'?DB:n=='user'?{canEdit:()=>ROLE=='admin',isOwner:()=>ROLE=='admin',role:ROLE,classes:MYCLASSES}:null}};
 </script>
@@ -207,7 +549,7 @@ const DEF={name:'DEC INTERNATIONAL SCHOOL',address:'Avenue Street, Kano, Nigeria
 types:['Day','Boarding'],
 bands:[{m:70,g:'A',r:'Excellent'},{m:60,g:'B',r:'Very Good'},{m:50,g:'C',r:'Good'},{m:40,g:'D',r:'Pass'},{m:0,g:'F',r:'Fail'}],
 classes:['Creche','Pre Nursery 1','Pre Nursery 2','Nursery 1','Nursery 2','Basic 1','Basic 2','Basic 3','Basic 4','Basic 5'].map(n=>({n,s:n=='Creche'?['Mathematics','English Studies','Rhymes','Social Studies']:core}))};
-let C=DEF,ST=[],SC={},db,user,admin=false,view='scores',sel={c:'',r:'ALL'},u2,key,promo={};
+let C=DEF,ST=[],SC={},db,user,admin=false,view='scores',sel={c:'',r:'ALL',ty:'ALL'},u2,key,promo={};
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pid=()=>C.ses+'_'+C.t,sesL=s=>s.replace('-','/'),cd=n=>C.classes.find(x=>x.n==n)||C.classes[0];
 const allowedClasses=()=>{const all=C.classes.map(x=>x.n);if(admin)return all;return all.filter(n=>MYCLASSES.includes(n))};
@@ -216,7 +558,8 @@ const gr=v=>C.bands.find(b=>v>=b.m)||C.bands[C.bands.length-1],ord=n=>n+(['th','
 const act=c=>ST.filter(s=>s.on!==false&&s.cls==c);
 const NB={g:'—',r:''},bl=v=>v===undefined||v===null||v==='';
 function calc(d,subs){const rows=subs.map(s=>{const[a,e]=(d&&d.sc&&d.sc[s])||[];const ca=+a||0,ex=+e||0,t=ca+ex,em=bl(a)&&bl(e);return{s,ca,ex,t,b:em?NB:gr(t),e:em}});const tot=rows.reduce((x,r)=>x+r.t,0),avg=subs.length?tot/subs.length:0,has=rows.some(r=>!r.e);return{rows,tot,avg,has,b:has?gr(avg):NB}}
-
+const passMk=()=>C.promoPass??C.passMark??35;
+const feeOf=c=>{const f=C.fees;if(f&&typeof f=='object')return String(f[c]??'').trim();return String(f||'').trim()};
 /* Single-position lookup (kept for edge cases; prefer posMap in render loops). */
 function pos(reg,c){const subs=cd(c).s,all=act(c).map(s=>calc(SC[s.reg],subs)).filter(k=>k.has).map(k=>k.tot),k0=calc(SC[reg],subs);return{p:k0.has?1+all.filter(x=>x>k0.tot).length:0,n:all.length}}
 
@@ -230,7 +573,7 @@ function posMap(c){
 }
 const ordp=p=>p.p?ord(p.p):'—';
 
-const parseC=n=>{const m=/^(.*?\d+)\s*(.*)$/.exec(String(n));return m?{lv:m[1].trim(),arm:m[2].trim()}:{lv:String(n).trim(),arm:''}},lvOf=x=>x.lv||parseC(x.n).lv,armOf=x=>x.arm!=null?x.arm:parseC(x.n).arm,levels=()=>[...new Set(C.classes.map(lvOf))];let ptt={};
+const parseC=n=>{const m=/^(.*?\d+)\s*(.*)$/.exec(String(n));return m?{lv:m[1].trim(),arm:m[2].trim()}:{lv:String(n).trim(),arm:''}},lvOf=x=>x.lv||parseC(x.n).lv,armOf=x=>x.arm!=null?x.arm:parseC(x.n).arm,levels=()=>[...new Set(C.classes.map(lvOf))];let ptt={},pty={},pf={c:'ALL',t:'ALL'};
 
 /* Promotion path: Creche>Nursery 1>Nursery 2>Basic 1..5>JSS 1..3>SS 1..3>Graduate */
 const lkey=x=>String(x).replace(/\s+/g,'').toUpperCase(),nrmSS=k=>k.replace(/^SSS/,'SS');
@@ -244,28 +587,15 @@ function nextOf(n){const cl=C.classes.find(x=>x.n==n);if(!cl)return null;const n
   const cur=C.classes.filter(y=>lvOf(y)==lvOf(cl));if(cur.length==cands.length)return cands[cur.findIndex(y=>y.n==n)].n;return null}
 function cumAvgOf(s){let sum=0,n=0;for(let j=0;j<=C.t;j++){const d=j==C.t?SC[s.reg]:(PV[j]||{})[s.reg];if(!d)continue;const k=calc(d,d.subs&&d.subs.length?d.subs:cd(s.cls).s);if(k.has){sum+=k.avg;n++}}return n?{avg:sum/n,n}:null}
 let POV={};
-function decide(s){const c=cumAvgOf(s),ov=POV[s.reg],pass=C.promoPass??35,out=ov=='repeat'?'repeat':ov=='promote'?'promote':(c&&c.avg>=pass?'promote':'repeat');return{c,out,noscore:!c,to:out=='repeat'?s.cls:(ptt[s.reg]||nextOf(s.cls))}}
+function decide(s){const c=cumAvgOf(s),ov=POV[s.reg],pass=passMk(),out=ov=='repeat'?'repeat':ov=='promote'?'promote':(c&&c.avg>=pass?'promote':'repeat');const to=out=='repeat'?s.cls:(ptt[s.reg]||nextOf(s.cls));return{c,out,noscore:!c,to,ty:out=='repeat'||to=='Graduated'?(s.type||''):(pty[s.reg]||s.type||'')}}
+
 
 const PEND={},INF={},_saveT={},_busy={},TF=['sc','pres','dom'];
-let _saveStatusT=null;
 function applyPend(reg,d){[...(INF[reg]||[]),...(PEND[reg]||[])].forEach(f=>f(d));return d}
 function setSaveState(s){const el=document.getElementById('sstat');if(!el)return;
-  clearTimeout(_saveStatusT);
-  if(s=='pending'){el.textContent='● saving…';el.style.color='#d98b00'}
-  else if(s=='saved'){el.textContent='● saved';el.style.color='#2e8b57';_saveStatusT=setTimeout(()=>{if(el.textContent=='● saved')el.textContent=''},2000)}
-  else{el.textContent='● NOT saved';el.style.color='#c0392b'}}
-
-/* Toast Notification handler */
-let _toastTimer=null;
-function showToast(msg){
-  const t=document.getElementById('toast');
-  if(!t)return;
-  document.getElementById('toastMsg').textContent=msg;
-  t.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
-}
-
+  if(s=='pending'){el.textContent='Saving…';el.style.background='rgba(255,255,255,.18)';el.style.color='#fff'}
+  else if(s=='saved'){el.textContent='Saved';el.style.background='rgba(255,255,255,.22)';el.style.color='#fff';setTimeout(()=>{if(el.textContent=='Saved'){el.textContent='';el.style.background='transparent'}},1800)}
+  else{el.textContent='Not saved';el.style.background='#c25a4f';el.style.color='#fff'}}
 function save(reg,fn,kind){
   const s=ST.find(x=>x.reg==reg);if(!s)return;
   if(!admin){
@@ -288,7 +618,7 @@ async function flush(reg,k){
     setSaveState((PEND[reg]||[]).length?'pending':'saved')
   }catch(e){
     PEND[reg]=fns.concat(PEND[reg]||[]);INF[reg]=null;setSaveState('error');
-    alert('Could not save: '+(e.message||e)+'\nYour entry is still on screen and will be retried with your next edit.')
+    toast('Could not save: ' + (e.message || e), 'err');
   }finally{_busy[reg]=0}}
 function sub(){const k=pid();if(!db||k==key)return;key=k;SC={};u2&&u2();UP.forEach(f=>f());UP=[];PV={};for(let j=0;j<C.t;j++)UP.push(db.collection('scores').where('p','==',C.ses+'_'+j).onSnapshot(q=>{PV[j]={};q.docs.forEach(d=>PV[j][d.data().reg]=d.data());draw(1)}));u2=db.collection('scores').where('p','==',k).onSnapshot(q=>{SC={};q.docs.forEach(d=>SC[d.data().reg]=d.data());Object.keys(PEND).forEach(r=>{if((PEND[r]||[]).length||(INF[r]||[]).length)SC[r]=applyPend(r,{...(SC[r]||{p:pid(),reg:r,sc:{},dom:{}})})});draw(1)})}
 function nav(){
@@ -308,44 +638,47 @@ function draw(soft){
     $('#m').innerHTML='<div class="warn"><b>No classes assigned.</b><br>You are signed in as a teacher but have not been assigned to any class. Please contact the administrator. If your class was recently renamed, the administrator also needs to update your assignment.</div>';
     return;
   }
-  $('#m').innerHTML=(db?'':'<div class="warn np">Connecting to the database. If this message stays, sign in again or reload the page.</div>')+
-    ({info:vInfo,scores:vScores,reports:vReports,board:vBoard,students:vStudents,past:vPast,import:vImport,admin:vAdmin}[view]||vScores)();
-  if(view=='reports')setTimeout(()=>fitCards($('#m')),50);
+  $('#m').innerHTML=(db?'':'<div class="warn">Connecting to the database. If this message stays, sign in again or reload the page.</div>')+
+    ({info:vInfo,scores:vScores,reports:vReports,board:vBoard,students:vStudents,past:vPast,import:vImport,admin:vAdmin}[view]||vScores)()
 }
 const clsSel=()=>{
   const a=allowedClasses();
   if(!a.length)return '<span class="warn" style="margin:0">No class assigned.</span>';
   return `<label>Class<select data-sel="c">${a.map(n=>`<option ${n==curC()?'selected':''}>${esc(n)}</option>`).join('')}</select></label>`;
 }
+const tySel=()=>{
+  const c=curC(),tys=[...new Set([...(C.types||['Day','Boarding']),...act(c).map(s=>s.type).filter(Boolean)])];if(sel.ty!='ALL'&&!tys.includes(sel.ty))sel.ty='ALL';
+  return `<label>Type<select data-sel="ty"><option value="ALL">All types</option>${tys.map(n=>`<option ${n==sel.ty?'selected':''}>${esc(n)}</option>`).join('')}</select></label>`;
+}
+const tySelAdd=()=>{
+  const c=curC(),tys=[...new Set([...(C.types||['Day','Boarding']),...act(c).map(s=>s.type).filter(Boolean)])];if(sel.ty!='ALL'&&!tys.includes(sel.ty))sel.ty='ALL';
+  return `<label>Filter Type<select data-sel="ty"><option value="ALL">All types</option>${tys.map(n=>`<option ${n==sel.ty?'selected':''}>${esc(n)}</option>`).join('')}</select></label>`;
+}
 function vScores(){
-  const c=curC(),subs=cd(c).s,L=act(c);
+  const c=curC(),subs=cd(c).s,L=act(c).filter(s=>sel.ty=='ALL'||(s.type||'')==sel.ty);
   if(!subs||!subs.length)return `<div class="warn">The class <b>${esc(c)}</b> has no subjects yet. Go to Settings to add subjects for this class.</div>`;
   const pm=posMap(c);
-  let h=`<div class="box"><div class="row">${clsSel()}<span class="mu">CA max ${C.ca} · Exam max ${C.ex} · scores save automatically. Press Enter / arrows to move down a column.</span><button class="b" data-act="csv">Export CSV</button></div><div class="sc"><table><tr><th rowspan=2>Reg No.</th><th rowspan=2>Name</th>${subs.map(s=>`<th class="c" colspan=2>${esc(s)}</th>`).join('')}<th rowspan=2 class="c">Total</th><th rowspan=2 class="c">Avg</th><th rowspan=2 class="c">Grade</th><th rowspan=2 class="c">Pos.</th></tr><tr>${subs.map(()=>`<th class="c">CA</th><th class="c">Exam</th>`).join('')}</tr>`;
-  for(const s of L){
-    const d=SC[s.reg],k=calc(d,subs),p=pm[s.reg]||{p:0,n:0};
-    h+=`<tr data-r="${esc(s.reg)}"><td>${esc(s.reg)}</td><td>${esc(s.name)}</td>${subs.map(j=>{const v=(d&&d.sc&&d.sc[j])||[];return[0,1].map(i=>`<td class="c"><input type="number" min="0" step="0.5" max="${i?C.ex:C.ca}" data-sc="${esc(j)}" data-k="${i}" value="${v[i]??''}"></td>`).join('')}).join('')}<td class="c tot">${k.tot}</td><td class="c avg">${k.avg.toFixed(1)}</td><td class="c gd">${k.b.g}</td><td class="c ps">${ordp(p)}</td></tr>`
-  }
+  let h=`<div class="box"><div class="row">${clsSel()}${tySel()}<span class="mu">CA max ${C.ca} · Exam max ${C.ex} · scores save automatically. Press Enter / arrows to move down a column.</span><button class="b" data-act="csv">Export CSV</button></div><div class="sc"><table><tr><th rowspan=2>Reg No.</th><th rowspan=2>Name</th>${subs.map(s=>`<th class="c" colspan=2>${esc(s)}</th>`).join('')}<th rowspan=2 class="c">Total</th><th rowspan=2 class="c">Avg</th><th rowspan=2 class="c">Grade</th><th rowspan=2 class="c">Pos.</th></tr><tr>${subs.map(()=>`<th class="c">CA</th><th class="c">Exam</th>`).join('')}</tr>`;
+  for(const s of L){const d=SC[s.reg],k=calc(d,subs),p=pm[s.reg]||{p:0,n:0};h+=`<tr data-r="${esc(s.reg)}"><td>${esc(s.reg)}</td><td>${esc(s.name)}</td>${subs.map(j=>{const v=(d&&d.sc&&d.sc[j])||[];return[0,1].map(i=>`<td class="c"><input type="number" min="0" step="0.5" max="${i?C.ex:C.ca}" data-sc="${esc(j)}" data-k="${i}" value="${v[i]??''}"></td>`).join('')}).join('')}<td class="c tot">${k.tot}</td><td class="c avg">${k.avg.toFixed(1)}</td><td class="c gd">${k.b.g}</td><td class="c ps">${ordp(p)}</td></tr>`}
   return h+`</table></div>${L.length?'':'<p class="mu">No students in this class yet.</p>'}</div>`
 }
 const isSec=n=>{const N=String(n).replace(/[\s.]/g,'').toUpperCase();return String(C.secPfx??'JSS, SS').split(',').map(x=>x.replace(/[\s.]/g,'').toUpperCase()).filter(Boolean).some(p=>N.startsWith(p)&&/\d/.test(N[p.length]||''))};
 const headOf=c=>isSec(c)?{role:'Principal',name:C.pname,sig:C.psig}:{role:'Headmaster',name:C.principal,sig:C.sig};
 function card(s,pm){
-  const c=s.cls,hd=headOf(s.cls),subs=cd(c).s,d=SC[s.reg]||{},k=calc(d,subs),p=pm?(pm[s.reg]||{p:0,n:0}):pos(s.reg,c),pres=+d.pres||0,ab=Math.max(0,C.days-pres),pc=C.days?(pres/C.days*100).toFixed(2):'0.00',dm=d.dom||{},R=remarks(s,k,d,p),B=C.bands,ca=k.rows.reduce((a,r)=>a+r.ca,0),ex=k.rows.reduce((a,r)=>a+r.ex,0),kv=(l,v)=>`<tr><th>${l}</th><td>${v}</td></tr>`,dr=(a,b)=>`<tr><th>${a}</th><td>${esc(dm[a]??'')}</td><th class="r">${b}</th><td>${esc(dm[b]??'')}</td></tr>`;
-  const fee=(C.fees&&C.fees[c])?C.fees[c]:'—';
+  const c=s.cls,fee=feeOf(c),hd=headOf(s.cls),subs=cd(c).s,d=SC[s.reg]||{},k=calc(d,subs),p=pm?(pm[s.reg]||{p:0,n:0}):pos(s.reg,c),pres=+d.pres||0,ab=Math.max(0,C.days-pres),pc=C.days?(pres/C.days*100).toFixed(2):'0.00',dm=d.dom||{},R=remarks(s,k,d,p),B=C.bands,ca=k.rows.reduce((a,r)=>a+r.ca,0),ex=k.rows.reduce((a,r)=>a+r.ex,0),kv=(l,v)=>`<tr><th>${l}</th><td>${v}</td></tr>`,dr=(a,b)=>`<tr><th>${a}</th><td>${esc(dm[a]??'')}</td><th class="r">${b}</th><td>${esc(dm[b]??'')}</td></tr>`;
   return`<div class="rc"><div class="top"><div class="lg">${C.logo?`<img src="${C.logo}">`:''}</div><div class="hd"><h2>${esc(C.name)}</h2><div class="ad">${esc(C.address)}</div><i>${esc(C.motto)}</i><div class="srs">STUDENT REPORT SHEET</div></div><div class="lg"></div></div>
-<div class="inf"><table>${kv('Student Name:',esc(s.name))}${kv('Class:',esc(c))}${kv('Academic Session:',sesL(C.ses))}${kv('Days Present:',pres)}${kv('Attendance %:',pc)}</table><table class="rt">${kv('Admission Number:',esc(s.reg))}${kv('Gender:',esc(s.g||''))}${kv('Term:',T[C.t])}${kv('Grade:',k.b.g)}${kv('Position:',p.p?ord(p.p)+' of '+p.n:'—')}</table></div>
+<div class="inf"><table>${kv('Student Name:',esc(s.name))}${kv('Class:',esc(c)+(s.type?' '+esc(s.type):''))}${kv('Academic Session:',sesL(C.ses))}${kv('Days Present:',pres)}${kv('Attendance %:',pc)}</table><table class="rt">${kv('Admission Number:',esc(s.reg))}${kv('Gender:',esc(s.g||''))}${kv('Term:',T[C.t])}${kv('Grade:',k.b.g)}${kv('Position:',p.p?ord(p.p)+' of '+p.n:'—')}</table></div>
 <div class="bar">ACADEMIC PERFORMANCE</div><table class="ac"><tr><th>S/N</th><th>Subject</th><th>CA Score</th><th>Exam Score</th><th>Total (${C.ca+C.ex})</th><th>Grade</th><th>Remark</th></tr>${k.rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.s)}</td><td>${r.e?'':r.ca}</td><td>${r.e?'':r.ex}</td><td>${r.e?'':r.t}</td><td>${esc(r.b.g)}</td><td>${esc(r.b.r)}</td></tr>`).join('')}<tr class="tt"><td></td><td>Total</td><td>${ca}</td><td>${ex}</td><td>${k.tot}</td><td>${k.b.g}</td><td>${k.b.r}</td></tr></table>
 ${cum(s,k)}<div class="tri"><table><tr><th colspan=2 class="h">Summary</th></tr>${kv('Total Obtainable',subs.length*(C.ca+C.ex))}${kv('Marks Obtained',k.tot)}${kv('Average','<b>'+k.avg.toFixed(1)+'</b>')}${kv('Grade','<b>'+k.b.g+'</b>')}</table><table><tr><th colspan=3 class="h">Grade Equivalent</th></tr>${B.map((b,i)=>`<tr><td>${b.g}</td><td>${b.m}-${i?B[i-1].m-1:100}</td><td>${b.r}</td></tr>`).join('')}</table><table><tr><th colspan=2 class="h">ATTENDANCE</th></tr>${kv('Days Open',C.days)}${kv('Days Present',pres)}${kv('Days Absent',ab)}${kv('Attendance %',pc)}</table></div>
-<div class="bar" style="margin-top:10px">Domain (Affective/Psychomotor)</div><table class="dm">${dr(TR[0],TR[4])}${dr(TR[1],TR[5])}${dr(TR[2],TR[6])}${dr(TR[3],TR[7])}</table>
-<div class="bar" style="margin-top:10px">REMARKS</div><div class="rs"><div>Next Term Resumes: ${esc(C.resume)}</div><div>Next Term School Fees is ${esc(fee)}</div></div><table class="rm"><tr><th>Class Teacher's Remark:</th><td>${esc(d.tr||R.t)}</td></tr><tr><th>${hd.role}'s Remark:</th><td>${esc(d.pr||R.p)}</td></tr></table>
-<div class="sg">${hd.sig?`<img src="${hd.sig}" style="height:var(--sgh);max-width:200px">`:'<br><br>'}<br>______________________________________<br>${hd.name?esc(hd.name)+' — ':''}${hd.role}'s Signature</div><div class="ft">Built and Designed by Bayo Analytics</div></div>`
+<div class="bar m2">Domain (Affective/Psychomotor)</div><table class="dm">${dr(TR[0],TR[4])}${dr(TR[1],TR[5])}${dr(TR[2],TR[6])}${dr(TR[3],TR[7])}</table>
+<div class="bar m2">REMARKS</div><div class="rs"><div>Next Term Resumes: ${esc(C.resume)}</div>${fee?`<div>Next Term School Fees is ${esc(fee)}</div>`:''}</div><table class="rm"><tr><th>Class Teacher's Remark:</th><td>${esc(d.tr||R.t)}</td></tr><tr><th>${hd.role}'s Remark:</th><td>${esc(d.pr||R.p)}</td></tr></table>
+<div class="sg">${hd.sig?`<img src="${hd.sig}" style="height:56px;max-width:220px">`:'<br><br>'}<br>______________________________________<br>${hd.name?esc(hd.name)+' — ':''}${hd.role}'s Signature</div><div class="ft">Built and Designed by Bayo Analytics</div></div>`
 }
 function vReports(){
-  const c=curC(),L=act(c),pm=posMap(c);
+  const c=curC(),L=act(c).filter(s=>sel.ty=='ALL'||(s.type||'')==sel.ty),pm=posMap(c);
   if(sel.r!='ALL'&&!L.some(s=>s.reg==sel.r))sel.r='ALL';
   const one=L.find(s=>s.reg==sel.r),d=one&&SC[one.reg]||{};
-  let h=`<div class="box np"><div class="row">${clsSel()}<label>Student<select data-sel="r"><option value="ALL">All students (print whole class)</option>${L.map(s=>`<option value="${esc(s.reg)}" ${s.reg==sel.r?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label><button class="b" data-act="print">Print</button><button class="b" data-act="pdf">Download PDF</button><span id="pst" class="mu">If Print does nothing in this view, use Download PDF.</span></div>`;
+  let h=`<div class="box np"><div class="row">${clsSel()}${tySel()}<label>Student<select data-sel="r"><option value="ALL">All students (print whole selection)</option>${L.map(s=>`<option value="${esc(s.reg)}" ${s.reg==sel.r?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label><button class="b" data-act="print">Print</button><button class="b" data-act="pdf">Download PDF</button><span id="pst" class="mu">If Print does nothing in this view, use Download PDF.</span></div>`;
   if(one){
     h+=`<div class="row"><label>Days present (of ${C.days})<input type="number" data-f="pres" data-r="${esc(one.reg)}" value="${d.pres??''}" min="0" max="${C.days}"></label>${TR.map(t=>`<label>${t}<input type="number" min="1" max="5" data-f="dom" data-t="${t}" data-r="${esc(one.reg)}" value="${(d.dom||{})[t]??''}"></label>`).join('')}</div>`;
     if(admin)h+=rmkBox(one,d,pm);
@@ -355,78 +688,49 @@ function vReports(){
   return h
 }
 async function hist(s){const el=$('#hist');if(!db||!el)return;try{const q=await db.collection('scores').where('reg','==',s.reg).get();const rows=q.docs.map(x=>x.data()).filter(x=>x.p!==pid()).sort((a,b)=>a.p<b.p?-1:1);el.innerHTML='<b>Previous terms</b><table><tr><th>Session</th><th>Term</th><th>Class</th><th>Total</th><th>Average</th><th>Grade</th></tr>'+rows.map(r=>{const[se,t]=r.p.split('_'),k=calc(r,r.subs||Object.keys(r.sc||{}));return`<tr><td>${sesL(se)}</td><td>${T[t]}</td><td>${esc(r.cls)}</td><td>${k.tot}</td><td>${k.avg.toFixed(1)}</td><td>${k.b.g}</td></tr>`}).join('')+'</table>'}catch(e){el.innerHTML='History unavailable.'}}
-function vBoard(){
-  const c=curC(),subs=cd(c).s;
-  if(!subs||!subs.length)return `<div class="warn">The class <b>${esc(c)}</b> has no subjects yet.</div>`;
-  const pm=posMap(c);
-  const L=act(c).map(s=>({s,k:calc(SC[s.reg],subs)})).sort((a,b)=>b.k.tot-a.k.tot);
-  const W=L.filter(x=>x.k.has),cnt={};
-  L.forEach(x=>cnt[x.k.b.g]=(cnt[x.k.b.g]||0)+1);
-  return`<div class="box"><div class="row">${clsSel()}<span class="mu">Class average ${W.length?(W.reduce((a,x)=>a+x.k.avg,0)/W.length).toFixed(1):0}% · ${C.bands.map(b=>b.g+': '+(cnt[b.g]||0)).join(' · ')}</span><button class="b" data-act="bprint">Print</button><button class="b" data-act="bxl">Export Excel</button></div><div class="po"><b>${esc(C.name)}</b><br>${esc(c)} broadsheet · ${sesL(C.ses)} · ${T[C.t]}</div><div class="sc"><table><tr><th>Pos.</th><th>Name</th>${subs.map(s=>`<th class="c">${esc(s)}</th>`).join('')}<th class="c">Total</th><th class="c">Avg</th><th class="c">Grade</th></tr>${L.map(x=>`<tr><td>${ordp(pm[x.s.reg]||{p:0})}</td><td>${esc(x.s.name)}</td>${x.k.rows.map(r=>`<td class="c">${r.e?'':r.t}</td>`).join('')}<td class="c">${x.k.has?x.k.tot:''}</td><td class="c">${x.k.has?x.k.avg.toFixed(1):''}</td><td class="c">${x.k.b.g}</td></tr>`).join('')}</table></div></div>`}
+function vBoard(){const c=curC(),subs=cd(c).s;if(!subs||!subs.length)return `<div class="warn">The class <b>${esc(c)}</b> has no subjects yet.</div>`;const pm=posMap(c),L=act(c).map(s=>({s,k:calc(SC[s.reg],subs)})).sort((a,b)=>b.k.tot-a.k.tot);const W=L.filter(x=>x.k.has),cnt={};L.forEach(x=>cnt[x.k.b.g]=(cnt[x.k.b.g]||0)+1);
+return`<div class="box"><div class="row">${clsSel()}<span class="mu">Class average ${W.length?(W.reduce((a,x)=>a+x.k.avg,0)/W.length).toFixed(1):0}% · ${C.bands.map(b=>b.g+': '+(cnt[b.g]||0)).join(' · ')}</span><button class="b" data-act="bprint">Print</button><button class="b" data-act="bxl">Export Excel</button></div><div class="po"><b>${esc(C.name)}</b><br>${esc(c)} broadsheet · ${sesL(C.ses)} · ${T[C.t]}</div><div class="sc"><table><tr><th>Pos.</th><th>Name</th>${subs.map(s=>`<th class="c">${esc(s)}</th>`).join('')}<th class="c">Total</th><th class="c">Avg</th><th class="c">Grade</th></tr>${L.map(x=>`<tr><td>${ordp(pm[x.s.reg]||{p:0})}</td><td>${esc(x.s.name)}</td>${x.k.rows.map(r=>`<td class="c">${r.e?'':r.t}</td>`).join('')}<td class="c">${x.k.has?x.k.tot:''}</td><td class="c">${x.k.has?x.k.avg.toFixed(1):''}</td><td class="c">${x.k.b.g}</td></tr>`).join('')}</table></div></div>`}
 function vPast(){const grads=ST.filter(s=>s.on===false);return`<div class="box"><b>Past students (${grads.length})</b><p class="mu">Graduated or withdrawn. Records are still in the database; reactivate a student to edit them or print an old report card.</p><div class="sc"><table><tr><th>Reg No.</th><th>Name</th><th>Last class</th><th>Last session</th><th>Outcome</th><th></th></tr>${grads.map(s=>{const h=(s.hist||[]).slice(-1)[0]||{};return`<tr><td>${esc(s.reg)}</td><td>${esc(s.name)}</td><td>${esc(h.cls||s.cls)}</td><td>${esc(h.ses||'')}</td><td>${esc(h.out||'—')}</td><td><button data-act="rea" data-r="${esc(s.reg)}">Reactivate</button></td></tr>`}).join('')}</table></div>${grads.length?'':'<p class="mu">No past students yet.</p>'}</div>`}
-function vStudents(){const c=curC(),all=ST.filter(s=>s.cls==c);return`<div class="box"><b>Add student <span class="tag">ADMIN</span></b><div class="row"><label>Full name<input id="an"></label>${clsSel()}<label>Gender<select id="ag"><option>Male</option><option>Female</option></select></label><label>Class Type<select id="at">${(C.types||['Day','Boarding']).map(t=>`<option>${esc(t)}</option>`).join('')}</select></label><label>House<input id="ah" size=8></label><label>Parent phone<input id="ap" size=12></label><label>Parent email<input id="ae"></label><button class="b" data-act="add">Add</button></div>
+function vStudents(){const c=curC(),all=ST.filter(s=>s.cls==c&&(sel.ty=='ALL'||(s.type||'')==sel.ty));return`<div class="box"><b>Add student <span class="tag">ADMIN</span></b><div class="row"><label>Full name<input id="an"></label>${clsSel()}<label>Gender<select id="ag"><option>Male</option><option>Female</option></select></label><label>Class Type<select id="at">${(C.types||['Day','Boarding']).map(t=>`<option>${esc(t)}</option>`).join('')}</select></label><label>House<input id="ah" size=8></label><label>Parent phone<input id="ap" size=12></label><label>Parent email<input id="ae"></label><button class="b" data-act="add">Add</button></div>
 <b>Bulk import</b> <span class="mu">one per line: Name, Class, Gender, Type, House, Phone, Email</span><textarea id="bi"></textarea><button class="b" data-act="imp">Import</button></div>
-<div class="box"><b>${esc(c)} (${all.length})</b><div class="sc"><table><tr><th>Reg No.</th><th>Name</th><th>Gender</th><th>Type</th><th>House</th><th>Phone</th><th>Status</th><th>Move to</th><th></th></tr>${all.map(s=>`<tr><td>${esc(s.reg)}</td><td>${esc(s.name)}</td><td>${esc(s.g)}</td><td>${esc(s.type||'')}</td><td>${esc(s.house||'')}</td><td>${esc(s.phone||'')}</td><td>${s.on===false?'Withdrawn':'Active'}</td><td><select data-mv="${esc(s.reg)}"${s.on===false?' disabled title="Reactivate first"':''}>${C.classes.map(x=>`<option ${x.n==s.cls?'selected':''}>${esc(x.n)}</option>`).join('')}</select></td><td><button data-act="tog" data-r="${esc(s.reg)}">${s.on===false?'Reactivate':'Withdraw'}</button> <button class="w" data-act="del" data-r="${esc(s.reg)}">Delete</button></td></tr>`).join('')}</table></div></div>`}
-function vAdmin(){
-  const f=(k,l,t='text')=>`<label>${l}<input type="${t}" data-cfg="${k}" value="${esc(C[k])}"></label>`,idx=C.classes.map(x=>x.n),L=ST.filter(s=>s.on!==false);
-  const feeRows=C.classes.map(x=>`<div class="row"><label style="width:150px;font-weight:600">${esc(x.n)}</label><input style="flex:1" data-fee="${esc(x.n)}" value="${esc((C.fees||{})[x.n]||'')}" placeholder="e.g. ₦50,000"></div>`).join('');
-  
-  return`<div class="box"><b>Headmaster's signature <span class="tag">ADMIN</span></b> <span class="mu">signs Creche, Pre Nursery, Nursery and Basic sheets</span><div class="row" style="margin-top:12px">${C.sig?`<img src="${C.sig}" style="height:60px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:4px">`:'<span class="mu">No signature yet.</span>'}<input type="file" id="sg" accept="image/*">${C.sig?'<button class="w" data-act="rmsig">Remove</button>':''}</div><span class="mu">Upload a photo or scan of the signature, ideally on a plain white background or as a transparent PNG.</span></div>
-<div class="box"><b>Principal's signature <span class="tag">ADMIN</span></b> <span class="mu">signs JSS and SS sheets</span><div class="row" style="margin-top:12px">${C.psig?`<img src="${C.psig}" style="height:60px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:4px">`:'<span class="mu">No signature yet.</span>'}<input type="file" id="psg" accept="image/*">${C.psig?'<button class="w" data-act="rmpsig">Remove</button>':''}</div><span class="mu">Applies to: ${esc(C.classes.filter(x=>isSec(x.n)).map(x=>x.n).join(', ')||'no classes yet')}. These sheets say "Principal" and use the principal's name and signature above; all other classes say "Headmaster".</span></div>
-<div class="box"><b>School logo</b><div class="row" style="margin-top:12px">${C.logo?`<img src="${C.logo}" style="height:70px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:4px">`:'<span class="mu">No logo yet.</span>'}<input type="file" id="lg" accept="image/*">${C.logo?'<button class="w" data-act="rmlogo">Remove</button>':''}</div><span class="mu">Upload once: it appears on every report card and in the header.</span></div>
-<div class="box"><b>School & term</b><div class="row" style="margin-top:12px">${f('name','School name')}${f('address','Address')}${f('motto','Motto')}${f('principal','Headmaster name')}${f('pname','Principal name (JSS & SS)')}${f('secPfx','Principal signs classes starting with')}${f('pfx','Reg prefix')}${f('ses','Session (e.g. 2025-2026)')}<label>Term<select data-cfg="t">${T.map((t,i)=>`<option value="${i}" ${i==C.t?'selected':''}>${t}</option>`).join('')}</select></label>${f('days','School days','number')}${f('ca','CA max','number')}${f('ex','Exam max','number')}${f('resume','Next term resumes')}</div>
+<div class="box"><b>${esc(c)} (${all.length})</b><div class="row">${tySelAdd()}</div><div class="sc"><table><tr><th>Reg No.</th><th>Name</th><th>Gender</th><th>Type</th><th>House</th><th>Phone</th><th>Status</th><th>Move to</th><th></th></tr>${all.map(s=>`<tr><td>${esc(s.reg)}</td><td>${esc(s.name)}</td><td>${esc(s.g)}</td><td>${esc(s.type||'')}</td><td>${esc(s.house||'')}</td><td>${esc(s.phone||'')}</td><td>${s.on===false?'Withdrawn':'Active'}</td><td><select data-mv="${esc(s.reg)}"${s.on===false?' disabled title="Reactivate first"':''}>${C.classes.map(x=>`<option ${x.n==s.cls?'selected':''}>${esc(x.n)}</option>`).join('')}</select></td><td><button data-act="tog" data-r="${esc(s.reg)}">${s.on===false?'Reactivate':'Withdraw'}</button> <button class="w" data-act="del" data-r="${esc(s.reg)}">Delete</button></td></tr>`).join('')}</table></div></div>`}
+let asub='school';
+function vAdmin(){const f=(k,l,t='text')=>`<label>${l}<input type="${t}" data-cfg="${k}" value="${esc(C[k])}"></label>`,idx=C.classes.map(x=>x.n),L=ST.filter(s=>s.on!==false);
+const P={
+school:()=>`<div class="box"><b>School & term</b><div class="row">${f('name','School name')}${f('address','Address')}${f('motto','Motto')}${f('principal','Headmaster name')}${f('pname','Principal name (JSS & SS)')}${f('secPfx','Principal signs classes starting with')}${f('pfx','Reg prefix')}${f('ses','Session (e.g. 2025-2026)')}<label>Term<select data-cfg="t">${T.map((t,i)=>`<option value="${i}" ${i==C.t?'selected':''}>${t}</option>`).join('')}</select></label>${f('days','School days','number')}${f('ca','CA max','number')}${f('ex','Exam max','number')}${f('resume','Next term resumes')}</div>
 <b>Grading</b> <span class="mu">one per line: min, grade, remark</span><textarea id="bd">${esc(C.bands.map(b=>[b.m,b.g,b.r].join(', ')).join('\n'))}</textarea>
 <div style="margin-top:20px;border-top:1px dashed var(--bd);padding-top:15px;">
   <b>Next Term Fees by Class</b> <span class="mu">Set the specific fee for each class. Leave blank to hide.</span>
-  ${feeRows}
-</div>
-<div style="margin-top:20px;border-top:1px dashed var(--bd);padding-top:15px;">
-  <b>Classes &amp; subjects</b> <span class="mu">comma separated, in report order. Arms such as White/Blue or Science/Commerce are separate classes under one level. Click Save settings after editing subjects.</span>
-  ${C.classes.map((x,i)=>{const first=C.classes.findIndex(y=>lvOf(y)==lvOf(x))==i;return`<div class="row" style="margin-top:8px"><label style="width:170px">${esc(x.n)}</label><input style="flex:1" data-sj="${i}" value="${esc(x.s.join(', '))}"><button data-act="rncls" data-i="${i}" title="Set or change the arm/stream name">Rename arm</button>${first?`<button data-act="lvup" data-i="${i}" title="Move this level up">↑</button><button data-act="lvdn" data-i="${i}" title="Move this level down">↓</button>`:''}<button class="w" data-act="rmcls" data-i="${i}">Remove</button></div>`}).join('')}
+  ${C.classes.map(x=>`<div class="row"><label style="width:150px;font-weight:600">${esc(x.n)}</label><input style="flex:1" data-fee="${esc(x.n)}" value="${esc(feeOf(x.n))}" placeholder="e.g. ₦50,000"></div>`).join('')}
 </div>
 <div style="margin-top:20px;border-top:1px dashed var(--bd);padding-top:15px;">
   <label>Class Types (comma separated)<input data-cfg="types" value="${esc((C.types||['Day','Boarding']).join(', '))}"></label>
 </div>
-<button class="b" style="margin-top:20px" data-act="cfg">Save settings</button></div>
-<div class="box"><b>Add classes</b><p class="mu">Level is the year group, e.g. Basic 1 or SS1. Leave Arms empty for a single class, or list them to create one class per arm, e.g. White, Blue or Science, Commerce, Art. Each arm gets the subjects below; edit them per class afterwards. Save any pending settings changes first.</p><div class="row"><label>Level<input id="cl_l" placeholder="SS1"></label><label>Arms (optional)<input id="cl_a" placeholder="Science, Commerce, Art" size="28"></label><label>Place after<select id="cl_p"><option value="">Auto (with its level, or at the end)</option>${levels().map(l=>`<option>${esc(l)}</option>`).join('')}</select></label></div><label class="mu">Subjects<input id="cl_s" style="width:100%" placeholder="Mathematics, English Language, ..."></label><div class="row" style="margin-top:8px"><button class="b" data-act="addcls">Add class(es)</button></div></div>
-<div class="box"><b>Backup &amp; restore <span class="tag">ADMIN</span></b><p class="mu">Downloads every student, score and setting as one file. Do this before promotion and at the end of each term.</p><div class="row"><button class="b" data-act="bak">Download backup</button><input type="file" id="rf" accept=".json"><button class="w" data-act="rst">Restore from file</button></div></div>
-<div class="box"><b>End-of-session promotion <span class="tag">ADMIN</span></b><p class="mu">Automatic, class by class, from each student's <b>cumulative average</b> (the average of all terms this session). Path: Creche → Nursery 1 → Nursery 2 → Basic 1–5 → JSS 1–3 → SS 1–3 → graduate.</p>
+<button class="b" data-act="cfg">Save settings</button></div>`,
+classes:()=>`<div class="box"><b>Classes &amp; subjects</b> <span class="mu">comma separated, in report order. Arms such as White/Blue or Science/Commerce are separate classes under one level. Click Save settings after editing subjects.</span>
+${C.classes.map((x,i)=>{const first=C.classes.findIndex(y=>lvOf(y)==lvOf(x))==i;return`<div class="row"><label style="width:170px">${esc(x.n)}</label><input style="flex:1" data-sj="${i}" value="${esc(x.s.join(', '))}"><button data-act="rncls" data-i="${i}" title="Set or change the arm/stream name">Rename arm</button>${first?`<button data-act="lvup" data-i="${i}" title="Move this level up">↑</button><button data-act="lvdn" data-i="${i}" title="Move this level down">↓</button>`:''}<button class="w" data-act="rmcls" data-i="${i}">Remove</button></div>`}).join('')}
+<button class="b" data-act="cfg">Save settings</button></div>
+<div class="box"><b>Add classes</b><p class="mu">Level is the year group, e.g. Basic 1 or SS1. Leave Arms empty for a single class, or list them to create one class per arm, e.g. White, Blue or Science, Commerce, Art. Each arm gets the subjects below; edit them per class afterwards. Save any pending settings changes first.</p><div class="row"><label>Level<input id="cl_l" placeholder="SS1"></label><label>Arms (optional)<input id="cl_a" placeholder="Science, Commerce, Art" size="28"></label><label>Place after<select id="cl_p"><option value="">Auto (with its level, or at the end)</option>${levels().map(l=>`<option>${esc(l)}</option>`).join('')}</select></label></div><label class="mu">Subjects<input id="cl_s" style="width:100%" placeholder="Mathematics, English Language, ..."></label><div class="row" style="margin-top:8px"><button class="b" data-act="addcls">Add class(es)</button></div></div>`,
+brand:()=>`<div class="box"><b>Headmaster's signature <span class="tag">ADMIN</span></b> <span class="mu">signs Creche, Pre Nursery, Nursery and Basic sheets</span><div class="row">${C.sig?`<img src="${C.sig}" style="height:60px;background:#fff;border:1px solid var(--bd);border-radius:6px">`:'<span class="mu">No signature yet.</span>'}<input type="file" id="sg" accept="image/*">${C.sig?'<button class="w" data-act="rmsig">Remove</button>':''}</div><span class="mu">Upload a photo or scan of the signature, ideally on a plain white background or as a transparent PNG.</span></div>
+<div class="box"><b>Principal's signature <span class="tag">ADMIN</span></b> <span class="mu">signs JSS and SS sheets</span><div class="row">${C.psig?`<img src="${C.psig}" style="height:60px;background:#fff;border:1px solid var(--bd);border-radius:6px">`:'<span class="mu">No signature yet.</span>'}<input type="file" id="psg" accept="image/*">${C.psig?'<button class="w" data-act="rmpsig">Remove</button>':''}</div><span class="mu">Applies to: ${esc(C.classes.filter(x=>isSec(x.n)).map(x=>x.n).join(', ')||'no classes yet')}. These sheets say "Principal" and use the principal's name and signature above; all other classes say "Headmaster".</span></div>
+<div class="box"><b>School logo</b><div class="row">${C.logo?`<img src="${C.logo}" style="height:70px;background:#fff;border:1px solid var(--bd);border-radius:6px">`:'<span class="mu">No logo yet.</span>'}<input type="file" id="lg" accept="image/*">${C.logo?'<button class="w" data-act="rmlogo">Remove</button>':''}</div><span class="mu">Upload once: it appears on every report card and in the header.</span></div>`,
+backup:()=>`<div class="box"><b>Backup &amp; restore <span class="tag">ADMIN</span></b><p class="mu">Downloads every student, score and setting as one file. Do this before promotion and at the end of each term.</p><div class="row"><button class="b" data-act="bak">Download backup</button><input type="file" id="rf" accept=".json"><button class="w" data-act="rst">Restore from file</button></div></div>`,
+promo:()=>`<div class="box"><b>End-of-session promotion <span class="tag">ADMIN</span></b><p class="mu">Automatic, class by class, from each student's <b>cumulative average</b> (the average of all terms this session). Students keep their arm (White stays White, Science stays Science) when the next level has it. Path: Creche → Nursery 1 → Nursery 2 → Basic 1–5 → JSS 1–3 → SS 1–3 → graduate.</p>
 <div class="row" style="background:var(--bg);padding:12px;border-radius:8px;border:1px solid var(--bd);margin-bottom:16px;">
-  <label>Promotion pass mark <input type="number" id="promoPassInput" value="${C.promoPass??35}" min="0" max="100"></label>
+  <label>Promotion pass mark <input type="number" id="promoPassInput" value="${passMk()}" min="0" max="100"></label>
   <button class="b" data-act="save-pass">Save Pass Mark</button>
   <span class="mu" style="margin-left:auto;">Students below this cumulative avg will auto-repeat.</span>
 </div>
 ${(()=>{const bad=L.filter(s=>!idx.includes(s.cls));return bad.length?`<div class="warn">${bad.length} active student(s) are in a class that is not in the class list and will be skipped: ${bad.slice(0,6).map(s=>esc(s.name)+' ('+esc(s.cls)+')').join(', ')}.</div>`:''})()}
 ${(()=>{const un=[...new Set(L.filter(s=>idx.includes(s.cls)).filter(s=>{const p=decide(s);return p.out=='promote'&&!p.to}).map(s=>s.cls))];return un.length?`<div class="warn">${un.map(c=>`<div class="row" style="margin:4px 0">The next class for <b>${esc(c)}</b> is not in your class list. Move all its promoted students to: <select data-pbulk="${esc(c)}"><option value="">— choose —</option>${[...idx,'Graduated'].map(n=>`<option>${esc(n)}</option>`).join('')}</select></div>`).join('')}</div>`:''})()}
-<div class="sc"><table><tr><th>#</th><th>Name</th><th class="c">Cum. Avg</th><th>Result</th><th>Override</th><th>Moves to</th></tr>${C.classes.map(x=>{const ss=L.filter(s=>s.cls==x.n).sort((a,b)=>String(a.name).localeCompare(String(b.name)));if(!ss.length)return'';const ps=ss.map(decide),up=ps.filter(p=>p.out=='promote').length,dn=nextOf(x.n);return`<tr><td colspan="6" style="background:var(--bg);font-weight:700">${esc(x.n)} <span class="mu" style="font-weight:400">— ${ss.length} student${ss.length>1?'s':''} · ${up} promoted · ${ss.length-up} repeating · next class: ${esc(dn||'(choose below)')}</span></td></tr>`+ss.map((s,i)=>{const p=ps[i],ov=POV[s.reg]||'auto';return`<tr><td>${i+1}</td><td>${esc(s.name)}</td><td class="c">${p.c?'<b>'+p.c.avg.toFixed(1)+'</b> <span class="mu">('+p.c.n+' term'+(p.c.n>1?'s':'')+')</span>':'<span class="mu">no scores</span>'}</td><td>${p.out=='promote'?'<b style="color:#2e8b57">Promote</b>':'<b style="color:#c0392b">Repeat</b>'+(p.noscore?' <span class="mu">(no scores)</span>':'')}</td><td><select data-pov="${esc(s.reg)}">${[['auto','Auto'],['promote','Promote'],['repeat','Repeat']].map(([v,l])=>`<option value="${v}" ${v==ov?'selected':''}>${l}</option>`).join('')}</select></td><td>${p.out=='repeat'?'<span class="mu">stays in</span> '+esc(s.cls):`<select data-pto="${esc(s.reg)}">${p.to?'':'<option value="">— choose —</option>'}${[...idx,'Graduated'].map(n=>`<option ${n==p.to?'selected':''}>${esc(n)}</option>`).join('')}</select>`}</td></tr>`}).join('')}).join('')}</table></div>
-${C.t<2?'<div class="warn">It is currently '+T[C.t]+'. Promotion is normally run after Third Term.</div>':''}<button class="w" data-act="promo" style="margin-top:16px;">Run promotion</button></div>${dangerBox()}`}
-
-/* ===== AUTO-FIT: shrink spacing (and if still needed, zoom) until each card fits one A4 page ===== */
-const FITV={'--fs':[12,9],'--py':[4,1],'--acp':[6,1],'--tm':[12,3],'--tm2':[10,3],'--bm':[9,3],'--rsm':[7,2],'--rh':[26,14],'--sgm':[22,4],'--sgh':[56,28],'--lgh':[78,40],'--h2':[21,15],'--srm':[10,3],'--ftm':[15,4],'--tp':[6,2]};
-function setDensity(c,t){for(const k in FITV){const[a,b]=FITV[k];c.style.setProperty(k,(a+(b-a)*t).toFixed(2)+'px')}}
-function fitCards(root){
-  (root||document).querySelectorAll('.rc').forEach(c=>{
-    const ow=c.style.width,om=c.style.maxWidth;
-    c.style.width='780px';c.style.maxWidth='none';c.style.zoom='';
-    const target=Math.floor(780*297/210)-10;
-    setDensity(c,0);
-    void c.offsetHeight;
-    if(c.offsetHeight>target){
-      let lo=0,hi=1;setDensity(c,1);void c.offsetHeight;
-      if(c.offsetHeight<=target){
-        for(let i=0;i<9;i++){const m=(lo+hi)/2;setDensity(c,m);void c.offsetHeight;if(c.offsetHeight<=target)hi=m;else lo=m}
-        setDensity(c,hi);
-      }else{
-        const h=c.offsetHeight;c.style.zoom=(target/h*.82).toFixed(4); /* .82 = print margin scale, keeps one page even with very many subjects */
-      }
-    }
-    c.style.width=ow;c.style.maxWidth=om;
-  })
-}
-window.addEventListener('beforeprint',()=>fitCards());
+${(()=>{const ty=C.types||['Day','Boarding'],cnt=L.filter(s=>idx.includes(s.cls)&&(pf.c=='ALL'||s.cls==pf.c)&&(pf.t=='ALL'||(s.type||'')==pf.t)).length;return`<div class="row" style="background:var(--bg);padding:12px;border-radius:8px;border:1px solid var(--bd);margin-bottom:16px;"><label>Class<select data-pf="c"><option value="ALL">All classes</option>${idx.map(n=>`<option ${n==pf.c?'selected':''}>${esc(n)}</option>`).join('')}</select></label><label>Class type<select data-pf="t"><option value="ALL">All types</option>${ty.map(n=>`<option ${n==pf.t?'selected':''}>${esc(n)}</option>`).join('')}</select></label><span class="mu" style="margin-left:auto">Showing ${cnt} student(s). Filters only change what you see; Run promotion still applies to every active student.</span></div>`})()}
+<div class="sc"><table><tr><th>#</th><th>Name</th><th>Type</th><th class="c">Cum. Avg</th><th>Result</th><th>Override</th><th>Moves to (class + type)</th></tr>${C.classes.map(x=>{const ss=(pf.c=='ALL'||pf.c==x.n?L.filter(s=>s.cls==x.n&&(pf.t=='ALL'||(s.type||'')==pf.t)):[]).sort((a,b)=>String(a.name).localeCompare(String(b.name)));if(!ss.length)return'';const ps=ss.map(decide),up=ps.filter(p=>p.out=='promote').length,dn=nextOf(x.n);return`<tr><td colspan="7" style="background:var(--bg);font-weight:700">${esc(x.n)} <span class="mu" style="font-weight:400">— ${ss.length} student${ss.length>1?'s':''} · ${up} promoted · ${ss.length-up} repeating · next class: ${esc(dn||'(choose below)')}</span></td></tr>`+ss.map((s,i)=>{const p=ps[i],ov=POV[s.reg]||'auto';return`<tr><td>${i+1}</td><td>${esc(s.name)}</td><td>${esc(s.type||'—')}</td><td class="c">${p.c?'<b>'+p.c.avg.toFixed(1)+'</b> <span class="mu">('+p.c.n+' term'+(p.c.n>1?'s':'')+')</span>':'<span class="mu">no scores</span>'}</td><td>${p.out=='promote'?'<b style="color:#2e8b57">Promote</b>':'<b style="color:#c0392b">Repeat</b>'+(p.noscore?' <span class="mu">(no scores)</span>':'')}</td><td><select data-pov="${esc(s.reg)}">${[['auto','Auto'],['promote','Promote'],['repeat','Repeat']].map(([v,l])=>`<option value="${v}" ${v==ov?'selected':''}>${l}</option>`).join('')}</select></td><td>${p.out=='repeat'?'<span class="mu">stays in</span> '+esc(s.cls):`<select data-pto="${esc(s.reg)}">${p.to?'':'<option value="">— choose —</option>'}${[...idx,'Graduated'].map(n=>`<option ${n==p.to?'selected':''}>${esc(n)}</option>`).join('')}</select>${p.to=='Graduated'?'':`<select data-pty="${esc(s.reg)}" title="Class type">${[...new Set([...(C.types||['Day','Boarding']),...(p.ty?[p.ty]:[])])].map(n=>`<option ${n==p.ty?'selected':''}>${esc(n)}</option>`).join('')}</select>`}`}</td></tr>`}).join('')}).join('')}</table></div>
+${C.t<2?'<div class="warn">It is currently '+T[C.t]+'. Promotion is normally run after Third Term.</div>':''}<button class="w" data-act="promo" style="margin-top:16px;">Run promotion</button></div>${dangerBox()}`};
+const tabs=[['school','School & Term'],['classes','Classes & Subjects'],['brand','Logo & Signature'],['backup','Backup & Restore'],['promo','Promotion']];
+return`<div class="box np"><div class="row" style="margin:0">${tabs.map(([k,l])=>`<button class="${asub==k?'b':''}" data-asub="${k}">${l}</button>`).join('')}</div></div>`+(P[asub]||P.school)()}
+$('#m').addEventListener('click',e=>{const p=e.target.dataset&&e.target.dataset.asub;if(p){asub=p;draw()}});
 const csvq=v=>'"'+String(v).replace(/"/g,'""')+'"';
-async function addSt(n,c,g,t,h,p,e){if(!n||!C.classes.some(x=>x.n==c))return false;if(ST.some(s=>s.cls==c&&String(s.name).trim().toLowerCase()==n.trim().toLowerCase()))return false;const ab=(c.replace(/[^A-Za-z]/g,'').slice(0,3)+c.replace(/\D/g,'')).toUpperCase();let i=ST.filter(s=>s.cls==c).length+1,r;do r=C.pfx+ab+String(i++).padStart(3,'0');while(ST.some(s=>s.reg==r));const o={reg:r,name:n,cls:c,g:g||'',type:t||'Day',house:h||'',phone:p||'',email:e||'',on:true,hist:[]};ST.push(o);try{await db.doc('students/'+r).set(o)}catch(x){ST=ST.filter(y=>y!==o);alert('Could not save student: '+(x.message||x));return false}return true}
-
+async function addSt(n,c,g,t,h,p,e){if(!n||!C.classes.some(x=>x.n==c))return false;if(ST.some(s=>s.cls==c&&String(s.name).trim().toLowerCase()==n.trim().toLowerCase()))return false;let r;try{const{data,error}=await sb.rpc('next_reg');if(error)throw error;const q=Number(data);if(!Number.isFinite(q)||q<1)throw new Error('The registration counter returned no number.');const dt=new Date();r=(C.pfx||'DEC')+'/'+String(dt.getMonth()+1).padStart(2,'0')+String(dt.getFullYear()).slice(-2)+'/A'+String(q).padStart(4,'0')}catch(x){alert('Could not get a registration number: '+(x.message||x)+'. Student not added.');return false}const o={reg:r,name:n,cls:c,g:g||'',type:t||'Day',house:h||'',phone:p||'',email:e||'',on:true,hist:[]};ST.push(o);try{await db.doc('students/'+r).set(o)}catch(x){ST=ST.filter(y=>y!==o);alert('Could not save student: '+(x.message||x));return false}return true}
 /* keyboard navigation: Enter/Arrow keys move within score grid */
 $('#m').addEventListener('keydown',e=>{
   if(!['Enter','ArrowDown','ArrowUp'].includes(e.key))return;
@@ -442,11 +746,13 @@ $('#m').addEventListener('keydown',e=>{
   focus(tr.nextElementSibling,sj,'1');
 });
 $('#m').addEventListener('change',async e=>{const t=e.target,d=t.dataset;if(!db&&!d.sel)return;
-if(d.sel){sel[d.sel]=t.value;if(d.sel=='c')sel.r='ALL';draw();return}
-if(d.sc){const tr=t.closest('tr'),r=tr.dataset.r,sj=d.sc,kk=+d.k,x=Math.max(0,Math.min(+t.value||0,kk?C.ex:C.ca)),v=t.value===''?'':x;t.value=v;rowUp(tr);save(r,o=>{const n=[...((o.sc||{})[sj]||['',''])];n[kk]=v;o.sc={...(o.sc||{}),[sj]:n}},'sc');return}
+if(d.sel){sel[d.sel]=t.value;if(d.sel=='c'||d.sel=='ty')sel.r='ALL';draw();return}
+if(d.sc){const tr=t.closest('tr'),r=tr.dataset.r,sj=d.sc,kk=+d.k,mx=kk?C.ex:C.ca,raw=t.value,num=+raw;if(raw!==''&&(isNaN(num)||num<0||num>mx)){const pv=(((SC[r]||{}).sc||{})[sj]||[])[kk];t.value=pv??'';t.classList.remove('bad');rowUp(tr);toast((kk?'Exam':'CA')+' score must be between 0 and '+mx+' (you entered '+raw+'). Nothing was saved; please re-enter.','err');setTimeout(()=>{t.focus();t.select()},0);return}const x=raw===''?'':num,v=x;t.classList.remove('bad');rowUp(tr);save(r,o=>{const n=[...((o.sc||{})[sj]||['',''])];n[kk]=v;o.sc={...(o.sc||{}),[sj]:n}},'sc');return}
 if(d.f){const r=d.r,f=d.f,tt=d.t,blank=t.value==='';if(f=='dom'){const v=blank?null:Math.max(1,Math.min(5,Math.round(+t.value)||1));if(v!==null)t.value=v;save(r,o=>{o.dom={...(o.dom||{})};if(v===null)delete o.dom[tt];else o.dom[tt]=v},'dom')}else if(f=='pres'){const v=blank?'':Math.max(0,Math.min(C.days,Math.round(+t.value)||0));t.value=v;save(r,o=>{o.pres=v},'pres')}else{const v=t.value;save(r,o=>{o[f]=v},f)}draw(1);return}
 if(d.pov!==undefined){if(t.value=='auto')delete POV[d.pov];else POV[d.pov]=t.value;draw()}
 if(d.pto!==undefined){ptt[d.pto]=t.value; draw()}
+if(d.pty!==undefined){pty[d.pty]=t.value; draw()}
+if(d.pf!==undefined){pf[d.pf]=t.value; draw()}
 if(d.pbulk!==undefined&&t.value){ST.filter(x=>x.on!==false&&x.cls==d.pbulk).forEach(x=>{const p=decide(x);if(p.out=='promote'&&!p.to)ptt[x.reg]=t.value});draw()}
 if(d.mv!==undefined){const r=d.mv,s=ST.find(x=>x.reg==r);if(!s||s.cls==t.value)return;const old=s.cls;s.cls=t.value;try{await db.doc('students/'+r).update({cls:t.value});const sd=await db.doc('scores/'+pid()+'_'+r).get();if(sd.exists)await db.doc('scores/'+pid()+'_'+r).set({...sd.data(),cls:t.value})}catch(x){s.cls=old;alert('Could not move student: '+(x.message||x))}draw()}
 });
@@ -466,163 +772,100 @@ function rowUp(tr){
   const p=my?1+allTotals.filter(x=>x.tot>my.tot).length:0;
   tr.querySelector('.ps').textContent=p?ord(p):'—';
 }
-$('#m').addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.sc)rowUp(t.closest('tr'))});
+$('#m').addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.sc){const mx=+t.dataset.k?C.ex:C.ca,v=t.value,n=+v,bad=v!==''&&(isNaN(n)||n<0||n>mx);t.classList.toggle('bad',bad);if(bad)toast((+t.dataset.k?'Exam':'CA')+' score is above the maximum of '+mx+' (you typed '+v+'). Correct it before moving on.','err');rowUp(t.closest('tr'))}});
 $('#m').addEventListener('focusout',()=>{if(late)setTimeout(()=>{const a=document.activeElement;if(late&&!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)))draw()},400)});
 $('#m').addEventListener('click',async e=>{const a=e.target.dataset.act;if(!a)return;
-if(a=='csv'){const c=curC(),subs=cd(c).s,rows=[['Reg No','Name',...subs.flatMap(s=>[s+' CA',s+' Exam']),'Total','Average','Grade','Position']];act(c).forEach(s=>{const d=SC[s.reg],k=calc(d,subs);rows.push([s.reg,s.name,...subs.flatMap(j=>[((d&&d.sc&&d.sc[j])||[])[0]??'',((d&&d.sc&&d.sc[j])||[])[1]??'']),k.tot,k.avg.toFixed(1),k.b.g,pos(s.reg,c).p||''])});try{const blob=new Blob(['\ufeff'+rows.map(r=>r.map(csvq).join(',')).join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${c}_${pid()}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}catch(x){alert('Download failed: '+x.message)}return}
+if(a=='csv'){const c=curC(),subs=cd(c).s,rows=[['Reg No','Name',...subs.flatMap(s=>[s+' CA',s+' Exam']),'Total','Average','Grade','Position']];act(c).forEach(s=>{const d=SC[s.reg],k=calc(d,subs);rows.push([s.reg,s.name,...subs.flatMap(j=>[((d&&d.sc&&d.sc[j])||[])[0]??'',((d&&d.sc&&d.sc[j])||[])[1]??'']),k.tot,k.avg.toFixed(1),k.b.g,pos(s.reg,c).p||''])});try{const blob=new Blob(['\ufeff'+rows.map(r=>r.map(csvq).join(',')).join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${c}_${pid()}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('CSV downloaded','ok')}catch(x){toast('Download failed: '+x.message,'err')}return}
 if(!db||!admin)return;
-if(a=='add'){const v=i=>$('#'+i).value.trim();if(await addSt(v('an'),curC(),$('#ag').value,$('#at').value,v('ah'),v('ap'),v('ae')))draw();else alert('Enter a name. A student with the same name in this class is skipped.')}
-if(a=='imp'){let n=0;for(const l of $('#bi').value.split('\n')){const p=l.split(',').map(x=>x.trim());if(await addSt(p[0],p[1],p[2],p[3],p[4],p[5],p[6]))n++}alert(n+' student(s) imported. Lines with unknown class names or duplicate names were skipped.');draw()}
-if(a=='tog'){const s=ST.find(x=>x.reg==e.target.dataset.r);if(!s)return;s.on=(s.on===false)?true:false;try{await db.doc('students/'+s.reg).update({on:s.on});draw()}catch(x){s.on=!s.on;alert('Failed to update: '+x.message)}}
-if(a=='rea'){const s=ST.find(x=>x.reg==e.target.dataset.r);if(!s)return;const last=((s.hist||[]).slice(-1)[0]||{}).cls,u={on:true};if(!C.classes.some(x=>x.n==s.cls))u.cls=last&&C.classes.some(x=>x.n==last)?last:C.classes[C.classes.length-1].n;try{await db.doc('students/'+s.reg).update(u);Object.assign(s,u)}catch(x){alert('Could not reactivate: '+(x.message||x))}draw()}
-if(a=='del'){const r=e.target.dataset.r,s=ST.find(x=>x.reg==r);if(!s||!confirm('Permanently delete '+s.name+' and ALL their scores? This cannot be undone. (Use Withdraw to keep the records.)'))return;try{const{error}=await sb.from('docs').delete().eq('col','scores').eq('data->>reg',r);if(error)throw error;await db.doc('students/'+r).delete();ST=ST.filter(x=>x.reg!=r);delete SC[r];draw()}catch(x){alert('Delete failed: '+(x.message||x))}}
-if(a=='addcls'){const lv=$('#cl_l').value.trim(),arms=$('#cl_a').value.split(',').map(z=>z.trim()).filter(Boolean),subs=$('#cl_s').value.split(',').map(z=>z.trim()).filter(Boolean),after=$('#cl_p').value;if(!lv)return alert('Enter the level, e.g. Basic 1 or SS1.');if(!subs.length)return alert('Enter at least one subject.');const add=(arms.length?arms:['']).map(ar=>({n:(lv+' '+ar).trim(),s:[...subs],lv,arm:ar})),have=new Set(C.classes.map(x=>x.n.toLowerCase())),dup=add.find(x=>have.has(x.n.toLowerCase()));if(dup)return alert(dup.n+' already exists.');const cls=[...C.classes],lvl=after||lv;let at=cls.length;cls.forEach((x,i)=>{if(lvOf(x)==lvl)at=i+1});cls.splice(at,0,...add);const o={...C,classes:cls};try{await db.doc('cfg/school').set(o);C=o;sub();draw();alert(add.map(x=>x.n).join(', ')+' added.')}catch(x){alert('Could not add: '+(x.message||x))}}
-if(a=='lvup'||a=='lvdn'){const x=C.classes[+e.target.dataset.i];if(!x)return;const L=levels(),li=L.indexOf(lvOf(x)),lj=a=='lvup'?li-1:li+1;if(lj<0||lj>=L.length)return;[L[li],L[lj]]=[L[lj],L[li]];const cls=[];L.forEach(l=>C.classes.filter(y=>lvOf(y)==l).forEach(y=>cls.push(y)));const o={...C,classes:cls};try{await db.doc('cfg/school').set(o);C=o;draw()}catch(y){alert('Could not reorder: '+(y.message||y))}}
-if(a=='rncls'){const i=+e.target.dataset.i,x=C.classes[i];if(!x)return;const lv=lvOf(x),ar=prompt('Arm / stream name for '+lv+' (e.g. White, Blue, Science). Leave empty for none:',x.arm||'');if(ar===null)return;const arm=ar.trim(),nn=(lv+' '+arm).trim();if(nn==x.n)return;if(C.classes.some((y,j)=>j!=i&&y.n.toLowerCase()==nn.toLowerCase()))return alert(nn+' already exists.');if(!confirm('Rename '+x.n+' to '+nn+'? Its students and current scores move with it. If teachers are assigned to "'+x.n+'", update their assignment too.'))return;try{for(const s of ST.filter(s=>s.cls==x.n))await db.doc('students/'+s.reg).update({cls:nn});for(let f=0;;f+=1000){const{data,error}=await sb.from('docs').select('col,id,data').eq('col','scores').eq('data->>cls',x.n).order('id').range(f,f+999);if(error)throw error;for(let j=0;j<data.length;j+=200){const{error:e2}=await sb.from('docs').upsert(data.slice(j,j+200).map(r=>({col:r.col,id:r.id,data:{...r.data,cls:nn},updated_at:new Date().toISOString()})));if(e2)throw e2}if(data.length<1000)break}const o={...C,classes:C.classes.map((y,j)=>j==i?{...y,n:nn,lv,arm}:y)};await db.doc('cfg/school').set(o);C=o;ST.forEach(s=>{if(s.cls==x.n)s.cls=nn});sub();draw()}catch(y){alert('Rename failed: '+(y.message||y)+'\nRun it again to finish.')}}
-if(a=='rmcls'){const i=+e.target.dataset.i,x=C.classes[i];if(!x)return;if(ST.some(s=>s.cls==x.n))return alert('Move or delete the students in '+x.n+' first.');if(C.classes.length<2)return alert('At least one class is required.');if(!confirm('Remove the class '+x.n+'?'))return;const o={...C,classes:C.classes.filter((_,j)=>j!=i)};try{await db.doc('cfg/school').set(o);C=o;sub();draw()}catch(y){alert('Could not remove class: '+(y.message||y))}}
-if(a=='bak'){try{const rows=[];for(let f=0;;f+=1000){const{data,error}=await sb.from('docs').select('col,id,data').order('col').order('id').range(f,f+999);if(error)throw error;rows.push(...data);if(data.length<1000)break}const b=new Blob([JSON.stringify({v:1,rows})],{type:'application/json'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='report-builder-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),5000)}catch(x){alert('Backup failed: '+(x.message||x))}}
-if(a=='rst'){const f=$('#rf').files[0];if(!f)return alert('Choose a backup file first.');try{const j=JSON.parse(await f.text());const rows=(j.rows||[]).filter(r=>r&&typeof r.col=='string'&&typeof r.id=='string'&&r.data);if(!rows.length)throw new Error('This is not a backup file');if(!confirm('Restore '+rows.length+' records? Matching records will be overwritten.'))return;const now=new Date().toISOString();for(let i=0;i<rows.length;i+=200){const{error}=await sb.from('docs').upsert(rows.slice(i,i+200).map(r=>({col:r.col,id:r.id,data:r.data,updated_at:now})));if(error)throw error}alert('Restore complete. The page will reload.');location.reload()}catch(x){alert('Restore failed: '+(x.message||x))}}
-if(a=='cfg'){const o={...C,fees:{}};document.querySelectorAll('[data-cfg]').forEach(i=>{const k=i.dataset.cfg;if(k==='types')o.types=i.value.split(',').map(x=>x.trim()).filter(Boolean);else o[k]=['t','days','ca','ex','promoPass'].includes(k)?+i.value:i.value.trim()});if(!o.types||!o.types.length)o.types=['Day','Boarding'];if(!(o.promoPass>=0&&o.promoPass<=100))return alert('Promotion pass mark must be between 0 and 100.');document.querySelectorAll('[data-fee]').forEach(i=>{if(i.value.trim())o.fees[i.dataset.fee]=i.value.trim()});o.bands=$('#bd').value.split('\n').map(l=>l.split(',').map(x=>x.trim())).filter(p=>p[1]).map(p=>({m:+p[0],g:p[1],r:p[2]||''})).sort((a,b)=>b.m-a.m);o.classes=C.classes.map((x,i)=>({...x,s:document.querySelector(`[data-sj="${i}"]`).value.split(',').map(z=>z.trim()).filter(Boolean)}));if(!/^\d{4}-\d{4}$/.test(o.ses))return alert('Session must look like 2025-2026.');if(!(o.days>0)||!(o.ca>=0)||!(o.ex>=0)||o.ca+o.ex!==100)return alert('CA max + Exam max must equal 100, and school days must be more than 0.');if(!o.bands.length||o.bands.some(b=>isNaN(b.m))||!o.bands.some(b=>b.m<=0))return alert('Grading: each line needs "min, grade, remark", and one band must start at 0.');if(o.classes.some(x=>!x.s.length))return alert('Every class needs at least one subject.');try{await db.doc('cfg/school').set(o);C=o;sub();draw();alert('Settings saved.')}catch(x){alert('Could not save settings: '+(x.message||x))}}
-if(a=='save-pass'){
-  const input=document.getElementById('promoPassInput');
-  const val=+input.value;
-  if(!(val>=0&&val<=100))return alert('Pass mark must be between 0 and 100.');
-  try{
-    const o={...C, promoPass: val};
-    await db.doc('cfg/school').set(o);
-    C=o;
-    setSaveState('saved');
-    showToast(`Pass mark updated to ${val}`);
-    draw();
-  }catch(x){
-    alert('Could not save pass mark: '+(x.message||x));
-  }
-}
-if(a=='promo'){if(!/^\d{4}-\d{4}$/.test(C.ses))return alert('Fix the session format (e.g. 2025-2026) in Settings first.');if(C.t<2&&prompt('Promotion is normally run after Third Term. It is currently '+T[C.t]+'. Type the session name ('+C.ses+') to confirm:')!==C.ses)return;const idx=C.classes.map(x=>x.n),done=h=>h.ses==C.ses&&['Promoted','Repeated','Graduated'].includes(h.out),plan=ST.filter(x=>x.on!==false&&idx.includes(x.cls)&&!(x.hist||[]).some(done)).map(s=>({s,...decide(s)})),bad=plan.filter(p=>p.out=='promote'&&!p.to);if(bad.length)return alert(bad.length+' promoted student(s) have no next class yet (e.g. '+bad.slice(0,5).map(p=>p.s.name+' / '+p.s.cls).join(', ')+'). Choose their class in the yellow box or in the "Moves to" column first.');const up=plan.filter(p=>p.out=='promote').length;if(!confirm('Promote '+up+' student(s) and keep '+(plan.length-up)+' in their class (repeat, cumulative average below '+(C.promoPass??35)+')?\n\nDownload a backup first (Settings → Backup). This cannot be undone automatically.'))return;try{for(const p of plan){const s=p.s,rep=p.out=='repeat',to=p.to,u={cls:to,hist:[...(s.hist||[]),{ses:C.ses,cls:s.cls,out:rep?'Repeated':to=='Graduated'?'Graduated':'Promoted',avg:p.c?+p.c.avg.toFixed(1):null}]};if(to=='Graduated')u.on=false;await db.doc('students/'+s.reg).update(u)}const o={...C,ses:C.ses.split('-').map(n=>+n+1).join('-'),t:0};await db.doc('cfg/school').set(o);C=o;promo={};ptt={};POV={};sub();draw();alert('Promotion complete. New session opened.')}catch(x){alert('Promotion stopped: '+(x.message||x)+'\nStudents already moved are skipped if you run it again.')}}});
-
-/* image upload handlers: logo */
-$('#m').addEventListener('change',e=>{const t=e.target;if(t.id!='lg'||!db||!admin||!t.files[0])return;const im=new Image();im.onload=async()=>{const k=Math.min(1,300/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k)||1;cv.height=Math.round(im.height*k)||1;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);const o={...C,logo:cv.toDataURL('image/png')};try{await db.doc('cfg/school').set(o);C=o;draw()}catch(x){alert('Logo could not be saved: '+(x.message||x))}};im.onerror=()=>alert('Could not read that image.');im.src=URL.createObjectURL(t.files[0])});
-$('#m').addEventListener('click',async e=>{if(e.target.dataset.act=='rmlogo'&&db&&admin){const o={...C};delete o.logo;await db.doc('cfg/school').set(o);C=o;draw()}});
+if(a=='add'){const v=i=>$('#'+i).value.trim();overlay('Adding student…','Saving to the database.');try{if(await addSt(v('an'),curC(),$('#ag').value,$('#at').value,v('ah'),v('ap'),v('ae'))){draw();toast('Student added','ok')}else{overlayForceHide();alert('Enter a name. A student with the same name in this class is skipped.')}}finally{overlayHide()}}
+if(a=='imp'){let n=0;const lines=$('#bi').value.split('\n').filter(l=>l.trim());overlay('Importing students…',lines.length+' line(s) to process.');try{for(const l of lines){const p=l.split(',').map(x=>x.trim());const isT=(C.types||['Day','Boarding']).some(t=>t.toLowerCase()==(p[3]||'').toLowerCase()),q=(p.length>=7||isT)?p:[p[0],p[1],p[2],'',...p.slice(3)];if(await addSt(q[0],q[1],q[2],q[3],q[4],q[5],q[6]))n++}draw();toast(n+' student(s) imported','ok')}finally{overlayHide()}}
+if(a=='tog'){const s=ST.find(x=>x.reg==e.target.dataset.r);if(!s)return;s.on=(s.on===false)?true:false;try{await db.doc('students/'+s.reg).update({on:s.on});draw();toast(s.on?'Reactivated':'Withdrawn','ok')}catch(x){s.on=!s.on;toast('Failed to update: '+x.message,'err')}}
+if(a=='rea'){const s=ST.find(x=>x.reg==e.target.dataset.r);if(!s)return;const last=((s.hist||[]).slice(-1)[0]||{}).cls,u={on:true};if(!C.classes.some(x=>x.n==s.cls))u.cls=last&&C.classes.some(x=>x.n==last)?last:C.classes[C.classes.length-1].n;try{await db.doc('students/'+s.reg).update(u);Object.assign(s,u);draw();toast('Student reactivated','ok')}catch(x){toast('Could not reactivate: '+(x.message||x),'err')}}
+if(a=='del'){const r=e.target.dataset.r,s=ST.find(x=>x.reg==r);if(!s||!confirm('Permanently delete '+s.name+' and ALL their scores? This cannot be undone. (Use Withdraw to keep the records.)'))return;overlay('Deleting student…','Removing records from the database.');try{const{error}=await sb.from('docs').delete().eq('col','scores').eq('data->>reg',r);if(error)throw error;await db.doc('students/'+r).delete();ST=ST.filter(x=>x.reg!=r);delete SC[r];draw();toast('Student deleted','ok')}catch(x){toast('Delete failed: '+(x.message||x),'err')}finally{overlayHide()}}
+if(a=='addcls'){const lv=$('#cl_l').value.trim(),arms=$('#cl_a').value.split(',').map(z=>z.trim()).filter(Boolean),subs=$('#cl_s').value.split(',').map(z=>z.trim()).filter(Boolean),after=$('#cl_p').value;if(!lv)return toast('Enter the level, e.g. Basic 1 or SS1.','err');if(!subs.length)return toast('Enter at least one subject.','err');const add=(arms.length?arms:['']).map(ar=>({n:(lv+' '+ar).trim(),s:[...subs],lv,arm:ar})),have=new Set(C.classes.map(x=>x.n.toLowerCase())),dup=add.find(x=>have.has(x.n.toLowerCase()));if(dup)return toast(dup.n+' already exists.','err');const cls=[...C.classes],lvl=after||lv;let at=cls.length;cls.forEach((x,i)=>{if(lvOf(x)==lvl)at=i+1});cls.splice(at,0,...add);const o={...C,classes:cls};try{await db.doc('cfg/school').set(o);C=o;sub();draw();toast(add.map(x=>x.n).join(', ')+' added','ok')}catch(x){toast('Could not add: '+(x.message||x),'err')}}
+if(a=='lvup'||a=='lvdn'){const x=C.classes[+e.target.dataset.i];if(!x)return;const L=levels(),li=L.indexOf(lvOf(x)),lj=a=='lvup'?li-1:li+1;if(lj<0||lj>=L.length)return;[L[li],L[lj]]=[L[lj],L[li]];const cls=[];L.forEach(l=>C.classes.filter(y=>lvOf(y)==l).forEach(y=>cls.push(y)));const o={...C,classes:cls};try{await db.doc('cfg/school').set(o);C=o;draw()}catch(y){toast('Could not reorder: '+(y.message||y),'err')}}
+if(a=='rncls'){const i=+e.target.dataset.i,x=C.classes[i];if(!x)return;const lv=lvOf(x),ar=prompt('Arm / stream name for '+lv+' (e.g. White, Blue, Science). Leave empty for none:',x.arm||'');if(ar===null)return;const arm=ar.trim(),nn=(lv+' '+arm).trim();if(nn==x.n)return;if(C.classes.some((y,j)=>j!=i&&y.n.toLowerCase()==nn.toLowerCase()))return toast(nn+' already exists.','err');if(!confirm('Rename '+x.n+' to '+nn+'? Its students and current scores move with it. If teachers are assigned to "'+x.n+'", update their assignment too.'))return;overlay('Renaming class…','Moving students and scores.');try{for(const s of ST.filter(s=>s.cls==x.n))await db.doc('students/'+s.reg).update({cls:nn});for(let f=0;;f+=1000){const{data,error}=await sb.from('docs').select('col,id,data').eq('col','scores').eq('data->>cls',x.n).order('id').range(f,f+999);if(error)throw error;for(let j=0;j<data.length;j+=200){const{error:e2}=await sb.from('docs').upsert(data.slice(j,j+200).map(r=>({col:r.col,id:r.id,data:{...r.data,cls:nn},updated_at:new Date().toISOString()})));if(e2)throw e2}if(data.length<1000)break}const o={...C,classes:C.classes.map((y,j)=>j==i?{...y,n:nn,lv,arm}:y)};await db.doc('cfg/school').set(o);C=o;ST.forEach(s=>{if(s.cls==x.n)s.cls=nn});sub();draw();toast('Class renamed','ok')}catch(y){toast('Rename failed: '+(y.message||y),'err')}finally{overlayHide()}}
+if(a=='rmcls'){const i=+e.target.dataset.i,x=C.classes[i];if(!x)return;if(ST.some(s=>s.cls==x.n))return toast('Move or delete the students in '+x.n+' first.','err');if(C.classes.length<2)return toast('At least one class is required.','err');if(!confirm('Remove the class '+x.n+'?'))return;const o={...C,classes:C.classes.filter((_,j)=>j!=i)};try{await db.doc('cfg/school').set(o);C=o;sub();draw();toast('Class removed','ok')}catch(y){toast('Could not remove class: '+(y.message||y),'err')}}
+if(a=='bak'){overlay('Preparing backup…','Collecting every record.');try{const rows=[];for(let f=0;;f+=1000){const{data,error}=await sb.from('docs').select('col,id,data').order('col').order('id').range(f,f+999);if(error)throw error;rows.push(...data);if(data.length<1000)break}const b=new Blob([JSON.stringify({v:1,rows})],{type:'application/json'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='report-builder-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),5000);toast('Backup downloaded','ok')}catch(x){toast('Backup failed: '+(x.message||x),'err')}finally{overlayHide()}}
+if(a=='rst'){const f=$('#rf').files[0];if(!f)return toast('Choose a backup file first.','err');try{const j=JSON.parse(await f.text());const rows=(j.rows||[]).filter(r=>r&&typeof r.col=='string'&&typeof r.id=='string'&&r.data);if(!rows.length)throw new Error('This is not a backup file');if(!confirm('Restore '+rows.length+' records? Matching records will be overwritten.'))return;overlay('Restoring…','Writing ' + rows.length + ' records.');const now=new Date().toISOString();for(let i=0;i<rows.length;i+=200){const{error}=await sb.from('docs').upsert(rows.slice(i,i+200).map(r=>({col:r.col,id:r.id,data:r.data,updated_at:now})));if(error)throw error}toast('Restore complete. Reloading…','ok');setTimeout(()=>location.reload(),900)}catch(x){overlayForceHide();toast('Restore failed: '+(x.message||x),'err')}}
+if(a=='cfg'){const o={...C};document.querySelectorAll('[data-cfg]').forEach(i=>{const k=i.dataset.cfg;if(k==='types')o.types=i.value.split(',').map(x=>x.trim()).filter(Boolean);else o[k]=['t','days','ca','ex'].includes(k)?+i.value:i.value.trim()});if(document.querySelector('[data-fee]')){o.fees={};document.querySelectorAll('[data-fee]').forEach(i=>{if(i.value.trim())o.fees[i.dataset.fee]=i.value.trim()})}if(!o.types||!o.types.length)o.types=['Day','Boarding'];if($('#bd'))o.bands=$('#bd').value.split('\n').map(l=>l.split(',').map(x=>x.trim())).filter(p=>p[1]).map(p=>({m:+p[0],g:p[1],r:p[2]||''})).sort((a,b)=>b.m-a.m);if(document.querySelector('[data-sj]'))o.classes=C.classes.map((x,i)=>({...x,s:document.querySelector(`[data-sj="${i}"]`).value.split(',').map(z=>z.trim()).filter(Boolean)}));if(!/^\d{4}-\d{4}$/.test(o.ses))return toast('Session must look like 2025-2026.','err');if(!(o.days>0)||!(o.ca>=0)||!(o.ex>=0)||o.ca+o.ex!==100)return toast('CA max + Exam max must equal 100, and school days must be more than 0.','err');if(!o.bands.length||o.bands.some(b=>isNaN(b.m))||!o.bands.some(b=>b.m<=0))return toast('Grading: each line needs "min, grade, remark", and one band must start at 0.','err');if(o.classes.some(x=>!x.s.length))return toast('Every class needs at least one subject.','err');overlay('Saving settings…','Writing to the database.');try{await db.doc('cfg/school').set(o);C=o;sub();draw();toast('Settings saved','ok')}catch(x){toast('Could not save settings: '+(x.message||x),'err')}finally{overlayHide()}}
+if(a=='save-pass'){const v=+$('#promoPassInput').value;if(!(v>=0&&v<=100))return toast('Pass mark must be between 0 and 100.','err');overlay('Saving pass mark…','Writing to the database.');try{const o={...C,promoPass:v};await db.doc('cfg/school').set(o);C=o;setSaveState('saved');draw();toast('Pass mark updated to '+v,'ok')}catch(x){toast('Could not save pass mark: '+(x.message||x),'err')}finally{overlayHide()}}
+if(a=='promo'){if(!/^\d{4}-\d{4}$/.test(C.ses))return toast('Fix the session format (e.g. 2025-2026) in Settings first.','err');if(C.t<2&&prompt('Promotion is normally run after Third Term. It is currently '+T[C.t]+'. Type the session name ('+C.ses+') to confirm:')!==C.ses)return;const idx=C.classes.map(x=>x.n),done=h=>h.ses==C.ses&&['Promoted','Repeated','Graduated'].includes(h.out),plan=ST.filter(x=>x.on!==false&&idx.includes(x.cls)&&!(x.hist||[]).some(done)).map(s=>({s,...decide(s)})),bad=plan.filter(p=>p.out=='promote'&&!p.to);if(bad.length)return alert(bad.length+' promoted student(s) have no next class yet (e.g. '+bad.slice(0,5).map(p=>p.s.name+' / '+p.s.cls).join(', ')+'). Choose their class in the yellow box or in the "Moves to" column first.');const up=plan.filter(p=>p.out=='promote').length;if(!confirm('Promote '+up+' student(s) and keep '+(plan.length-up)+' in their class (repeat, cumulative average below '+passMk()+')?\n\nDownload a backup first (Settings → Backup). This cannot be undone automatically.'))return;overlay('Running promotion…','Moving students to the next class.');try{for(const p of plan){const s=p.s,rep=p.out=='repeat',to=p.to,u={cls:to,...(!rep&&to!='Graduated'&&p.ty&&p.ty!=s.type?{type:p.ty}:{}),hist:[...(s.hist||[]),{ses:C.ses,cls:s.cls,out:rep?'Repeated':to=='Graduated'?'Graduated':'Promoted',avg:p.c?+p.c.avg.toFixed(1):null}]};if(to=='Graduated')u.on=false;await db.doc('students/'+s.reg).update(u)}const o={...C,ses:C.ses.split('-').map(n=>+n+1).join('-'),t:0};await db.doc('cfg/school').set(o);C=o;ptt={};pty={};POV={};sub();draw();toast('Promotion complete. New session opened.','ok')}catch(x){toast('Promotion stopped: '+(x.message||x)+'. Students already moved are skipped if you run it again.','err')}finally{overlayHide()}}});
+$('#m').addEventListener('change',e=>{const t=e.target;if(t.id!='lg'||!db||!admin||!t.files[0])return;overlay('Uploading logo…','Resizing and saving.');const im=new Image();im.onload=async()=>{const k=Math.min(1,300/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k)||1;cv.height=Math.round(im.height*k)||1;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);const o={...C,logo:cv.toDataURL('image/png')};try{await db.doc('cfg/school').set(o);C=o;draw();toast('Logo saved','ok')}catch(x){toast('Logo could not be saved: '+(x.message||x),'err')}finally{overlayHide()}};im.onerror=()=>{toast('Could not read that image.','err');overlayForceHide()};im.src=URL.createObjectURL(t.files[0])});
+$('#m').addEventListener('click',async e=>{if(e.target.dataset.act=='rmlogo'&&db&&admin){const o={...C};delete o.logo;await db.doc('cfg/school').set(o);C=o;draw();toast('Logo removed','ok')}});
 const nz=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
 function vInfo(){
-  const c=curC(),L=act(c);
+  const c=curC(),L=act(c).filter(s=>sel.ty=='ALL'||(s.type||'')==sel.ty);
   const bio=admin?(s,k,w)=>{
     if(k==='type') return `<td><select data-st="${k}" data-r="${esc(s.reg)}">${(C.types||['Day','Boarding']).map(t=>`<option ${s[k]==t?'selected':''}>${esc(t)}</option>`).join('')}</select></td>`;
     return `<td><input data-st="${k}" data-r="${esc(s.reg)}" value="${esc(s[k]||'')}" size="${w}"></td>`;
   }:(s,k,w)=>`<td>${esc(s[k]||'')}</td>`;
-  return`<div class="box"><div class="row">${clsSel()}<span class="mu">${admin
+  return`<div class="box"><div class="row">${clsSel()}${tySel()}<span class="mu">${admin
     ?'Bio-data, attendance and ratings (1-5). Everything saves automatically.'
     :'Bio-data is view-only for teachers. Attendance and domain ratings are editable for your assigned classes.'}</span></div><div class="sc"><table><tr><th>Reg No.</th><th>Full Name</th><th>Class Type</th><th>Gender</th><th>Days Present</th><th>Days Absent</th><th>House</th><th>Parent Phone</th><th>Parents Email</th>${TR.map(t=>`<th>${t}</th>`).join('')}</tr>${L.map(s=>{const d=SC[s.reg]||{},dm=d.dom||{},p=d.pres??'';return`<tr><td>${esc(s.reg)}</td>${bio(s,'name',22)}${bio(s,'type',8)}${bio(s,'g',8)}<td><input type="number" data-f="pres" data-r="${esc(s.reg)}" value="${p}" min="0" max="${C.days}"></td><td class="c">${p===''?'':Math.max(0,C.days-p)}</td>${bio(s,'house',8)}${bio(s,'phone',12)}${bio(s,'email',22)}${TR.map(t=>`<td><input type="number" min="1" max="5" data-f="dom" data-t="${t}" data-r="${esc(s.reg)}" value="${dm[t]??''}"></td>`).join('')}</tr>`}).join('')}</table></div>${L.length?'':'<p class="mu">No students in this class yet.</p>'}</div>`
 }
 function vImport(){return`<div class="box"><b>Import from Excel <span class="tag">ADMIN</span></b><p class="mu">In Google Sheets choose File → Download → Microsoft Excel (.xlsx), then upload it here. Sheets named "Info <Class>" and "Score_<Class>" (or just "<Class>") are read. Students are matched by Reg No., scores and attendance go into ${sesL(C.ses)} · ${T[C.t]}. Re-import updates instead of duplicating.</p><div class="row"><input type="file" id="xf" accept=".xlsx,.xlsm,.xls"><button class="b" data-act="xl">Import</button></div><label class="mu"><input type="checkbox" id="xs"> Also import school details, term and class subjects from the Settings sheet</label><div id="xst" class="mu" style="white-space:pre-wrap;margin-top:8px"></div></div>`}
 
-/* STRICT 1-PAGE PDF GENERATION — aspect-ratio preserved, vertically centred.
-   Two RAF ticks + a short timeout let the browser re-lay-out before html2canvas captures. */
+const FIT_W=780,FIT_H=1060;
+const FIT_V=[['pv',3,0.5,'px','s'],['rp',7,1,'px','s'],['tp',6,2,'px','s'],['lh',80,40,'px','s'],['lw',110,54,'px','s'],['sm',10,1,'px','s'],['bm',8,3,'px','s'],['bm2',14,3,'px','s'],['bp',3,0,'px','s'],['tm',14,3,'px','s'],['rh',24,13,'px','s'],['rsm',6,2,'px','s'],['sg',30,3,'px','s'],['si',56,26,'px','s'],['fm',16,3,'px','s'],['ph',6,3,'px','s'],['fs',12,9.5,'px','f'],['fs2',14,10.5,'px','f'],['h2',21,15,'px','f']];
+const FIT_N=30;
+function fitSet(el,i){const u=i/(FIT_N-1),sp=Math.min(1,u/.6),fp=Math.max(0,(u-.4)/.6);FIT_V.forEach(([k,a,b,un,ph])=>{const f=ph=='s'?sp:fp;el.style.setProperty('--'+k,(a+(b-a)*f).toFixed(2)+un)})}
+function fitBox(){let b=document.getElementById('fitbox');if(!b){b=document.createElement('div');b.id='fitbox';b.setAttribute('aria-hidden','true');b.style.cssText='position:absolute;left:-10000px;top:0;width:'+FIT_W+'px;visibility:hidden;pointer-events:none';document.body.append(b)}return b}
+function fitOne(card){
+  const box=fitBox(),cl=card.cloneNode(true);
+  cl.removeAttribute('style');cl.style.cssText='width:'+FIT_W+'px;max-width:none;margin:0';box.append(cl);
+  const H=i=>{fitSet(cl,i);return cl.offsetHeight};
+  let lo=0,hi=FIT_N-1,best=hi,h=H(0);
+  if(h<=FIT_H)best=0;
+  else{while(lo<hi){const m=(lo+hi)>>1;if(H(m)<=FIT_H)hi=m;else lo=m+1}best=lo;h=H(best)}
+  box.removeChild(cl);
+  card.style.cssText='';fitSet(card,best);
+  card.style.setProperty('--pz',(h>FIT_H?Math.max(.5,FIT_H/h):1).toFixed(4));
+  card.dataset.fit=best+'/'+(FIT_N-1);
+}
+function fitCards(){document.querySelectorAll('#m .rc').forEach(fitOne)}
+let fitT;const fitSoon=()=>{clearTimeout(fitT);fitT=setTimeout(fitCards,30)};
+new MutationObserver(fitSoon).observe($('#m'),{childList:true,subtree:true});
+window.addEventListener('beforeprint',fitCards);
+window.addEventListener('load',fitSoon);
+
 async function pdf(){
   const cs=[...document.querySelectorAll('#m .rc')],st=$('#pst');if(!cs.length)return;
+  const host=document.createElement('div');host.style.cssText='position:absolute;left:-10000px;top:0;width:'+FIT_W+'px;background:#fff';document.body.append(host);
+  overlay('Building PDF…','Rendering ' + cs.length + ' page(s).');
   try{
     if(!window.jspdf||!window.html2canvas)throw new Error('PDF tools did not load, reload the page');
-    fitCards($('#m'));
-    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-    await new Promise(r=>setTimeout(r,80));
-    const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'});
-    const PAGE_W=210,PAGE_H=297,MARGIN=20; /* mm of white space around the card; raise for wider margins */
-    const MAX_W=PAGE_W-MARGIN*2,MAX_H=PAGE_H-MARGIN*2;
+    fitCards();
+    const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4',compress:true});
     for(let i=0;i<cs.length;i++){
       st.textContent='Building page '+(i+1)+' of '+cs.length+'…';
-      const cv=await html2canvas(cs[i],{scale:4,backgroundColor:'#fff'});
-      const imgData=cv.toDataURL('image/png');
+      document.getElementById('ovSub').textContent='Rendering page ' + (i+1) + ' of ' + cs.length + '…';
+      const cl=cs[i].cloneNode(true);Object.assign(cl.style,{width:FIT_W+'px',maxWidth:'none',margin:'0',border:'0',paddingTop:'0'});host.append(cl);
+      const cv=await html2canvas(cl,{scale:3,backgroundColor:'#fff',windowWidth:FIT_W+40});
+      host.removeChild(cl);
       if(i)doc.addPage();
-      let w=MAX_W,h=cv.height*(MAX_W/cv.width);
-      if(h>MAX_H){h=MAX_H;w=cv.width*(MAX_H/cv.height)}
-      const x=(PAGE_W-w)/2,y=(PAGE_H-h)/2;
-      doc.addImage(imgData,'PNG',x,y,w,h);
+      let w=190,h=cv.height*w/cv.width;
+      if(h>277){w=w*277/h;h=277}
+      doc.addImage(cv.toDataURL('image/jpeg',.95),'JPEG',(210-w)/2,10,w,h,undefined,'FAST');
     }
-    const blob=doc.output('blob');
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${curC()}_${sel.r=='ALL'?'All':sel.r}_${pid()}.pdf`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);st.textContent='PDF ready.'
-  }catch(e){st.textContent='PDF failed: '+(e.message||e)}
+    const blob=doc.output('blob'),a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download=`${curC()}_${sel.ty&&sel.ty!='ALL'?sel.ty+'_':''}${sel.r=='ALL'?'All':sel.r}_${pid()}.pdf`.replace(/[\\/:*?"<>|]/g,'-');a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    st.textContent='PDF ready.';toast('PDF downloaded','ok')
+  }catch(e){st.textContent='PDF failed: '+(e.message||e);toast('PDF failed: '+(e.message||e),'err')}
+  host.remove();overlayHide()
 }
 
-async function xl(){const f=$('#xf').files[0],o=$('#xst');if(!f)return alert('Choose the .xlsx file first.');if(!window.XLSX)return alert('The spreadsheet reader did not load. Reload the page.');if(!db)return;const L=[];o.textContent='Reading…';
+async function xl(){const f=$('#xf').files[0],o=$('#xst');if(!f)return toast('Choose the .xlsx file first.','err');if(!window.XLSX)return toast('The spreadsheet reader did not load.','err');if(!db)return;const L=[];o.textContent='Reading…';
+overlay('Reading Excel file…','Parsing sheets.');
 try{const wb=XLSX.read(await f.arrayBuffer(),{type:'array'}),rows=n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}),find=n=>wb.SheetNames.find(x=>nz(x)==nz(n)),tr=x=>String(x??'').trim();let cfg={...C};
-if($('#xs').checked&&find('Settings')){
-  const mp={schoolname:'name',schooladdress:'address',schoolmotto:'motto',headteacherproprietor:'principal',nexttermresumptiondate:'resume'},cl=[];
-  rows(find('Settings')).forEach(r=>{
-    const k=nz(r[1]),v=tr(r.slice(2).find(x=>tr(x)!==''));
-    if(!v||v[0]=='[')return;
-    if(mp[k])cfg[mp[k]]=v;
-    else if(k=='academicsession')cfg.ses=v.replace('/','-');
-    else if(k=='currentterm'&&T.includes(v))cfg.t=T.indexOf(v);
-    else{
-      const subs=[...new Set(r.slice(3).map(tr).filter(Boolean))];
-      if(tr(r[1])&&subs.length&&Number(r[2])>0)cl.push({n:tr(r[1]),s:subs});
-    }
-  });
-  if(cl.length){
-    /* Merge with existing classes to preserve lv/arm for matching names. */
-    const byName=Object.fromEntries(C.classes.map(x=>[x.n.toLowerCase(),x]));
-    cfg.classes=cl.map(x=>{
-      const prev=byName[x.n.toLowerCase()];
-      return prev?{...prev,n:x.n,s:x.s}:{n:x.n,s:x.s};
-    });
-  }
-  await db.doc('cfg/school').set(cfg);C=cfg;sub();L.push('Settings imported ('+C.classes.length+' classes).');
-}
+if($('#xs').checked&&find('Settings')){const mp={schoolname:'name',schooladdress:'address',schoolmotto:'motto',headteacherproprietor:'principal',nexttermresumptiondate:'resume'},cl=[];rows(find('Settings')).forEach(r=>{const k=nz(r[1]),v=tr(r.slice(2).find(x=>tr(x)!==''));if(!v||v[0]=='[')return;if(mp[k])cfg[mp[k]]=v;else if(k=='academicsession')cfg.ses=v.replace('/','-');else if(k=='currentterm'&&T.includes(v))cfg.t=T.indexOf(v);else{const s=[...new Set(r.slice(3).map(tr).filter(Boolean))];if(tr(r[1])&&s.length&&Number(r[2])>0)cl.push({n:tr(r[1]),s})}});if(cl.length){const byName=Object.fromEntries(C.classes.map(x=>[x.n.toLowerCase(),x]));cfg.classes=cl.map(x=>{const prev=byName[x.n.toLowerCase()];return prev?{...prev,n:x.n,s:x.s}:{n:x.n,s:x.s}})}await db.doc('cfg/school').set(cfg);C=cfg;sub();L.push('Settings imported ('+C.classes.length+' classes).')}
 const studs={},docs={},P=pid();
-for(const c of C.classes){
-  const is=find('Info '+c.n)||find(c.n);
-  if(is){
-    const R=rows(is),hi=R.findIndex(r=>nz(r[0])=='regno');
-    if(hi>=0){
-      const H=R[hi].map(nz),ix=k=>H.indexOf(nz(k));
-      R.slice(hi+1).forEach(r=>{
-        const g=k=>tr(r[ix(k)]),reg=g('Reg No.'),nm=g('Full Name');
-        if(!reg||!nm)return;
-        const ex=ST.find(x=>x.reg==reg)||{hist:[]},o0=SC[reg]||{};
-        studs[reg]={...ex,reg,name:nm,cls:c.n,g:g('Gender'),type:g('Class Type'),house:g('House'),phone:g('Parent Phone'),email:g('Parents Email'),on:ex.on!==false};
-        const d=docs[reg]={...o0,p:P,reg,cls:c.n,subs:c.s,sc:{...(o0.sc||{})},dom:{...(o0.dom||{})}},pr=g('Days Present');
-        if(pr!=='')d.pres=Math.min(+pr||0,C.days);
-        TR.forEach(t=>{const v=+g(t);if(v>=1&&v<=5)d.dom[t]=v});
-      });
-    }
-  }else L.push('No info sheet found for '+c.n);
-  /* Prefer Score_<class> / <class>_scores over bare <class> (which may be the Info sheet). */
-  const ss=find('Score_'+c.n)||find(c.n+'_scores')||(!find('Info '+c.n)?find(c.n):null);
-  if(!ss){L.push('No score sheet found for '+c.n);continue}
-  const R=rows(ss);
-  /* Header row: any cell in col>1 matching Test / CA / Class Assessment */
-  const hi=R.findIndex(r=>r.some((x,i)=>i>1&&/^(test|ca|class\s*assessment)$/i.test(tr(x))));
-  if(hi<0){L.push('Sheet "'+ss+'" has no Test/CA columns — skipped.');continue}
-  const pairs=[];
-  R[hi].forEach((x,i)=>{
-    if(i>1&&/^(test|ca|class\s*assessment)$/i.test(tr(x))){
-      const m=c.s.find(y=>nz(y)==nz(tr(x).replace(/^(test|ca|class\s*assessment)$/i,'')));
-      if(m&&!pairs.some(p=>p.s==m))pairs.push({s:m,i});
-    }
-  });
-  R.slice(hi+1).forEach(r=>{
-    const reg=tr(r[0]);
-    let d=docs[reg];
-    if(!d&&reg){
-      const ex=ST.find(x=>x.reg==reg&&x.cls==c.n);
-      if(ex){const o0=SC[reg]||{};d=docs[reg]={...o0,p:P,reg,cls:c.n,subs:c.s,sc:{...(o0.sc||{})},dom:{...(o0.dom||{})}}}
-    }
-    if(!reg||!d)return;
-    pairs.forEach(p=>{
-      const a=tr(r[p.i]),b=tr(r[p.i+1]);
-      if(a===''&&b==='')return;
-      const na=(a===''||a==null)?'':+a, nb=(b===''||b==null)?'':+b;
-      /* Skip garbage cells; never overwrite with 0 from a non-numeric entry */
-      if(a!=='' && (isNaN(na)||na<0))return;
-      if(b!=='' && (isNaN(nb)||nb<0))return;
-      d.sc[p.s]=[a===''?'':Math.min(na||0,C.ca), b===''?'':Math.min(nb||0,C.ex)];
-    });
-  });
-}
-const S=Object.values(studs),D=Object.values(docs);let n=0;const par=async(a,fn)=>{for(let i=0;i<a.length;i+=8){await Promise.all(a.slice(i,i+8).map(fn));n+=Math.min(8,a.length-i);o.textContent='Saving… '+n+' of '+(S.length+D.length)}};await par(S,s=>db.doc('students/'+s.reg).set(s));await par(D,d=>db.doc('scores/'+P+'_'+d.reg).set(d));
-o.textContent=L.concat(`Done: ${S.length} students and ${D.length} records imported into ${sesL(C.ses)} · ${T[C.t]}.`).join('\n')}catch(e){o.textContent='Import failed: '+(e.message||e)}}
+for(const c of C.classes){const is=find('Info '+c.n)||find(c.n);if(is){const R=rows(is),hi=R.findIndex(r=>nz(r[0])=='regno');if(hi>=0){const H=R[hi].map(nz),ix=k=>H.indexOf(nz(k));R.slice(hi+1).forEach(r=>{const g=k=>tr(r[ix(k)]),reg=g('Reg No.'),nm=g('Full Name');if(!reg||!nm)return;const ex=ST.find(x=>x.reg==reg)||{hist:[]},o0=SC[reg]||{};studs[reg]={...ex,reg,name:nm,cls:c.n,g:g('Gender'),type:g('Class Type'),house:g('House'),phone:g('Parent Phone'),email:g('Parents Email'),on:ex.on!==false};const d=docs[reg]={...o0,p:P,reg,cls:c.n,subs:c.s,sc:{...(o0.sc||{})},dom:{...(o0.dom||{})}},pr=g('Days Present');if(pr!=='')d.pres=Math.min(+pr||0,C.days);TR.forEach(t=>{const v=+g(t);if(v>=1&&v<=5)d.dom[t]=v})})}}else L.push('No info sheet found for '+c.n);
+const ss=find('Score_'+c.n)||find(c.n+'_scores')||(!find('Info '+c.n)?find(c.n):null);if(!ss){L.push('No score sheet found for '+c.n);continue}const R=rows(ss),hi=R.findIndex(r=>r.some((x,i)=>i>1&&/(test|\s+ca|\s+class\s*assessment)$/i.test(tr(x))));if(hi<0){L.push('Sheet "'+ss+'" has no Test/CA columns — skipped.');continue}const pairs=[];R[hi].forEach((x,i)=>{if(i>1&&/(test|\s+ca|\s+class\s*assessment)$/i.test(tr(x))){const m=c.s.find(y=>nz(y)==nz(tr(x).replace(/(\s*test|\s+ca|\s+class\s*assessment)$/i,'')));if(m&&!pairs.some(p=>p.s==m))pairs.push({s:m,i})}});R.slice(hi+1).forEach(r=>{const reg=tr(r[0]);let d=docs[reg];if(!d&&reg){const ex=ST.find(x=>x.reg==reg&&x.cls==c.n);if(ex){const o0=SC[reg]||{};d=docs[reg]={...o0,p:P,reg,cls:c.n,subs:c.s,sc:{...(o0.sc||{})},dom:{...(o0.dom||{})}}}}if(!reg||!d)return;pairs.forEach(p=>{const a=tr(r[p.i]),b=tr(r[p.i+1]);if(a===''&&b==='')return;const na=a===''?'':+a,nb=b===''?'':+b;if(a!==''&&(isNaN(na)||na<0))return;if(b!==''&&(isNaN(nb)||nb<0))return;d.sc[p.s]=[a===''?'':Math.min(na||0,C.ca),b===''?'':Math.min(nb||0,C.ex)]})})}
+const S=Object.values(studs),D=Object.values(docs);let n=0;const par=async(a,fn)=>{for(let i=0;i<a.length;i+=8){await Promise.all(a.slice(i,i+8).map(fn));n+=Math.min(8,a.length-i);o.textContent='Saving… '+n+' of '+(S.length+D.length);document.getElementById('ovSub').textContent='Saving… ' + n + ' of ' + (S.length + D.length)}};overlay('Saving…','Writing to the database.');await par(S,s=>db.doc('students/'+s.reg).set(s));await par(D,d=>db.doc('scores/'+P+'_'+d.reg).set(d));
+o.textContent=L.concat(`Done: ${S.length} students and ${D.length} records imported into ${sesL(C.ses)} · ${T[C.t]}.`).join('\n');toast('Import complete','ok')}catch(e){o.textContent='Import failed: '+(e.message||e);toast('Import failed: '+(e.message||e),'err')}finally{overlayHide()}}
 $('#m').addEventListener('click',e=>{const a=e.target.dataset.act;if(a=='print'){try{window.print()}catch(x){}}else if(a=='pdf')pdf();else if(a=='xl'&&admin)xl();else if(a=='bprint')bprint();else if(a=='bxl')bxl()});
-$('#m').addEventListener('change',async e=>{const d=e.target.dataset;if(!d.st||!db||!admin)return;const s=ST.find(x=>x.reg==d.r);if(!s)return;s[d.st]=e.target.value.trim();try{await db.doc('students/'+s.reg).update({[d.st]:s[d.st]})}catch(x){alert('Could not save: '+(x.message||x))}});
+$('#m').addEventListener('change',async e=>{const d=e.target.dataset;if(!d.st||!db||!admin)return;const s=ST.find(x=>x.reg==d.r);if(!s)return;s[d.st]=e.target.value.trim();try{await db.doc('students/'+s.reg).update({[d.st]:s[d.st]})}catch(x){toast('Could not save: '+(x.message||x),'err')}});
 const hs=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return h},pk=(a,h,o=0)=>a[(h+o)%a.length];
 function remarks(s,k,d,p){
 const dom=d.dom||{},gv=n=>{const v=+dom[n];return v>=1&&v<=5?v:null},nm=String(s.name||'').trim().split(/\s+/)[0]||'This pupil',gd=String(s.g||''),G=/^f/i.test(gd)?['she','her']:/^m/i.test(gd)?['he','his']:null,
@@ -653,26 +896,51 @@ if(pc!==null)out.push(pc>=95?P(['Attendance is excellent.',`${He} hardly ever mi
 const ac2=[['An excellent academic result.','Outstanding classwork.'],['A very good academic result.','Very good work in class.'],['A good academic result.','A fair academic result.'],['A pass; more effort is needed.','Academic work needs improvement.'],['Academic work is weak and needs urgent attention.','Parents should help with studies at home.']],
 HC=[['We are proud of '+nm+'.','Well done, keep it up.'],['Aim for the top next term.','Keep up the good work.'],['More effort will bring better results.','Keep trying.'],['Greater commitment is needed next term.','Parents should supervise studies closely.'],['Parents are advised to meet the school.','Urgent improvement is needed.']];
 let q=out.join(' ');if(k.has){q+=(q?' ':'')+P(ac2[ti],'ac');if(p&&p.p&&p.n>1&&p.p<=3)q+=` Well done on finishing ${ord(p.p)} in class.`;q+=' '+P(HC[ti],'hc')}
+
+/* --- THIRD TERM: Promotion / Repeat remark --- */
+if(C.t==2){
+  const avg = k.avg;
+  const pass = passMk();
+  const isPromoted = avg >= pass;
+  
+  const prArray = isPromoted 
+    ? [
+        `Having passed the required assessment, ${nm} is hereby promoted to the next class.`,
+        `Based on the cumulative result this session, ${nm} has earned promotion to the next class.`,
+        `${nm}'s performance this session meets the criteria for promotion to the next class.`
+      ]
+    : [
+        `Due to ${his} performance this session, ${nm} is advised to repeat this class.`,
+        `Based on the cumulative result, ${nm} is advised to repeat the current class to build a stronger foundation.`,
+        `Following the end-of-session assessment, ${nm} is advised to repeat this class.`
+      ];
+      
+  const prRemark = P(prArray, 'pr');
+  q = isPromoted 
+    ? `We congratulate ${nm} on a successful session. ${prRemark}`
+    : `${prRemark} We wish ${nm} a more productive term next session.`;
+}
+
 return{t:t.trim(),p:q.trim()}}
 function rmkBox(one,d,pm){const R=remarks(one,calc(d,cd(one.cls).s),d,pm?(pm[one.reg]||{p:0,n:0}):pos(one.reg,one.cls));return`<label class="mu">Class teacher's remark (auto-written; type to override)<textarea placeholder="${esc(R.t)}" data-f="tr" data-r="${esc(one.reg)}">${esc(d.tr||'')}</textarea></label><label class="mu">${headOf(one.cls).role}'s remark (auto-written; type to override)<textarea placeholder="${esc(R.p)}" data-f="pr" data-r="${esc(one.reg)}">${esc(d.pr||'')}</textarea></label>`}
-$('#m').addEventListener('change',e=>{const t=e.target;if(!['sg','psg'].includes(t.id)||!db||!admin||!t.files[0])return;const fld=t.id=='psg'?'psig':'sig';const im=new Image();im.onload=async()=>{const k=Math.min(1,400/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k)||1;cv.height=Math.round(im.height*k)||1;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);const o={...C,[fld]:cv.toDataURL('image/png')};try{await db.doc('cfg/school').set(o);C=o;draw()}catch(x){alert('Signature could not be saved: '+(x.message||x))}};im.onerror=()=>alert('Could not read that image.');im.src=URL.createObjectURL(t.files[0])});
-$('#m').addEventListener('click',async e=>{const a0=e.target.dataset.act;if((a0=='rmsig'||a0=='rmpsig')&&db&&admin){const o={...C};delete o[a0=='rmpsig'?'psig':'sig'];await db.doc('cfg/school').set(o);C=o;draw()}});
+$('#m').addEventListener('change',e=>{const t=e.target;if(!['sg','psg'].includes(t.id)||!db||!admin||!t.files[0])return;overlay('Uploading signature…','Resizing and saving.');const fld=t.id=='psg'?'psig':'sig';const im=new Image();im.onload=async()=>{const k=Math.min(1,400/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k)||1;cv.height=Math.round(im.height*k)||1;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);const o={...C,[fld]:cv.toDataURL('image/png')};try{await db.doc('cfg/school').set(o);C=o;draw();toast('Signature saved','ok')}catch(x){toast('Signature could not be saved: '+(x.message||x),'err')}finally{overlayHide()}};im.onerror=()=>{toast('Could not read that image.','err');overlayForceHide()};im.src=URL.createObjectURL(t.files[0])});
+$('#m').addEventListener('click',async e=>{const a0=e.target.dataset.act;if((a0=='rmsig'||a0=='rmpsig')&&db&&admin){const o={...C};delete o[a0=='rmpsig'?'psig':'sig'];await db.doc('cfg/school').set(o);C=o;draw();toast('Signature removed','ok')}});
 let PV={},UP=[];
-function cum(s,k){if(!C.t)return'';let sum=k.tot,av=k.avg,n=1;const row=(a,b,c,e)=>`<tr><td>${a}</td><td>${b}</td><td>${c}</td><td>${e}</td></tr>`,R=[];for(let j=0;j<C.t;j++){const d=(PV[j]||{})[s.reg],x=d?calc(d,d.subs||Object.keys(d.sc||{})):null;R.push(row(T[j],x?x.tot:'—',x?x.avg.toFixed(1):'—',x?x.b.g:'—'));if(x){sum+=x.tot;av+=x.avg;n++}}R.push(row(T[C.t]+' (this term)',k.tot,k.avg.toFixed(1),k.b.g));if(C.t==2)R.push(row('Cumulative ('+n+' terms)',sum,(av/n).toFixed(1),gr(av/n).g));return`<div class="bar" style="margin-top:10px">TERMLY RECORD</div><table class="cm"><tr><th>Term</th><th>Total Score</th><th>Average</th><th>Grade</th></tr>${R.join('')}</table>`}
-function bprint(){let st=document.getElementById('pg');if(!st){st=document.createElement('style');st.id='pg';document.head.append(st)}st.textContent='@media print{@page{size:A4 landscape;margin:0}main{padding:10mm!important}}';const off=()=>{st.textContent='';window.removeEventListener('afterprint',off)};window.addEventListener('afterprint',off);try{window.print()}catch(x){}}
-function bxl(){if(!window.XLSX)return alert('The spreadsheet library did not load. Reload the page.');const c=curC(),subs=cd(c).s,pm=posMap(c),L=act(c).map(s=>({s,k:calc(SC[s.reg],subs)})).sort((a,b)=>b.k.tot-a.k.tot),rows=[['Pos.','Reg No.','Name',...subs,'Total','Average','Grade']];L.forEach(x=>rows.push([(pm[x.s.reg]||{p:0}).p||'',x.s.reg,x.s.name,...x.k.rows.map(r=>r.e?'':r.t),x.k.has?x.k.tot:'',x.k.has?+x.k.avg.toFixed(1):'',x.k.b.g]));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),c.replace(/[\\\/?*\[\]:]/g,'').slice(0,31)||'Class');const b=new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/octet-stream'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='Broadsheet_'+c+'_'+pid()+'.xlsx';document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),5000)}
+function cum(s,k){if(!C.t)return'';let sum=k.tot,av=k.avg,n=1;const row=(a,b,c,e)=>`<tr><td>${a}</td><td>${b}</td><td>${c}</td><td>${e}</td></tr>`,R=[];for(let j=0;j<C.t;j++){const d=(PV[j]||{})[s.reg],x=d?calc(d,d.subs||Object.keys(d.sc||{})):null;R.push(row(T[j],x?x.tot:'—',x?x.avg.toFixed(1):'—',x?x.b.g:'—'));if(x){sum+=x.tot;av+=x.avg;n++}}R.push(row(T[C.t]+' (this term)',k.tot,k.avg.toFixed(1),k.b.g));if(C.t==2)R.push(row('Cumulative ('+n+' terms)',sum,(av/n).toFixed(1),gr(av/n).g));return`<div class="bar m2">TERMLY RECORD</div><table class="cm"><tr><th>Term</th><th>Total Score</th><th>Average</th><th>Grade</th></tr>${R.join('')}</table>`}
+function bprint(){let st=document.getElementById('pg');if(!st){st=document.createElement('style');st.id='pg';document.head.append(st)}st.textContent='@media print{@page{size:A4 landscape;margin:10mm}}';const off=()=>{st.textContent='';window.removeEventListener('afterprint',off)};window.addEventListener('afterprint',off);try{window.print()}catch(x){}}
+function bxl(){if(!window.XLSX)return toast('The spreadsheet library did not load.','err');const c=curC(),subs=cd(c).s,pm=posMap(c),L=act(c).map(s=>({s,k:calc(SC[s.reg],subs)})).sort((a,b)=>b.k.tot-a.k.tot),rows=[['Pos.','Reg No.','Name',...subs,'Total','Average','Grade']];L.forEach(x=>rows.push([(pm[x.s.reg]||{p:0}).p||'',x.s.reg,x.s.name,...x.k.rows.map(r=>r.e?'':r.t),x.k.has?x.k.tot:'',x.k.has?+x.k.avg.toFixed(1):'',x.k.b.g]));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),c.replace(/[\\\/?*\[\]:]/g,'').slice(0,31)||'Class');const b=new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/octet-stream'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='Broadsheet_'+c+'_'+pid()+'.xlsx';document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),5000);toast('Broadsheet exported','ok')}
 /* ===== DANGER ZONE: delete all students / all scores, re-checks the admin password first ===== */
-function dangerBox(){return`<div class="box" style="border-color:#c0392b"><b style="color:#c0392b">Danger zone</b><p class="mu">Permanently deletes data for every class and every term. School settings, logo, signatures and staff logins are kept. You will be asked to enter your password again.</p><label style="display:block;margin:4px 0"><input type="checkbox" id="dz-s"> Delete all students (names, bio-data, promotion history)</label><label style="display:block;margin:4px 0"><input type="checkbox" id="dz-c"> Delete all scores, attendance, ratings and remarks (all terms)</label><button class="w" data-act="wipe" style="margin-top:10px">Delete selected records…</button></div>`}
-async function wipe(){const s=$('#dz-s').checked,c=$('#dz-c').checked;if(!s&&!c)return alert('Tick what you want to delete first.');if(!db||!admin)return;
+function dangerBox(){return`<div class="box" style="border-color:var(--danger)"><b style="color:var(--danger)">Danger zone</b><p class="mu">Permanently deletes data for every class and every term. School settings, logo, signatures and staff logins are kept. You will be asked to enter your password again.</p><label style="display:block;margin:4px 0"><input type="checkbox" id="dz-s"> Delete all students (names, bio-data, promotion history)</label><label style="display:block;margin:4px 0"><input type="checkbox" id="dz-c"> Delete all scores, attendance, ratings and remarks (all terms)</label><button class="w" data-act="wipe" style="margin-top:10px">Delete selected records…</button></div>`}
+async function wipe(){const s=$('#dz-s').checked,c=$('#dz-c').checked;if(!s&&!c)return toast('Tick what you want to delete first.','err');if(!db||!admin)return;
 const cnt=async col=>{const{count}=await sb.from('docs').select('*',{count:'exact',head:true}).eq('col',col);return count||0};
 const ns=s?await cnt('students'):0,nc=c?await cnt('scores'):0,em=(await sb.auth.getUser()).data.user.email;
-const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:99';
-o.innerHTML=`<form class="box" style="width:340px"><b style="color:#c0392b">Confirm permanent deletion</b><p>This will delete:${s?`<br>• <b>${ns}</b> student record(s)`:''}${c?`<br>• <b>${nc}</b> score record(s)`:''}<br>This cannot be undone.</p><p class="mu">Signed in as ${esc(em)}. Enter your password again to continue.</p><p><input name="p" type="password" placeholder="Password" style="width:100%;box-sizing:border-box" required></p><p><input name="t" placeholder="Type DELETE to confirm" style="width:100%;box-sizing:border-box" required></p><p class="mu" id="dzm"></p><button class="w" style="width:48%">Delete forever</button> <button type="button" id="dzx" style="width:48%">Cancel</button></form>`;
+const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:9000';
+o.innerHTML=`<form class="box" style="width:340px"><b style="color:var(--danger)">Confirm permanent deletion</b><p>This will delete:${s?`<br>• <b>${ns}</b> student record(s)`:''}${c?`<br>• <b>${nc}</b> score record(s)`:''}<br>This cannot be undone.</p><p class="mu">Signed in as ${esc(em)}. Enter your password again to continue.</p><p><input name="p" type="password" placeholder="Password" style="width:100%;box-sizing:border-box" required></p><p><input name="t" placeholder="Type DELETE to confirm" style="width:100%;box-sizing:border-box" required></p><p class="mu" id="dzm"></p><button class="w" style="width:48%">Delete forever</button> <button type="button" id="dzx" style="width:48%">Cancel</button></form>`;
 document.body.append(o);o.querySelector('#dzx').onclick=()=>o.remove();
 o.firstChild.onsubmit=async ev=>{ev.preventDefault();const f=ev.target,m=o.querySelector('#dzm');if(f.t.value.trim()!='DELETE'){m.textContent='Type DELETE exactly.';return}
 m.textContent='Checking password…';const{error:e1}=await sb.auth.signInWithPassword({email:em,password:f.p.value});if(e1){m.textContent='Wrong password. Nothing was deleted.';return}
 try{m.textContent='Deleting…';for(const[col,on]of[['scores',c],['students',s]])if(on){const{error}=await sb.from('docs').delete().eq('col',col);if(error)throw error}
-if(s)ST=[];if(c){SC={};PV={}}o.remove();draw();alert('Selected records deleted.')}catch(x){m.textContent='Failed: '+(x.message||x)}}}
+if(s)ST=[];if(c){SC={};PV={}}o.remove();draw();toast('Selected records deleted.','ok')}catch(x){m.textContent='Failed: '+(x.message||x)}}}
 $('#m').addEventListener('click',e=>{if(e.target.dataset.act=='wipe'&&admin)wipe()});
 $('#nv').addEventListener('click',e=>{if(e.target.dataset.v){view=e.target.dataset.v;draw()}});
 (async()=>{try{draw();db=await claude.use('db');user=await claude.use('user');admin=!!(user&&user.canEdit());if(!db){draw();return}
