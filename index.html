@@ -294,7 +294,7 @@ button:active{transform:translateY(0)}
   header,nav,.np,#ov,#signin,#toast{display:none!important}
   body{background:#fff}
   main{padding:0;max-width:none;margin:0;animation:none}
-  .rc{border:0;margin:0 auto;padding-top:5mm;width:780px;max-width:none;break-inside:avoid;zoom:var(--pz,1);box-shadow:none;border-radius:0}
+  .rc{border:0;margin:0 auto;padding-top:12mm;width:780px;max-width:none;break-inside:avoid;zoom:calc(var(--pz,1)*.85);box-shadow:none;border-radius:0}
   .rc+.rc{break-before:page}
   @page{size:A4;margin:0}
 }
@@ -861,9 +861,9 @@ async function pdf(){
       const cv=await html2canvas(cl,{scale:3,backgroundColor:'#fff',windowWidth:FIT_W+40});
       host.removeChild(cl);
       if(i)doc.addPage();
-      let w=190,h=cv.height*w/cv.width;
-      if(h>277){w=w*277/h;h=277}
-      doc.addImage(cv.toDataURL('image/jpeg',.95),'JPEG',(210-w)/2,10,w,h,undefined,'FAST');
+      let w=172,h=cv.height*w/cv.width;
+      if(h>262){w=w*262/h;h=262}
+      doc.addImage(cv.toDataURL('image/jpeg',.95),'JPEG',(210-w)/2,14,w,h,undefined,'FAST');
     }
     const blob=doc.output('blob'),a=document.createElement('a');
     a.href=URL.createObjectURL(blob);a.download=`${curC()}_${sel.ty&&sel.ty!='ALL'?sel.ty+'_':''}${sel.r=='ALL'?'All':sel.r}_${pid()}.pdf`.replace(/[\\/:*?"<>|]/g,'-');a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
