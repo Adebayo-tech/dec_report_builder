@@ -321,6 +321,17 @@ input.bad{border-color:var(--danger)!important;background:var(--danger-soft)!imp
   #ov .ov-card{padding:28px 24px 24px;min-width:auto;width:calc(100vw - 32px)}
   #signin .signin-card{padding:32px 24px 24px}
 }
+
+/* ---- admin control centre ---- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:0 0 14px}
+.kpi{background:var(--bg-elevated);border:1px solid var(--bd);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow-sm)}
+.kpi .kl{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--fg-muted)}
+.kpi .kv{font-size:26px;font-weight:700;margin:4px 0 2px;line-height:1.15;overflow-wrap:anywhere}
+.kpi .ks{font-size:12px;color:var(--fg-muted)}
+.cg{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin-bottom:14px}
+.cg .box{margin:0}
+details>summary{cursor:pointer}
+@media print{#lockbar{display:none!important}}
 </style>
 </head>
 <body>
@@ -432,7 +443,7 @@ function toast(msg, kind) {
   _toastT = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-let sb,ROLE=null,MYCLASSES=[];
+let sb,ROLE=null,MYCLASSES=[],ME={id:'',email:''},AUD_BULK=0;
 const Q=s=>document.querySelector(s);
 const rowDoc=r=>({id:r.id,exists:true,data:()=>r.data});
 function snap(get,col){return function(next,err){let on=1,t,last,first=1;const run=()=>get().then(r=>{if(!on)return;const g=JSON.stringify(r.docs?r.docs.map(d=>[d.id,d.data()]):[r.exists,r.data()]);if(g===last)return;last=g;next(r)}).catch(e=>err&&err(e));run();const cfg={event:'*',schema:'public',table:'docs'};if(col)cfg.filter='col=eq.'+col;
@@ -440,7 +451,7 @@ const ch=sb.channel('c'+Math.random().toString(36).slice(2)).on('postgres_change
 const poll=setInterval(()=>{if(!document.hidden)run()},60000);
 return()=>{on=0;clearInterval(poll);clearTimeout(t);sb.removeChannel(ch)}}}
 function query(col,flt){const q={where:(f,o,v)=>query(col,[...flt,[f,v]]),async get(){let all=[],from=0;for(;;){let r=sb.from('docs').select('id,data').eq('col',col).order('id').range(from,from+999);flt.forEach(([f,v])=>r=r.eq('data->>'+f,v));const{data,error}=await r;if(error)throw error;all=all.concat(data);if(data.length<1000)break;from+=1000}return{docs:all.map(rowDoc),size:all.length,empty:!all.length}}};q.onSnapshot=snap(()=>q.get(),col);return q}
-function ref(p){const sl=p.indexOf('/'),col=p.slice(0,sl),id=p.slice(sl+1),r={async get(){const{data,error}=await sb.from('docs').select('data').eq('col',col).eq('id',id).maybeSingle();if(error)throw error;return{id,exists:!!data,data:()=>data&&data.data}},async set(o){const{error}=await sb.from('docs').upsert({col,id,data:o,updated_at:new Date().toISOString()});if(error)throw error},async update(o){const s=await r.get();return r.set({...(s.data()||{}),...o})},async delete(){const{error}=await sb.from('docs').delete().eq('col',col).eq('id',id);if(error)throw error}};r.onSnapshot=snap(()=>r.get(),col);return r}
+function ref(p){const sl=p.indexOf('/'),col=p.slice(0,sl),id=p.slice(sl+1);const chk=()=>{if(typeof lockedForMe=='function'&&lockedForMe())throw new Error(LOCKMSG())};const w=async(o,old)=>{chk();const{error}=await sb.from('docs').upsert({col,id,data:o,updated_at:new Date().toISOString()});if(error)throw error;if(!AUD_BULK&&typeof audWrite=='function')audWrite(col,id,old,o)};const r={async get(){const{data,error}=await sb.from('docs').select('data').eq('col',col).eq('id',id).maybeSingle();if(error)throw error;return{id,exists:!!data,data:()=>data&&data.data}},async set(o){chk();let old;if(!AUD_BULK){try{old=(await r.get()).data()}catch(e){}}return w(o,old)},async update(o){chk();const s=await r.get(),old=s.data();return w({...(old||{}),...o},old)},async delete(){chk();let old;try{old=(await r.get()).data()}catch(e){}const{error}=await sb.from('docs').delete().eq('col',col).eq('id',id);if(error)throw error;if(typeof audDel=='function')audDel(col,id,old)}};r.onSnapshot=snap(()=>r.get(),col);return r}
 const DB={doc:ref,collection:c=>({...query(c,[]),doc:id=>ref(c+'/'+id)})};
 
 /* ============ SIGN-IN MODAL ============ */
@@ -531,11 +542,13 @@ const ready = (async () => {
   Q('header').insertAdjacentHTML('beforeend', '<a href="#" id="so">Sign out</a>');
   Q('#so').onclick = async e => {
     e.preventDefault();
+    try { if (typeof audLog == 'function') audLog('Signed out'); } catch (x) {}
     overlay('Signing out…', 'See you next time.');
     await new Promise(r => setTimeout(r, 300));
     await sb.auth.signOut();
     location.reload();
   };
+  { const { data: { session: s2 } } = await sb.auth.getSession(); if (s2) ME = { id: s2.user.id, email: s2.user.email || '' }; }
   toast('Signed in as ' + (ROLE === 'admin' ? 'administrator' : 'teacher'), 'ok');
 })();
 window.claude={use:async n=>{await ready;return n=='db'?DB:n=='user'?{canEdit:()=>ROLE=='admin',isOwner:()=>ROLE=='admin',role:ROLE,classes:MYCLASSES}:null}};
@@ -559,6 +572,7 @@ const act=c=>ST.filter(s=>s.on!==false&&s.cls==c);
 const NB={g:'—',r:''},bl=v=>v===undefined||v===null||v==='';
 function calc(d,subs){const rows=subs.map(s=>{const[a,e]=(d&&d.sc&&d.sc[s])||[];const ca=+a||0,ex=+e||0,t=ca+ex,em=bl(a)&&bl(e);return{s,ca,ex,t,b:em?NB:gr(t),e:em}});const tot=rows.reduce((x,r)=>x+r.t,0),avg=subs.length?tot/subs.length:0,has=rows.some(r=>!r.e);return{rows,tot,avg,has,b:has?gr(avg):NB}}
 const passMk=()=>C.promoPass??C.passMark??35;
+const promoNote=s=>{if(C.t!=2)return'';const p=decide(s);if(!p.c)return'';return p.out=='repeat'?'Advised to repeat this class.':p.to=='Graduated'?'Congratulations on completing the programme.':'Promoted to the next class.'};
 const feeOf=c=>{const f=C.fees;if(f&&typeof f=='object')return String(f[c]??'').trim();return String(f||'').trim()};
 /* Single-position lookup (kept for edge cases; prefer posMap in render loops). */
 function pos(reg,c){const subs=cd(c).s,all=act(c).map(s=>calc(SC[s.reg],subs)).filter(k=>k.has).map(k=>k.tot),k0=calc(SC[reg],subs);return{p:k0.has?1+all.filter(x=>x>k0.tot).length:0,n:all.length}}
@@ -597,6 +611,7 @@ function setSaveState(s){const el=document.getElementById('sstat');if(!el)return
   else if(s=='saved'){el.textContent='Saved';el.style.background='rgba(255,255,255,.22)';el.style.color='#fff';setTimeout(()=>{if(el.textContent=='Saved'){el.textContent='';el.style.background='transparent'}},1800)}
   else{el.textContent='Not saved';el.style.background='#c25a4f';el.style.color='#fff'}}
 function save(reg,fn,kind){
+  if(lockedForMe()){toast(LOCKMSG(),'err');return}
   const s=ST.find(x=>x.reg==reg);if(!s)return;
   if(!admin){
     if(!MYCLASSES.includes(s.cls)){alert('You are not assigned to this class. Contact the administrator.');return}
@@ -623,6 +638,7 @@ async function flush(reg,k){
 function sub(){const k=pid();if(!db||k==key)return;key=k;SC={};u2&&u2();UP.forEach(f=>f());UP=[];PV={};for(let j=0;j<C.t;j++)UP.push(db.collection('scores').where('p','==',C.ses+'_'+j).onSnapshot(q=>{PV[j]={};q.docs.forEach(d=>PV[j][d.data().reg]=d.data());draw(1)}));u2=db.collection('scores').where('p','==',k).onSnapshot(q=>{SC={};q.docs.forEach(d=>SC[d.data().reg]=d.data());Object.keys(PEND).forEach(r=>{if((PEND[r]||[]).length||(INF[r]||[]).length)SC[r]=applyPend(r,{...(SC[r]||{p:pid(),reg:r,sc:{},dom:{}})})});draw(1)})}
 function nav(){
   const t=[['scores','Score Entry'],['reports','Report Cards'],['board','Broadsheet'],['info','Class Info']];
+  if(admin)t.unshift(['dash','Dashboard']);
   if(admin)t.push(['students','Students'],['past','Past Students'],['import','Import Data'],['admin','Settings & Promotion']);
   $('#nv').innerHTML=t.map(([k,l])=>`<button data-v="${k}" class="${view==k?'on':''}">${l}</button>`).join('')
 }
@@ -639,7 +655,7 @@ function draw(soft){
     return;
   }
   $('#m').innerHTML=(db?'':'<div class="warn">Connecting to the database. If this message stays, sign in again or reload the page.</div>')+
-    ({info:vInfo,scores:vScores,reports:vReports,board:vBoard,students:vStudents,past:vPast,import:vImport,admin:vAdmin}[view]||vScores)()
+    ({info:vInfo,scores:vScores,reports:vReports,board:vBoard,students:vStudents,past:vPast,import:vImport,admin:vAdmin,dash:vDash}[view]||vScores)();postDraw()
 }
 const clsSel=()=>{
   const a=allowedClasses();
@@ -671,7 +687,7 @@ function card(s,pm){
 <div class="bar">ACADEMIC PERFORMANCE</div><table class="ac"><tr><th>S/N</th><th>Subject</th><th>CA Score</th><th>Exam Score</th><th>Total (${C.ca+C.ex})</th><th>Grade</th><th>Remark</th></tr>${k.rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.s)}</td><td>${r.e?'':r.ca}</td><td>${r.e?'':r.ex}</td><td>${r.e?'':r.t}</td><td>${esc(r.b.g)}</td><td>${esc(r.b.r)}</td></tr>`).join('')}<tr class="tt"><td></td><td>Total</td><td>${ca}</td><td>${ex}</td><td>${k.tot}</td><td>${k.b.g}</td><td>${k.b.r}</td></tr></table>
 ${cum(s,k)}<div class="tri"><table><tr><th colspan=2 class="h">Summary</th></tr>${kv('Total Obtainable',subs.length*(C.ca+C.ex))}${kv('Marks Obtained',k.tot)}${kv('Average','<b>'+k.avg.toFixed(1)+'</b>')}${kv('Grade','<b>'+k.b.g+'</b>')}</table><table><tr><th colspan=3 class="h">Grade Equivalent</th></tr>${B.map((b,i)=>`<tr><td>${b.g}</td><td>${b.m}-${i?B[i-1].m-1:100}</td><td>${b.r}</td></tr>`).join('')}</table><table><tr><th colspan=2 class="h">ATTENDANCE</th></tr>${kv('Days Open',C.days)}${kv('Days Present',pres)}${kv('Days Absent',ab)}${kv('Attendance %',pc)}</table></div>
 <div class="bar m2">Domain (Affective/Psychomotor)</div><table class="dm">${dr(TR[0],TR[4])}${dr(TR[1],TR[5])}${dr(TR[2],TR[6])}${dr(TR[3],TR[7])}</table>
-<div class="bar m2">REMARKS</div><div class="rs"><div>Next Term Resumes: ${esc(C.resume)}</div>${fee?`<div>Next Term School Fees is ${esc(fee)}</div>`:''}</div><table class="rm"><tr><th>Class Teacher's Remark:</th><td>${esc(d.tr||R.t)}</td></tr><tr><th>${hd.role}'s Remark:</th><td>${esc(d.pr||R.p)}</td></tr></table>
+<div class="bar m2">REMARKS</div><div class="rs"><div>Next Term Resumes: ${esc(C.resume)}</div>${fee?`<div>Next Term School Fees is ${esc(fee)}</div>`:''}</div><table class="rm"><tr><th>Class Teacher's Remark:</th><td>${esc(d.tr||R.t)}</td></tr><tr><th>${hd.role}'s Remark:</th><td>${esc(((d.pr||R.p)+' '+promoNote(s)).trim())}</td></tr></table>
 <div class="sg">${hd.sig?`<img src="${hd.sig}" style="height:56px;max-width:220px">`:'<br><br>'}<br>______________________________________<br>${hd.name?esc(hd.name)+' — ':''}${hd.role}'s Signature</div><div class="ft">Built and Designed by Bayo Analytics</div></div>`
 }
 function vReports(){
@@ -726,7 +742,8 @@ ${(()=>{const un=[...new Set(L.filter(s=>idx.includes(s.cls)).filter(s=>{const p
 ${(()=>{const ty=C.types||['Day','Boarding'],cnt=L.filter(s=>idx.includes(s.cls)&&(pf.c=='ALL'||s.cls==pf.c)&&(pf.t=='ALL'||(s.type||'')==pf.t)).length;return`<div class="row" style="background:var(--bg);padding:12px;border-radius:8px;border:1px solid var(--bd);margin-bottom:16px;"><label>Class<select data-pf="c"><option value="ALL">All classes</option>${idx.map(n=>`<option ${n==pf.c?'selected':''}>${esc(n)}</option>`).join('')}</select></label><label>Class type<select data-pf="t"><option value="ALL">All types</option>${ty.map(n=>`<option ${n==pf.t?'selected':''}>${esc(n)}</option>`).join('')}</select></label><span class="mu" style="margin-left:auto">Showing ${cnt} student(s). Filters only change what you see; Run promotion still applies to every active student.</span></div>`})()}
 <div class="sc"><table><tr><th>#</th><th>Name</th><th>Type</th><th class="c">Cum. Avg</th><th>Result</th><th>Override</th><th>Moves to (class + type)</th></tr>${C.classes.map(x=>{const ss=(pf.c=='ALL'||pf.c==x.n?L.filter(s=>s.cls==x.n&&(pf.t=='ALL'||(s.type||'')==pf.t)):[]).sort((a,b)=>String(a.name).localeCompare(String(b.name)));if(!ss.length)return'';const ps=ss.map(decide),up=ps.filter(p=>p.out=='promote').length,dn=nextOf(x.n);return`<tr><td colspan="7" style="background:var(--bg);font-weight:700">${esc(x.n)} <span class="mu" style="font-weight:400">— ${ss.length} student${ss.length>1?'s':''} · ${up} promoted · ${ss.length-up} repeating · next class: ${esc(dn||'(choose below)')}</span></td></tr>`+ss.map((s,i)=>{const p=ps[i],ov=POV[s.reg]||'auto';return`<tr><td>${i+1}</td><td>${esc(s.name)}</td><td>${esc(s.type||'—')}</td><td class="c">${p.c?'<b>'+p.c.avg.toFixed(1)+'</b> <span class="mu">('+p.c.n+' term'+(p.c.n>1?'s':'')+')</span>':'<span class="mu">no scores</span>'}</td><td>${p.out=='promote'?'<b style="color:#2e8b57">Promote</b>':'<b style="color:#c0392b">Repeat</b>'+(p.noscore?' <span class="mu">(no scores)</span>':'')}</td><td><select data-pov="${esc(s.reg)}">${[['auto','Auto'],['promote','Promote'],['repeat','Repeat']].map(([v,l])=>`<option value="${v}" ${v==ov?'selected':''}>${l}</option>`).join('')}</select></td><td>${p.out=='repeat'?'<span class="mu">stays in</span> '+esc(s.cls):`<select data-pto="${esc(s.reg)}">${p.to?'':'<option value="">— choose —</option>'}${[...idx,'Graduated'].map(n=>`<option ${n==p.to?'selected':''}>${esc(n)}</option>`).join('')}</select>${p.to=='Graduated'?'':`<select data-pty="${esc(s.reg)}" title="Class type">${[...new Set([...(C.types||['Day','Boarding']),...(p.ty?[p.ty]:[])])].map(n=>`<option ${n==p.ty?'selected':''}>${esc(n)}</option>`).join('')}</select>`}`}</td></tr>`}).join('')}).join('')}</table></div>
 ${C.t<2?'<div class="warn">It is currently '+T[C.t]+'. Promotion is normally run after Third Term.</div>':''}<button class="w" data-act="promo" style="margin-top:16px;">Run promotion</button></div>${dangerBox()}`};
-const tabs=[['school','School & Term'],['classes','Classes & Subjects'],['brand','Logo & Signature'],['backup','Backup & Restore'],['promo','Promotion']];
+P.activity=vActivity;P.export=vExport;P.control=vControl;
+const tabs=[['school','School & Term'],['classes','Classes & Subjects'],['brand','Logo & Signature'],['backup','Backup & Restore'],['promo','Promotion'],['activity','Activity & Online'],['export','Student Export'],['control','Lock & Setup']];
 return`<div class="box np"><div class="row" style="margin:0">${tabs.map(([k,l])=>`<button class="${asub==k?'b':''}" data-asub="${k}">${l}</button>`).join('')}</div></div>`+(P[asub]||P.school)()}
 $('#m').addEventListener('click',e=>{const p=e.target.dataset&&e.target.dataset.asub;if(p){asub=p;draw()}});
 const csvq=v=>'"'+String(v).replace(/"/g,'""')+'"';
@@ -787,7 +804,7 @@ if(a=='lvup'||a=='lvdn'){const x=C.classes[+e.target.dataset.i];if(!x)return;con
 if(a=='rncls'){const i=+e.target.dataset.i,x=C.classes[i];if(!x)return;const lv=lvOf(x),ar=prompt('Arm / stream name for '+lv+' (e.g. White, Blue, Science). Leave empty for none:',x.arm||'');if(ar===null)return;const arm=ar.trim(),nn=(lv+' '+arm).trim();if(nn==x.n)return;if(C.classes.some((y,j)=>j!=i&&y.n.toLowerCase()==nn.toLowerCase()))return toast(nn+' already exists.','err');if(!confirm('Rename '+x.n+' to '+nn+'? Its students and current scores move with it. If teachers are assigned to "'+x.n+'", update their assignment too.'))return;overlay('Renaming class…','Moving students and scores.');try{for(const s of ST.filter(s=>s.cls==x.n))await db.doc('students/'+s.reg).update({cls:nn});for(let f=0;;f+=1000){const{data,error}=await sb.from('docs').select('col,id,data').eq('col','scores').eq('data->>cls',x.n).order('id').range(f,f+999);if(error)throw error;for(let j=0;j<data.length;j+=200){const{error:e2}=await sb.from('docs').upsert(data.slice(j,j+200).map(r=>({col:r.col,id:r.id,data:{...r.data,cls:nn},updated_at:new Date().toISOString()})));if(e2)throw e2}if(data.length<1000)break}const o={...C,classes:C.classes.map((y,j)=>j==i?{...y,n:nn,lv,arm}:y)};await db.doc('cfg/school').set(o);C=o;ST.forEach(s=>{if(s.cls==x.n)s.cls=nn});sub();draw();toast('Class renamed','ok')}catch(y){toast('Rename failed: '+(y.message||y),'err')}finally{overlayHide()}}
 if(a=='rmcls'){const i=+e.target.dataset.i,x=C.classes[i];if(!x)return;if(ST.some(s=>s.cls==x.n))return toast('Move or delete the students in '+x.n+' first.','err');if(C.classes.length<2)return toast('At least one class is required.','err');if(!confirm('Remove the class '+x.n+'?'))return;const o={...C,classes:C.classes.filter((_,j)=>j!=i)};try{await db.doc('cfg/school').set(o);C=o;sub();draw();toast('Class removed','ok')}catch(y){toast('Could not remove class: '+(y.message||y),'err')}}
 if(a=='bak'){overlay('Preparing backup…','Collecting every record.');try{const rows=[];for(let f=0;;f+=1000){const{data,error}=await sb.from('docs').select('col,id,data').order('col').order('id').range(f,f+999);if(error)throw error;rows.push(...data);if(data.length<1000)break}const b=new Blob([JSON.stringify({v:1,rows})],{type:'application/json'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='report-builder-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),5000);toast('Backup downloaded','ok')}catch(x){toast('Backup failed: '+(x.message||x),'err')}finally{overlayHide()}}
-if(a=='rst'){const f=$('#rf').files[0];if(!f)return toast('Choose a backup file first.','err');try{const j=JSON.parse(await f.text());const rows=(j.rows||[]).filter(r=>r&&typeof r.col=='string'&&typeof r.id=='string'&&r.data);if(!rows.length)throw new Error('This is not a backup file');if(!confirm('Restore '+rows.length+' records? Matching records will be overwritten.'))return;overlay('Restoring…','Writing ' + rows.length + ' records.');const now=new Date().toISOString();for(let i=0;i<rows.length;i+=200){const{error}=await sb.from('docs').upsert(rows.slice(i,i+200).map(r=>({col:r.col,id:r.id,data:r.data,updated_at:now})));if(error)throw error}toast('Restore complete. Reloading…','ok');setTimeout(()=>location.reload(),900)}catch(x){overlayForceHide();toast('Restore failed: '+(x.message||x),'err')}}
+if(a=='rst'){const f=$('#rf').files[0];if(!f)return toast('Choose a backup file first.','err');try{const j=JSON.parse(await f.text());const rows=(j.rows||[]).filter(r=>r&&typeof r.col=='string'&&typeof r.id=='string'&&r.data);if(!rows.length)throw new Error('This is not a backup file');if(!confirm('Restore '+rows.length+' records? Matching records will be overwritten.'))return;overlay('Restoring…','Writing ' + rows.length + ' records.');const now=new Date().toISOString();for(let i=0;i<rows.length;i+=200){const{error}=await sb.from('docs').upsert(rows.slice(i,i+200).map(r=>({col:r.col,id:r.id,data:r.data,updated_at:now})));if(error)throw error}audLog('Restored a backup','',rows.length+' records');toast('Restore complete. Reloading…','ok');setTimeout(()=>location.reload(),900)}catch(x){overlayForceHide();toast('Restore failed: '+(x.message||x),'err')}}
 if(a=='cfg'){const o={...C};document.querySelectorAll('[data-cfg]').forEach(i=>{const k=i.dataset.cfg;if(k==='types')o.types=i.value.split(',').map(x=>x.trim()).filter(Boolean);else o[k]=['t','days','ca','ex'].includes(k)?+i.value:i.value.trim()});if(document.querySelector('[data-fee]')){o.fees={};document.querySelectorAll('[data-fee]').forEach(i=>{if(i.value.trim())o.fees[i.dataset.fee]=i.value.trim()})}if(!o.types||!o.types.length)o.types=['Day','Boarding'];if($('#bd'))o.bands=$('#bd').value.split('\n').map(l=>l.split(',').map(x=>x.trim())).filter(p=>p[1]).map(p=>({m:+p[0],g:p[1],r:p[2]||''})).sort((a,b)=>b.m-a.m);if(document.querySelector('[data-sj]'))o.classes=C.classes.map((x,i)=>({...x,s:document.querySelector(`[data-sj="${i}"]`).value.split(',').map(z=>z.trim()).filter(Boolean)}));if(!/^\d{4}-\d{4}$/.test(o.ses))return toast('Session must look like 2025-2026.','err');if(!(o.days>0)||!(o.ca>=0)||!(o.ex>=0)||o.ca+o.ex!==100)return toast('CA max + Exam max must equal 100, and school days must be more than 0.','err');if(!o.bands.length||o.bands.some(b=>isNaN(b.m))||!o.bands.some(b=>b.m<=0))return toast('Grading: each line needs "min, grade, remark", and one band must start at 0.','err');if(o.classes.some(x=>!x.s.length))return toast('Every class needs at least one subject.','err');overlay('Saving settings…','Writing to the database.');try{await db.doc('cfg/school').set(o);C=o;sub();draw();toast('Settings saved','ok')}catch(x){toast('Could not save settings: '+(x.message||x),'err')}finally{overlayHide()}}
 if(a=='save-pass'){const v=+$('#promoPassInput').value;if(!(v>=0&&v<=100))return toast('Pass mark must be between 0 and 100.','err');overlay('Saving pass mark…','Writing to the database.');try{const o={...C,promoPass:v};await db.doc('cfg/school').set(o);C=o;setSaveState('saved');draw();toast('Pass mark updated to '+v,'ok')}catch(x){toast('Could not save pass mark: '+(x.message||x),'err')}finally{overlayHide()}}
 if(a=='promo'){if(!/^\d{4}-\d{4}$/.test(C.ses))return toast('Fix the session format (e.g. 2025-2026) in Settings first.','err');if(C.t<2&&prompt('Promotion is normally run after Third Term. It is currently '+T[C.t]+'. Type the session name ('+C.ses+') to confirm:')!==C.ses)return;const idx=C.classes.map(x=>x.n),done=h=>h.ses==C.ses&&['Promoted','Repeated','Graduated'].includes(h.out),plan=ST.filter(x=>x.on!==false&&idx.includes(x.cls)&&!(x.hist||[]).some(done)).map(s=>({s,...decide(s)})),bad=plan.filter(p=>p.out=='promote'&&!p.to);if(bad.length)return alert(bad.length+' promoted student(s) have no next class yet (e.g. '+bad.slice(0,5).map(p=>p.s.name+' / '+p.s.cls).join(', ')+'). Choose their class in the yellow box or in the "Moves to" column first.');const up=plan.filter(p=>p.out=='promote').length;if(!confirm('Promote '+up+' student(s) and keep '+(plan.length-up)+' in their class (repeat, cumulative average below '+passMk()+')?\n\nDownload a backup first (Settings → Backup). This cannot be undone automatically.'))return;overlay('Running promotion…','Moving students to the next class.');try{for(const p of plan){const s=p.s,rep=p.out=='repeat',to=p.to,u={cls:to,...(!rep&&to!='Graduated'&&p.ty&&p.ty!=s.type?{type:p.ty}:{}),hist:[...(s.hist||[]),{ses:C.ses,cls:s.cls,out:rep?'Repeated':to=='Graduated'?'Graduated':'Promoted',avg:p.c?+p.c.avg.toFixed(1):null}]};if(to=='Graduated')u.on=false;await db.doc('students/'+s.reg).update(u)}const o={...C,ses:C.ses.split('-').map(n=>+n+1).join('-'),t:0};await db.doc('cfg/school').set(o);C=o;ptt={};pty={};POV={};sub();draw();toast('Promotion complete. New session opened.','ok')}catch(x){toast('Promotion stopped: '+(x.message||x)+'. Students already moved are skipped if you run it again.','err')}finally{overlayHide()}}});
@@ -862,8 +879,8 @@ if($('#xs').checked&&find('Settings')){const mp={schoolname:'name',schooladdress
 const studs={},docs={},P=pid();
 for(const c of C.classes){const is=find('Info '+c.n)||find(c.n);if(is){const R=rows(is),hi=R.findIndex(r=>nz(r[0])=='regno');if(hi>=0){const H=R[hi].map(nz),ix=k=>H.indexOf(nz(k));R.slice(hi+1).forEach(r=>{const g=k=>tr(r[ix(k)]),reg=g('Reg No.'),nm=g('Full Name');if(!reg||!nm)return;const ex=ST.find(x=>x.reg==reg)||{hist:[]},o0=SC[reg]||{};studs[reg]={...ex,reg,name:nm,cls:c.n,g:g('Gender'),type:g('Class Type'),house:g('House'),phone:g('Parent Phone'),email:g('Parents Email'),on:ex.on!==false};const d=docs[reg]={...o0,p:P,reg,cls:c.n,subs:c.s,sc:{...(o0.sc||{})},dom:{...(o0.dom||{})}},pr=g('Days Present');if(pr!=='')d.pres=Math.min(+pr||0,C.days);TR.forEach(t=>{const v=+g(t);if(v>=1&&v<=5)d.dom[t]=v})})}}else L.push('No info sheet found for '+c.n);
 const ss=find('Score_'+c.n)||find(c.n+'_scores')||(!find('Info '+c.n)?find(c.n):null);if(!ss){L.push('No score sheet found for '+c.n);continue}const R=rows(ss),hi=R.findIndex(r=>r.some((x,i)=>i>1&&/(test|\s+ca|\s+class\s*assessment)$/i.test(tr(x))));if(hi<0){L.push('Sheet "'+ss+'" has no Test/CA columns — skipped.');continue}const pairs=[];R[hi].forEach((x,i)=>{if(i>1&&/(test|\s+ca|\s+class\s*assessment)$/i.test(tr(x))){const m=c.s.find(y=>nz(y)==nz(tr(x).replace(/(\s*test|\s+ca|\s+class\s*assessment)$/i,'')));if(m&&!pairs.some(p=>p.s==m))pairs.push({s:m,i})}});R.slice(hi+1).forEach(r=>{const reg=tr(r[0]);let d=docs[reg];if(!d&&reg){const ex=ST.find(x=>x.reg==reg&&x.cls==c.n);if(ex){const o0=SC[reg]||{};d=docs[reg]={...o0,p:P,reg,cls:c.n,subs:c.s,sc:{...(o0.sc||{})},dom:{...(o0.dom||{})}}}}if(!reg||!d)return;pairs.forEach(p=>{const a=tr(r[p.i]),b=tr(r[p.i+1]);if(a===''&&b==='')return;const na=a===''?'':+a,nb=b===''?'':+b;if(a!==''&&(isNaN(na)||na<0))return;if(b!==''&&(isNaN(nb)||nb<0))return;d.sc[p.s]=[a===''?'':Math.min(na||0,C.ca),b===''?'':Math.min(nb||0,C.ex)]})})}
-const S=Object.values(studs),D=Object.values(docs);let n=0;const par=async(a,fn)=>{for(let i=0;i<a.length;i+=8){await Promise.all(a.slice(i,i+8).map(fn));n+=Math.min(8,a.length-i);o.textContent='Saving… '+n+' of '+(S.length+D.length);document.getElementById('ovSub').textContent='Saving… ' + n + ' of ' + (S.length + D.length)}};overlay('Saving…','Writing to the database.');await par(S,s=>db.doc('students/'+s.reg).set(s));await par(D,d=>db.doc('scores/'+P+'_'+d.reg).set(d));
-o.textContent=L.concat(`Done: ${S.length} students and ${D.length} records imported into ${sesL(C.ses)} · ${T[C.t]}.`).join('\n');toast('Import complete','ok')}catch(e){o.textContent='Import failed: '+(e.message||e);toast('Import failed: '+(e.message||e),'err')}finally{overlayHide()}}
+const S=Object.values(studs),D=Object.values(docs);let n=0;const par=async(a,fn)=>{for(let i=0;i<a.length;i+=8){await Promise.all(a.slice(i,i+8).map(fn));n+=Math.min(8,a.length-i);o.textContent='Saving… '+n+' of '+(S.length+D.length);document.getElementById('ovSub').textContent='Saving… ' + n + ' of ' + (S.length + D.length)}};overlay('Saving…','Writing to the database.');AUD_BULK=1;await par(S,s=>db.doc('students/'+s.reg).set(s));await par(D,d=>db.doc('scores/'+P+'_'+d.reg).set(d));AUD_BULK=0;audLog('Imported data from Excel','',S.length+' students, '+D.length+' score records · '+sesL(C.ses)+' '+T[C.t]);
+o.textContent=L.concat(`Done: ${S.length} students and ${D.length} records imported into ${sesL(C.ses)} · ${T[C.t]}.`).join('\n');toast('Import complete','ok')}catch(e){o.textContent='Import failed: '+(e.message||e);toast('Import failed: '+(e.message||e),'err')}finally{AUD_BULK=0;overlayHide()}}
 $('#m').addEventListener('click',e=>{const a=e.target.dataset.act;if(a=='print'){try{window.print()}catch(x){}}else if(a=='pdf')pdf();else if(a=='xl'&&admin)xl();else if(a=='bprint')bprint();else if(a=='bxl')bxl()});
 $('#m').addEventListener('change',async e=>{const d=e.target.dataset;if(!d.st||!db||!admin)return;const s=ST.find(x=>x.reg==d.r);if(!s)return;s[d.st]=e.target.value.trim();try{await db.doc('students/'+s.reg).update({[d.st]:s[d.st]})}catch(x){toast('Could not save: '+(x.message||x),'err')}});
 const hs=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return h},pk=(a,h,o=0)=>a[(h+o)%a.length];
@@ -940,10 +957,331 @@ document.body.append(o);o.querySelector('#dzx').onclick=()=>o.remove();
 o.firstChild.onsubmit=async ev=>{ev.preventDefault();const f=ev.target,m=o.querySelector('#dzm');if(f.t.value.trim()!='DELETE'){m.textContent='Type DELETE exactly.';return}
 m.textContent='Checking password…';const{error:e1}=await sb.auth.signInWithPassword({email:em,password:f.p.value});if(e1){m.textContent='Wrong password. Nothing was deleted.';return}
 try{m.textContent='Deleting…';for(const[col,on]of[['scores',c],['students',s]])if(on){const{error}=await sb.from('docs').delete().eq('col',col);if(error)throw error}
-if(s)ST=[];if(c){SC={};PV={}}o.remove();draw();toast('Selected records deleted.','ok')}catch(x){m.textContent='Failed: '+(x.message||x)}}}
+if(s)ST=[];if(c){SC={};PV={}}audLog('Deleted ALL '+(c&&s?'scores and students':c?'scores':'students'),'','Danger zone');o.remove();draw();toast('Selected records deleted.','ok')}catch(x){m.textContent='Failed: '+(x.message||x)}}}
 $('#m').addEventListener('click',e=>{if(e.target.dataset.act=='wipe'&&admin)wipe()});
 $('#nv').addEventListener('click',e=>{if(e.target.dataset.v){view=e.target.dataset.v;draw()}});
+
+/* =================== ADMIN CONTROL CENTRE: dashboard · activity · online · lock · export =================== */
+const LOCK={on:false,msg:'',by:'',at:''};
+const lockedForMe=()=>!!LOCK.on&&ROLE!='admin';
+const LOCKMSG=()=>'Editing is locked by the administrator'+(LOCK.msg?': '+LOCK.msg:'.');
+const fmtT=s=>{try{return new Date(s).toLocaleString([],{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'})}catch(e){return s||''}};
+const ago=s=>{const t=Math.max(0,(Date.now()-new Date(s).getTime())/1000);if(t<60)return 'just now';if(t<3600)return Math.floor(t/60)+' min ago';if(t<86400)return Math.floor(t/3600)+' h ago';return Math.floor(t/86400)+' d ago'};
+const VL={dash:'Dashboard',scores:'Score Entry',reports:'Report Cards',board:'Broadsheet',info:'Class Info',students:'Students',past:'Past Students',import:'Import Data',admin:'Settings & Promotion'};
+const stName=reg=>{const s=ST.find(x=>x.reg==reg);return s?s.name:reg};
+
+/* ---------- audit: what changed ---------- */
+const nzv=v=>(v===undefined||v===null||v==='')?'':v;
+const cutv=v=>v===undefined||v===null?'':(typeof v=='string'&&v.length>80?v.slice(0,77)+'…':v);
+function flat(o,p,out,d){out=out||{};d=d||0;
+  if(o&&typeof o=='object'&&!Array.isArray(o)&&d<4){Object.keys(o).forEach(k=>flat(o[k],p?p+'.'+k:k,out,d+1))}
+  else if(Array.isArray(o)&&p&&p.indexOf('sc.')==0){o.forEach((v,i)=>out[p+'.'+i]=v)}
+  else if(p)out[p]=Array.isArray(o)?JSON.stringify(o):o;
+  return out}
+const SKIPK=['subs','p','reg','logo','sig','psig'];
+function diffDocs(a,b){const fa=flat(a||{},'',{}),fb=flat(b||{},'',{}),out=[];
+  new Set([...Object.keys(fa),...Object.keys(fb)]).forEach(k=>{if(SKIPK.includes(k.split('.')[0]))return;if(JSON.stringify(nzv(fa[k]))===JSON.stringify(nzv(fb[k])))return;out.push({k,f:cutv(fa[k]),t:cutv(fb[k])})});
+  return out.slice(0,40)}
+function hk(k){let m;
+  if(m=/^sc\.(.+)\.([01])$/.exec(k))return m[1]+(m[2]=='0'?' CA':' Exam');
+  if(m=/^sc\.(.+)$/.exec(k))return m[1]+' scores';
+  if(m=/^dom\.(.+)$/.exec(k))return m[1]+' rating';
+  return({pres:'Days present',g:'Gender',cls:'Class',on:'Active',type:'Class type',name:'Name',house:'House',phone:'Parent phone',email:'Parent email',ses:'Session',t:'Term',promoPass:'Promotion pass mark'})[k]||k}
+function targetOf(col,id,o){o=o||{};
+  if(col=='scores'){const parts=id.split('_'),reg=o.reg||parts.slice(2).join('_'),per=o.p||parts.slice(0,2).join('_'),j=+String(per).split('_')[1],s=ST.find(x=>x.reg==reg);return stName(reg)+(s?' ('+s.cls+')':'')+' · '+(T[j]||per)}
+  if(col=='students')return (o.name||stName(id))+(o.cls?' ('+o.cls+')':'');
+  if(col=='cfg')return id=='school'?'School settings':id=='lock'?'Editing lock':id;
+  return col+'/'+id}
+const shw=v=>v===''||v===null||v===undefined?'—':v;
+function audWrite(col,id,old,nu){try{
+  const ch=diffDocs(old,nu).filter(c=>!(col=='scores'&&c.k=='cls'));
+  if(col=='cfg'&&old&&nu)['logo','sig','psig'].forEach(k=>{if((old[k]||'')!==(nu[k]||''))ch.push({k,f:old[k]?'(image)':'',t:nu[k]?'(image updated)':'(removed)'})});
+  if(!ch.length&&old)return;
+  let action;
+  if(col=='scores')action=ch.length&&ch.every(c=>/^dom\./.test(c.k)||c.k=='pres')?'Edited attendance / ratings':'Edited scores';
+  else if(col=='students')action=old?'Edited student':'Added student';
+  else if(col=='cfg')action=id=='lock'?'Changed editing lock':'Changed settings';
+  else action='Saved '+col;
+  const det=ch.slice(0,4).map(c=>hk(c.k)+': '+shw(c.f)+' → '+shw(c.t)).join('; ')+(ch.length>4?' (+'+(ch.length-4)+' more)':'');
+  audLog(action,targetOf(col,id,nu),det,ch)
+}catch(e){}}
+function audDel(col,id,old){try{audLog('Deleted '+(col=='students'?'student':col=='scores'?'score record':col),targetOf(col,id,old),'',null)}catch(e){}}
+let AUD_ERR=null;
+function audLog(action,target,detail,changes){
+  if(!sb||!ME.id)return;
+  ME.last={a:action,t:target||'',at:Date.now()};presDirty();
+  sb.from('activity_log').insert({uid:ME.id,email:ME.email,role:ROLE,action,target:target||'',detail:detail||'',changes:changes&&changes.length?changes:null}).then(r=>{AUD_ERR=r&&r.error?(r.error.message||String(r.error)):null},()=>{})}
+
+/* ---------- live presence ---------- */
+let PRCH=null,ONL={},_prT,_psig='';
+const pmeta=()=>({email:ME.email,role:ROLE,view:VL[view]||view,cls:['scores','reports','board','info','students'].includes(view)?curC():'',vis:document.hidden?'away':'active',since:ME.since||Date.now(),last:ME.last?ME.last.a+(ME.last.t?' · '+ME.last.t:''):'',lat:ME.last?ME.last.at:0});
+function presDirty(){clearTimeout(_prT);_prT=setTimeout(()=>{if(PRCH&&PRCH._ok)PRCH.track(pmeta())},1200)}
+function presBoot(){if(!sb||!ME.id||PRCH)return;ME.since=Date.now();
+  PRCH=sb.channel('dec-online',{config:{presence:{key:ME.id}}});
+  PRCH.on('presence',{event:'sync'},()=>{ONL=PRCH.presenceState();onlUI()}).subscribe(st=>{if(st=='SUBSCRIBED'){PRCH._ok=1;PRCH.track(pmeta())}});
+  document.addEventListener('visibilitychange',presDirty)}
+const onlList=()=>Object.entries(ONL).map(([k,v])=>{const m=v.slice().sort((a,b)=>(b.lat||0)-(a.lat||0))[0]||{};return{...m,id:k,tabs:v.length}});
+const onlHTML=L=>L.length?`<div class="sc"><table><tr><th>User</th><th>Role</th><th>Viewing</th><th>Class</th><th>Last action</th><th>Online since</th><th>Status</th></tr>${L.sort((a,b)=>String(a.email).localeCompare(String(b.email))).map(u=>`<tr><td><b>${esc(u.email||u.id)}</b>${u.id==ME.id?' <span class="mu">(you)</span>':''}${u.tabs>1?' <span class="mu">· '+u.tabs+' tabs</span>':''}</td><td>${u.role=='admin'?'Admin':'Teacher'}</td><td>${esc(u.view||'')}</td><td>${esc(u.cls||'—')}</td><td>${esc(u.last||'—')}${u.lat?' <span class="mu">'+ago(u.lat)+'</span>':''}</td><td>${u.since?ago(u.since):''}</td><td>${u.vis=='away'?'<span style="color:#c9a45c">● Away</span>':'<span style="color:#2e8b57">● Active</span>'}</td></tr>`).join('')}</table></div>`:'<p class="mu">Nobody is online right now.</p>';
+function onlUI(){const L=onlList();document.querySelectorAll('.js-onl-n').forEach(e=>e.textContent=L.length);const el=$('#onlbox');if(el)el.innerHTML=onlHTML(L);usrUI()}
+
+/* ---------- staff list ---------- */
+let STAFF=[],STAFF_ERR=null;
+async function loadStaff(){try{const{data,error}=await sb.from('staff').select('*');if(error)throw error;STAFF=data||[];STAFF_ERR=null}catch(e){STAFF_ERR=e.message||String(e)}onlUI()}
+const stfEm=r=>String(r.email||r.user_email||r.name||r.full_name||r.id||r.user_id||'');
+function usrUI(){const el=$('#usrbox');if(!el)return;
+  if(STAFF_ERR){el.innerHTML='<p class="mu">Could not read the staff table: '+esc(STAFF_ERR)+'</p>';return}
+  if(!STAFF.length){el.innerHTML='<p class="mu">No staff records found.</p>';return}
+  const on=new Set(onlList().map(u=>String(u.email).toLowerCase()));
+  el.innerHTML=`<div class="sc"><table><tr><th>User</th><th>Role</th><th>Classes</th><th>Status</th><th>Online</th><th>Last activity</th></tr>${STAFF.slice().sort((a,b)=>stfEm(a).localeCompare(stfEm(b))).map(r=>{const em=stfEm(r),la=ACT.find(x=>String(x.email).toLowerCase()==em.toLowerCase());return`<tr><td><b>${esc(em)}</b></td><td>${r.role=='admin'?'Admin':'Teacher'}</td><td>${esc(Array.isArray(r.classes)?r.classes.join(', '):'')||'—'}</td><td>${r.status&&r.status!='active'?'<span style="color:var(--danger)">'+esc(r.status)+'</span>':'Active'}</td><td>${on.has(em.toLowerCase())?'<span style="color:#2e8b57">● Online</span>':'<span class="mu">Offline</span>'}</td><td>${la?esc(la.action)+' <span class="mu">'+ago(la.at)+'</span>':'<span class="mu">—</span>'}</td></tr>`}).join('')}</table></div>`}
+
+/* ---------- editing lock ---------- */
+let LOCKU=null;
+function lockBoot(){if(LOCKU)return;LOCKU=db.doc('cfg/lock').onSnapshot(s=>{const d=(s.exists&&s.data())||{},was=lockedForMe();Object.assign(LOCK,{on:!!d.on,msg:d.msg||'',by:d.by||'',at:d.at||''});lockUI();if(was!=lockedForMe()||admin)draw(1)})}
+function lockUI(){
+  let bar=$('#lockbar');if(!bar){$('#nv').insertAdjacentHTML('afterend','<div id="lockbar" class="np"></div>');bar=$('#lockbar')}
+  if(LOCK.on){bar.style.display='';bar.innerHTML=admin?`<div class="warn" style="margin:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><b>Editing is LOCKED for all other users.</b><span class="mu">${esc(LOCK.msg)}</span><button class="b" data-act="cc-unlock" style="margin-left:auto">Unlock now</button></div>`:`<div class="warn" style="margin:10px 16px"><b>Editing is locked by the administrator.</b> You can still view, print and export, but changes cannot be saved.${LOCK.msg?' <span class="mu">'+esc(LOCK.msg)+'</span>':''}</div>`}
+  else{bar.style.display='none';bar.innerHTML=''}
+  if(lockedForMe())document.querySelectorAll('#m input,#m textarea,#m select,#m button').forEach(el=>{
+    if(el.matches('[data-sel],[data-asub],[data-v],[data-pf],[data-dsh]'))return;
+    if(el.tagName=='BUTTON'&&['csv','print','pdf','bxl','bprint'].includes(el.dataset.act))return;
+    el.disabled=true;el.title='Locked by the administrator'})}
+async function setLock(on){if(!admin)return;const m=$('#lockmsg'),msg=on?(m?m.value.trim():LOCK.msg):'';
+  overlay(on?'Locking editing…':'Unlocking…','Updating all users.');
+  try{await db.doc('cfg/lock').set({on,msg,by:ME.email,at:new Date().toISOString()});toast(on?'Editing locked for all other users.':'Editing unlocked.','ok')}
+  catch(x){toast('Could not change the lock: '+(x.message||x),'err')}finally{overlayHide()}}
+
+/* ---------- activity log ---------- */
+let ACT=[],ACTF={u:'ALL',k:'ALL',p:'7',q:''},ACT_MORE=false,ACT_OK=null,ACTCH=null;
+const KIND={ALL:()=>true,edits:r=>/^(Edited|Added|Deleted|Saved|Changed|Imported|Ran|Started)/.test(r.action),scores:r=>/scores|attendance/i.test(r.action),students:r=>/student/i.test(r.action),settings:r=>/settings|lock/i.test(r.action),logins:r=>/^(Session|Signed)/.test(r.action),views:r=>/^Opened/.test(r.action),exports:r=>/^(Printed|Exported|Downloaded)/.test(r.action),deletes:r=>/^Deleted/.test(r.action)};
+async function loadAct(more){if(!admin||!sb)return;
+  try{let q=sb.from('activity_log').select('*').order('at',{ascending:false}).limit(300);
+    if(ACTF.p!='all')q=q.gte('at',new Date(Date.now()-(+ACTF.p)*864e5).toISOString());
+    if(more&&ACT.length)q=q.lt('at',ACT[ACT.length-1].at);
+    const{data,error}=await q;if(error)throw error;
+    ACT=more?ACT.concat(data):data;ACT_MORE=data.length==300;ACT_OK=true;AUD_ERR=null}
+  catch(e){ACT_OK=false;AUD_ERR=e.message||String(e)}
+  actUI();usrUI()}
+function actBoot(){if(!admin||!sb||ACTCH)return;loadAct();
+  ACTCH=sb.channel('al-'+Math.random().toString(36).slice(2)).on('postgres_changes',{event:'INSERT',schema:'public',table:'activity_log'},p=>{if(p&&p.new){ACT.unshift(p.new);actUI();usrUI()}}).subscribe()}
+const actFiltered=()=>{const q=ACTF.q.trim().toLowerCase();return ACT.filter(r=>(ACTF.u=='ALL'||String(r.email).toLowerCase()==ACTF.u)&&(KIND[ACTF.k]||KIND.ALL)(r)&&(!q||[r.email,r.action,r.target,r.detail].join(' ').toLowerCase().includes(q)))};
+function actUI(){const box=$('#actbox'),info=$('#actinfo');if(!box)return;
+  if(ACT_OK===false){info.innerHTML='';box.innerHTML='<div class="warn"><b>The activity log is not set up yet.</b> '+esc(AUD_ERR||'')+'<br>Open <b>Lock &amp; Setup</b> in this section, copy the SQL and run it once in Supabase.</div>';return}
+  const L=actFiltered();
+  info.textContent=L.length+' entr'+(L.length==1?'y':'ies')+' shown'+(ACT_MORE?' (older entries available)':'')+' · live: new activity appears automatically';
+  box.innerHTML=L.length?`<div class="sc"><table><tr><th>Time</th><th>User</th><th>Action</th><th>Target</th><th>Details (before → after)</th></tr>${L.slice(0,400).map(r=>{const ch=Array.isArray(r.changes)?r.changes:[];return`<tr><td style="white-space:nowrap">${esc(fmtT(r.at))}</td><td>${esc(r.email||'')}<div class="mu">${r.role=='admin'?'Admin':'Teacher'}</div></td><td><b>${esc(r.action)}</b></td><td>${esc(r.target||'')}</td><td>${ch.length>1?`<details><summary>${esc(r.detail||'')}</summary><div style="margin-top:6px">${ch.map(c=>esc(hk(c.k))+': '+esc(shw(c.f))+' → <b>'+esc(shw(c.t))+'</b>').join('<br>')}</div></details>`:esc(r.detail||'')}</td></tr>`}).join('')}</table></div>${ACT_MORE?'<p><button data-act="cc-actmore">Load older entries</button></p>':''}`:'<p class="mu">No activity matches these filters.</p>'}
+function vActivity(){
+  const emails=[...new Set([...STAFF.map(stfEm),...ACT.map(r=>r.email)].filter(Boolean).map(x=>x.toLowerCase()))].sort();
+  return `<div class="box"><b>Users online now</b> <span class="tag js-onl-n">0</span> <span class="mu">live · updates automatically</span><div id="onlbox" style="margin-top:10px"></div></div>
+<div class="box"><b>Activity log</b> <span class="mu">sign-ins, pages opened, every save / edit / delete, exports and prints, with before → after values.</span>
+<div class="row"><label>User<select data-actf="u"><option value="ALL">All users</option>${emails.map(e=>`<option ${e==ACTF.u?'selected':''}>${esc(e)}</option>`).join('')}</select></label>
+<label>Type<select data-actf="k">${[['ALL','Everything'],['edits','All changes'],['scores','Scores & attendance'],['students','Students'],['settings','Settings & lock'],['deletes','Deletions'],['logins','Sessions'],['views','Pages opened'],['exports','Exports & prints']].map(([v,l])=>`<option value="${v}" ${v==ACTF.k?'selected':''}>${l}</option>`).join('')}</select></label>
+<label>Period<select data-actf="p">${[['1','Last 24 hours'],['7','Last 7 days'],['30','Last 30 days'],['all','All time']].map(([v,l])=>`<option value="${v}" ${v==ACTF.p?'selected':''}>${l}</option>`).join('')}</select></label>
+<label>Search<input data-actf="q" value="${esc(ACTF.q)}" placeholder="name, subject, action…"></label>
+<button data-act="cc-actref">Refresh</button><button class="b" data-act="cc-actxl">Export log (XLSX)</button></div>
+<div id="actinfo" class="mu"></div><div id="actbox"></div></div>
+<div class="box"><b>Users</b> <span class="mu">from the staff list</span><div id="usrbox" style="margin-top:10px"></div></div>`}
+
+/* ---------- lock & setup tab ---------- */
+let _ctl=0,_ctlHTML='';
+function vControl(){return `<div class="box"><b>Editing lock</b> <span class="tag">ADMIN</span>
+<p class="mu">Stops every other user (teachers) from entering scores or changing anything. They can still view, print and export. You, as administrator, are never locked out. The lock takes effect instantly on every open screen.</p>
+<div class="row"><b style="font-size:15px">Status: ${LOCK.on?'<span style="color:var(--danger)">LOCKED</span>':'<span style="color:#2e8b57">Open for editing</span>'}</b>${LOCK.on&&LOCK.by?'<span class="mu">since '+esc(fmtT(LOCK.at))+' by '+esc(LOCK.by)+'</span>':''}</div>
+<div class="row"><label style="flex:1;min-width:260px">Message shown to users (optional)<input id="lockmsg" value="${esc(LOCK.msg)}" placeholder="e.g. Score entry is closed for this term"></label>${LOCK.on?'<button class="b" data-act="cc-unlock">Unlock editing</button>':'<button class="w" data-act="cc-lock">Lock editing for everyone else</button>'}</div></div>
+<div class="box"><b>Connection &amp; setup check</b><div id="ctlstat" class="mu" style="margin-top:8px">Checking…</div><div class="row"><button data-act="cc-recheck">Re-check</button></div>
+</div>`}
+function buildSQL(cond,note){return [
+'-- ===== Smart Report Builder: admin control centre =====',
+'-- Run once in Supabase > SQL Editor. Safe to re-run.',
+note||'',
+'-- 1) Is the signed-in user an active administrator?',
+'create or replace function public.is_admin() returns boolean',
+'language sql stable security definer set search_path = public as $$',
+"  select exists (select 1 from public.staff where "+cond+" and role = 'admin' and coalesce(status,'active') = 'active')",
+'$$;','',
+'-- 2) Activity log (everyone can write their own entries, only admins can read)',
+'create table if not exists public.activity_log (',
+'  id bigint generated always as identity primary key,',
+'  at timestamptz not null default now(),',
+'  uid uuid, email text, role text,',
+'  action text not null, target text, detail text, changes jsonb',
+');',
+'create index if not exists activity_log_at_idx on public.activity_log (at desc);',
+'alter table public.activity_log enable row level security;',
+'drop policy if exists al_insert on public.activity_log;',
+'create policy al_insert on public.activity_log for insert to authenticated with check (uid = auth.uid());',
+'drop policy if exists al_select on public.activity_log;',
+'create policy al_select on public.activity_log for select to authenticated using (public.is_admin());',
+'drop policy if exists al_delete on public.activity_log;',
+'create policy al_delete on public.activity_log for delete to authenticated using (public.is_admin());',
+'do $$ begin alter publication supabase_realtime add table public.activity_log; exception when others then null; end $$;','',
+'-- 3) Server-side editing lock (restrictive: adds to your existing rules, removes none)',
+'-- Only has effect while row level security is enabled on public.docs.',
+'create or replace function public.is_locked() returns boolean',
+'language sql stable security definer set search_path = public as $$',
+"  select coalesce((select (data->>'on') = 'true' from public.docs where col = 'cfg' and id = 'lock'), false)",
+'$$;',
+'drop policy if exists lock_ins on public.docs;',
+'create policy lock_ins on public.docs as restrictive for insert to authenticated with check (public.is_admin() or not public.is_locked());',
+'drop policy if exists lock_upd on public.docs;',
+'create policy lock_upd on public.docs as restrictive for update to authenticated using (public.is_admin() or not public.is_locked()) with check (public.is_admin() or not public.is_locked());',
+'drop policy if exists lock_del on public.docs;',
+'create policy lock_del on public.docs as restrictive for delete to authenticated using (public.is_admin() or not public.is_locked());'
+].join('\n')}
+async function genSQL(){let cond='user_id = auth.uid()',note='-- NOTE: could not detect the staff id column automatically. Replace the condition in section 1 if needed.';
+  try{const{data}=await sb.from('staff').select('*'),rows=data||[],em=String(ME.email).toLowerCase();
+    let hit=rows.find(r=>Object.values(r).some(v=>v===ME.id));
+    if(hit){const k=Object.keys(hit).find(k=>hit[k]===ME.id);cond=k+' = auth.uid()';note=''}
+    else{hit=rows.find(r=>Object.values(r).some(v=>typeof v=='string'&&v.toLowerCase()==em));if(hit){const k=Object.keys(hit).find(k=>typeof hit[k]=='string'&&hit[k].toLowerCase()==em);cond='lower('+k+") = lower(auth.jwt() ->> 'email')";note=''}}
+  }catch(e){}
+  return buildSQL(cond,note)}
+async function ctlInit(){
+  const out=[];
+  try{const{error}=await sb.from('activity_log').select('id',{count:'exact',head:true});out.push(error?['bad','Activity log table: not ready ('+(error.message||error.code)+'). Run the SQL below.']:['ok','Activity log table: ready.'])}catch(e){out.push(['bad','Activity log: '+(e.message||e)])}
+  await loadStaff();out.push(STAFF_ERR?['bad','Staff table: cannot be read ('+STAFF_ERR+').']:['ok','Staff table: '+STAFF.length+' user(s) readable.']);
+  out.push(PRCH&&PRCH._ok?['ok','Live presence: connected ('+onlList().length+' online).']:['bad','Live presence: not connected (Realtime must be enabled in Supabase).']);
+  _ctlHTML=out.map(([k,t])=>`<div style="margin:3px 0;color:${k=='ok'?'#2e8b57':'var(--danger)'}">${k=='ok'?'✔':'✖'} ${esc(t)}</div>`).join('');
+  if($('#ctlstat'))$('#ctlstat').innerHTML=_ctlHTML;
+  window._sql=await genSQL();if($('#sqlbox'))$('#sqlbox').textContent=window._sql}
+
+/* ---------- dashboard ---------- */
+let dsh={c:'ALL',t:'ALL',b:'term'},DSHX=null;
+const PAL=['#5b8a72','#c9a45c','#6f8fb5','#b5707a','#8a79b0','#7aa98e','#d08b5b'],GC=['#3f8f6b','#6aa86a','#b7b44f','#d39a45','#c8664f','#a94b44','#8c3f3a'];
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null,f1=v=>v===null||v===undefined?'—':(+v).toFixed(1),pc=v=>v===null||v===undefined?'—':Math.round(v)+'%';
+const hbar=(items,mx,fmt)=>{mx=mx||Math.max(1,...items.map(i=>i.v));return items.length?items.map(i=>`<div style="display:grid;grid-template-columns:minmax(70px,120px) 1fr 52px;gap:8px;align-items:center;margin:6px 0;font-size:13px"><span class="mu" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(i.l)}">${esc(i.l)}</span><div style="background:var(--bg);border-radius:6px;height:14px;overflow:hidden"><div style="width:${Math.max(0,Math.min(100,i.v/mx*100))}%;height:100%;background:${i.c||'var(--ac)'};border-radius:6px"></div></div><b style="text-align:right">${fmt?fmt(i.v):i.v}</b></div>`).join(''):'<p class="mu">No data for this selection.</p>'};
+const vcol=items=>{const mx=Math.max(1,...items.map(i=>i.v));return `<div style="display:flex;align-items:flex-end;gap:10px;padding-top:6px">${items.map(i=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><b style="font-size:12px">${i.v}</b><div style="width:100%;max-width:48px;height:${Math.round(i.v/mx*110)}px;min-height:${i.v?3:0}px;background:${i.c||'var(--ac)'};border-radius:6px 6px 0 0"></div><span class="mu" style="margin-top:4px;font-size:12px">${esc(i.l)}</span></div>`).join('')}</div>`};
+const donut=(items,center)=>{items=items.filter(i=>i.v>0);const tot=items.reduce((a,b)=>a+b.v,0);if(!tot)return '<p class="mu">No data for this selection.</p>';let a=0;const seg=items.map((i,k)=>{const s=a;a+=i.v/tot*100;return(i.c||PAL[k%PAL.length])+' '+s+'% '+a+'%'}).join(',');
+  return `<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><div style="width:130px;height:130px;border-radius:50%;background:conic-gradient(${seg});position:relative;flex:none"><div style="position:absolute;inset:26px;background:var(--bg-elevated);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column"><b style="font-size:20px">${tot}</b><span class="mu" style="font-size:11px">${esc(center||'total')}</span></div></div><div>${items.map((i,k)=>`<div style="margin:3px 0;font-size:13px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${i.c||PAL[k%PAL.length]};margin-right:6px"></span>${esc(i.l)}: <b>${i.v}</b> <span class="mu">(${Math.round(i.v/tot*100)}%)</span></div>`).join('')}</div></div>`};
+const lineChart=pts=>{const W=380,H=160,pad=28,ok=pts.filter(p=>p.v!==null);if(!ok.length)return '<p class="mu">No scores recorded yet.</p>';
+  const x=i=>pad+(pts.length==1?(W-2*pad)/2:i*(W-2*pad)/(pts.length-1)),y=v=>H-pad-(v/100)*(H-2*pad),path=pts.map((p,i)=>p.v===null?null:[x(i),y(p.v)]).filter(Boolean);
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:480px"><g stroke="var(--bd)" stroke-width="1">${[0,50,100].map(g=>`<line x1="${pad}" x2="${W-pad}" y1="${y(g)}" y2="${y(g)}"/>`).join('')}</g><g fill="var(--fg-muted)" font-size="10">${[0,50,100].map(g=>`<text x="2" y="${y(g)+3}">${g}</text>`).join('')}</g><polyline fill="none" stroke="var(--ac)" stroke-width="2.5" points="${path.map(p=>p.join(',')).join(' ')}"/>${pts.map((p,i)=>p.v===null?'':`<circle cx="${x(i)}" cy="${y(p.v)}" r="4" fill="var(--ac)"/><text x="${x(i)}" y="${y(p.v)-9}" text-anchor="middle" font-size="11" fill="var(--fg)">${p.v.toFixed(1)}</text>`).join('')}${pts.map((p,i)=>`<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--fg-muted)">${esc(p.l)}</text>`).join('')}</svg>`};
+const dcard=(t,sub,body)=>`<div class="box"><b>${t}</b>${sub?` <span class="mu">${sub}</span>`:''}<div style="margin-top:10px">${body}</div></div>`;
+const kpi=(l,v,s)=>`<div class="kpi"><div class="kl">${l}</div><div class="kv">${v}</div><div class="ks">${s||'&nbsp;'}</div></div>`;
+function vDash(){
+  if(!admin)return '<div class="warn">The dashboard is for the administrator only.</div>';
+  const ty=C.types||['Day','Boarding'],names=C.classes.map(x=>x.n),pass=passMk();
+  if(dsh.c!='ALL'&&!names.includes(dsh.c))dsh.c='ALL';
+  const known=s=>names.includes(s.cls),inT=s=>dsh.t=='ALL'||(s.type||'')==dsh.t,inC=s=>dsh.c=='ALL'||s.cls==dsh.c;
+  const A=ST.filter(s=>s.on!==false&&known(s)),F=A.filter(s=>inT(s)&&inC(s));
+  const perf=s=>{const subs=cd(s.cls).s,d=SC[s.reg];let avg=null;
+    if(dsh.b=='cum'){const c=cumAvgOf(s);avg=c?c.avg:null}else{const k=calc(d,subs);avg=k.has?k.avg:null}
+    const filled=subs.reduce((n,j)=>{const v=(d&&d.sc&&d.sc[j])||[];return n+(bl(v[0])?0:1)+(bl(v[1])?0:1)},0);
+    return{s,avg,has:avg!==null,filled,exp:subs.length*2,pres:d?d.pres:undefined}};
+  const PF=F.map(perf),sc=PF.filter(p=>p.has),top=sc.slice().sort((a,b)=>b.avg-a.avg);
+  const avgAll=mean(sc.map(p=>p.avg)),passN=sc.filter(p=>p.avg>=pass).length,fillN=PF.reduce((n,p)=>n+p.filled,0),expN=PF.reduce((n,p)=>n+p.exp,0);
+  const att=mean(PF.filter(p=>!bl(p.pres)&&C.days>0).map(p=>Math.min(100,p.pres/C.days*100)));
+  const wd=ST.filter(s=>s.on===false&&inT(s)&&inC(s)).length,nm=PF.length-sc.length;
+  const staff=STAFF||[],nAdm=staff.filter(r=>r.role=='admin').length,nOff=staff.filter(r=>r.status&&r.status!='active').length;
+  const nOn=onlList().length;
+  /* by class (type filter only, selected class highlighted) */
+  const TA=A.filter(inT),byC=names.map(n=>{const l=TA.filter(s=>s.cls==n),p=l.map(perf),s2=p.filter(x=>x.has),ex=p.reduce((a,b)=>a+b.exp,0),fi=p.reduce((a,b)=>a+b.filled,0);
+    return{n,N:l.length,boys:l.filter(x=>/^m/i.test(x.g||'')).length,girls:l.filter(x=>/^f/i.test(x.g||'')).length,avg:mean(s2.map(x=>x.avg)),pass:s2.length?s2.filter(x=>x.avg>=pass).length/s2.length*100:null,comp:ex?fi/ex*100:null,att:mean(p.filter(x=>!bl(x.pres)&&C.days>0).map(x=>Math.min(100,x.pres/C.days*100)))}}).filter(x=>x.N>0);
+  const hc=n=>dsh.c=='ALL'||n==dsh.c?'var(--ac)':'var(--bd-strong)';
+  /* composition (class filter only) */
+  const CA=A.filter(inC),tyItems=[...new Set([...ty,...CA.map(s=>s.type||'')])].filter(Boolean).map(t=>({l:t,v:CA.filter(s=>(s.type||'')==t).length})),gen=[{l:'Male',v:CA.filter(s=>/^m/i.test(s.g||'')).length},{l:'Female',v:CA.filter(s=>/^f/i.test(s.g||'')).length}],gOth=CA.length-gen[0].v-gen[1].v;if(gOth>0)gen.push({l:'Not set',v:gOth});
+  const grades=C.bands.map((b,i)=>({l:b.g,v:sc.filter(p=>gr(p.avg).g==b.g).length,c:GC[Math.min(i,GC.length-1)]}));
+  const sm={};F.forEach(s=>{const d=SC[s.reg];if(!d||!d.sc)return;cd(s.cls).s.forEach(j=>{const v=d.sc[j];if(v&&(!bl(v[0])||!bl(v[1])))(sm[j]=sm[j]||[]).push((+v[0]||0)+(+v[1]||0))})});
+  const subj=Object.entries(sm).map(([l,a])=>({l,v:mean(a)})).sort((a,b)=>b.v-a.v).slice(0,14);
+  const trend=[];for(let j=0;j<=C.t;j++){const a=[];F.forEach(s=>{const d=j==C.t?SC[s.reg]:(PV[j]||{})[s.reg];if(!d)return;const k=calc(d,d.subs&&d.subs.length?d.subs:cd(s.cls).s);if(k.has)a.push(k.avg)});trend.push({l:'Term '+(j+1),v:mean(a)})}
+  const cur=(dsh.c=='ALL'?'All classes':dsh.c)+' · '+(dsh.t=='ALL'?'All types':dsh.t)+' · '+(dsh.b=='cum'?'Session cumulative':T[C.t]);
+  DSHX={k:[['Selection',cur],['Total students',F.length],['Withdrawn / graduated',wd],['Total users',staff.length],['Currently online',nOn],['Average score',avgAll===null?'':+avgAll.toFixed(1)],['Pass rate %',sc.length?Math.round(passN/sc.length*100):''],['Score entry completion %',expN?Math.round(fillN/expN*100):''],['Attendance %',att===null?'':Math.round(att)],['Students with no scores',nm]],c:[['Class','Students','Boys','Girls','Average','Pass rate %','Score entry %','Attendance %'],...byC.map(x=>[x.n,x.N,x.boys,x.girls,x.avg===null?'':+x.avg.toFixed(1),x.pass===null?'':Math.round(x.pass),x.comp===null?'':Math.round(x.comp),x.att===null?'':Math.round(x.att)])]};
+  const tbl=(L)=>L.length?`<div class="sc"><table><tr><th>#</th><th>Name</th><th>Class</th><th>Type</th><th class="c">Avg</th><th class="c">Grade</th></tr>${L.map((p,i)=>`<tr><td>${i+1}</td><td>${esc(p.s.name)}</td><td>${esc(p.s.cls)}</td><td>${esc(p.s.type||'—')}</td><td class="c"><b>${f1(p.avg)}</b></td><td class="c">${gr(p.avg).g}</td></tr>`).join('')}</table></div>`:'<p class="mu">No scores recorded yet.</p>';
+  return `<div class="box np"><div class="row" style="margin:0"><label>Class<select data-dsh="c"><option value="ALL">All classes</option>${names.map(n=>`<option ${n==dsh.c?'selected':''}>${esc(n)}</option>`).join('')}</select></label><label>Class type<select data-dsh="t"><option value="ALL">All types</option>${ty.map(n=>`<option ${n==dsh.t?'selected':''}>${esc(n)}</option>`).join('')}</select></label><label>Performance basis<select data-dsh="b"><option value="term" ${dsh.b=='term'?'selected':''}>This term (${esc(T[C.t])})</option><option value="cum" ${dsh.b=='cum'?'selected':''}>Session cumulative</option></select></label><span class="mu" style="margin-left:auto">${esc(sesL(C.ses))} · ${esc(cur)}</span><button class="b" data-act="cc-dshxl">Export dashboard (XLSX)</button></div></div>
+<div class="kpis">
+${kpi('Total students',F.length,wd?wd+' withdrawn / graduated':'active students')}
+${kpi('Total users',STAFF_ERR?'—':staff.length,STAFF_ERR?'staff list unavailable':(nAdm+' admin · '+(staff.length-nAdm)+' teacher'+(nOff?' · '+nOff+' disabled':'')))}
+${kpi('Currently online','<span class="js-onl-n">'+nOn+'</span>','signed in right now')}
+${kpi('Average score',f1(avgAll),sc.length+' student'+(sc.length==1?'':'s')+' with scores')}
+${kpi('Pass rate',sc.length?pc(passN/sc.length*100):'—','average ≥ '+pass)}
+${kpi('Score entry',expN?pc(fillN/expN*100):'—','completed · '+nm+' student'+(nm==1?'':'s')+' with none')}
+${kpi('Attendance',att===null?'—':pc(att),'average days present')}
+${kpi('Top performer',top.length?esc(top[0].s.name):'—',top.length?esc(top[0].s.cls)+' · '+f1(top[0].avg):'')}
+${kpi('Editing',LOCK.on?'<span style="color:var(--danger)">Locked</span>':'Open',LOCK.on?'for all other users':'for all users')}
+</div>
+<div class="cg">
+${dcard('Enrolment by class',dsh.t=='ALL'?'':esc(dsh.t),hbar(byC.map(x=>({l:x.n,v:x.N,c:hc(x.n)}))))}
+${dcard('Average score by class','out of 100',hbar(byC.filter(x=>x.avg!==null).map(x=>({l:x.n,v:x.avg,c:hc(x.n)})),100,f1))}
+${dcard('Grade distribution',esc(cur),vcol(grades))}
+${dcard('Class type','by '+(dsh.c=='ALL'?'school':esc(dsh.c)),donut(tyItems,'students'))}
+${dcard('Gender',(dsh.c=='ALL'?'school':esc(dsh.c)),donut(gen,'students'))}
+${dcard('Average by subject','out of 100',hbar(subj,100,f1))}
+${dcard('Term trend','average score',lineChart(trend))}
+${dcard('Score entry progress','by class',hbar(byC.filter(x=>x.comp!==null).map(x=>({l:x.n,v:x.comp,c:x.comp>=100?'#3f8f6b':x.comp>=50?'#c9a45c':'#c8664f'})),100,v=>Math.round(v)+'%'))}
+${dcard('Top 5 students','',tbl(top.slice(0,5)))}
+${dcard('Needs support — lowest 5','',tbl(top.slice(-5).reverse()))}
+</div>
+<div class="box"><b>Class summary</b> <span class="mu">${esc(cur)}</span><div class="sc" style="margin-top:10px"><table><tr><th>Class</th><th class="c">Students</th><th class="c">Boys</th><th class="c">Girls</th><th class="c">Average</th><th class="c">Pass rate</th><th class="c">Score entry</th><th class="c">Attendance</th></tr>${(dsh.c=='ALL'?byC:byC.filter(x=>x.n==dsh.c)).map(x=>`<tr><td><b>${esc(x.n)}</b></td><td class="c">${x.N}</td><td class="c">${x.boys}</td><td class="c">${x.girls}</td><td class="c">${f1(x.avg)}</td><td class="c">${pc(x.pass)}</td><td class="c">${pc(x.comp)}</td><td class="c">${pc(x.att)}</td></tr>`).join('')||'<tr><td colspan="8" class="mu">No students.</td></tr>'}</table></div></div>`}
+
+/* ---------- student info export (admin only) ---------- */
+const EXC=[['reg','Reg No.'],['name','Full Name'],['g','Gender'],['cls','Class'],['type','Class Type'],['house','House'],['phone','Parent Phone'],['email','Parent Email'],['st','Status']];
+let exf={c:'ALL',t:'ALL',s:'active',g:true,cols:{reg:1,name:1,g:1,cls:1,type:1,house:1,phone:1,email:1,st:0}};
+function expList(){const order=C.classes.map(x=>x.n);return ST.filter(s=>(exf.c=='ALL'||s.cls==exf.c)&&(exf.t=='ALL'||(s.type||'')==exf.t)&&(exf.s=='all'||(exf.s=='active'?s.on!==false:s.on===false))).sort((a,b)=>{const i=order.indexOf(a.cls),j=order.indexOf(b.cls);return(i<0?999:i)-(j<0?999:j)||String(a.name).localeCompare(String(b.name))})}
+const expVal=(s,k)=>String(k=='st'?(s.on===false?'Withdrawn':'Active'):(s[k]??''));
+const expName=()=>'Students_'+(exf.c=='ALL'?'AllClasses':exf.c.replace(/\s+/g,''))+'_'+(exf.t=='ALL'?'AllTypes':exf.t)+'_'+new Date().toISOString().slice(0,10);
+const expDesc=()=>(exf.c=='ALL'?'All classes':exf.c)+' · '+(exf.t=='ALL'?'All types':exf.t)+' · '+exf.s+' · '+expList().length+' students';
+function vExport(){const ty=C.types||['Day','Boarding'],L=expList(),cols=EXC.filter(([k])=>exf.cols[k]);
+  return `<div class="box"><b>Student information export</b> <span class="tag">ADMIN ONLY</span><p class="mu">Download student details by class and class type as Excel or PDF. This page is visible to the administrator only.</p>
+<div class="row"><label>Class<select data-exf="c"><option value="ALL">All classes</option>${C.classes.map(x=>`<option ${x.n==exf.c?'selected':''}>${esc(x.n)}</option>`).join('')}</select></label>
+<label>Class type<select data-exf="t"><option value="ALL">All types</option>${ty.map(n=>`<option ${n==exf.t?'selected':''}>${esc(n)}</option>`).join('')}</select></label>
+<label>Students<select data-exf="s">${[['active','Active students'],['withdrawn','Withdrawn / past'],['all','Everyone']].map(([v,l])=>`<option value="${v}" ${v==exf.s?'selected':''}>${l}</option>`).join('')}</select></label>
+<label style="display:flex;flex-direction:row;align-items:center;gap:6px"><input type="checkbox" data-exf="g" ${exf.g?'checked':''}> Separate sheet / section per class</label></div>
+<div class="row"><b>Columns:</b>${EXC.map(([k,l])=>`<label style="display:inline-flex;flex-direction:row;gap:5px;align-items:center"><input type="checkbox" data-excol="${k}" ${exf.cols[k]?'checked':''}> ${l}</label>`).join('')}</div>
+<div class="row"><span class="mu"><b>${L.length}</b> student(s) match this selection.</span><button class="b" data-act="cc-expxl">Download Excel (.xlsx)</button><button class="b" data-act="cc-exppdf">Download PDF</button></div></div>
+<div class="box"><b>Preview</b> <span class="mu">first ${Math.min(15,L.length)} of ${L.length}</span><div class="sc" style="margin-top:10px"><table><tr>${cols.map(([k,l])=>`<th>${l}</th>`).join('')}</tr>${L.slice(0,15).map(s=>`<tr>${cols.map(([k])=>`<td>${esc(expVal(s,k))}</td>`).join('')}</tr>`).join('')||'<tr><td class="mu">No students match.</td></tr>'}</table></div></div>`}
+function expXLSX(){if(!admin)return;if(!window.XLSX)return toast('The spreadsheet library did not load.','err');
+  const L=expList(),cols=EXC.filter(([k])=>exf.cols[k]);if(!L.length)return toast('No students match this selection.','err');if(!cols.length)return toast('Tick at least one column.','err');
+  const wb=XLSX.utils.book_new(),add=(name,list)=>{const ws=XLSX.utils.aoa_to_sheet([cols.map(c=>c[1]),...list.map(s=>cols.map(([k])=>expVal(s,k)))]);ws['!cols']=cols.map(c=>({wch:c[0]=='name'||c[0]=='email'?30:15}));XLSX.utils.book_append_sheet(wb,ws,String(name).replace(/[\\\/?*\[\]:]/g,' ').slice(0,31)||'Students')};
+  if(exf.g&&exf.c=='ALL'){[...new Set(L.map(s=>s.cls))].forEach(n=>add(n,L.filter(s=>s.cls==n)))}else add(exf.c=='ALL'?'Students':exf.c,L);
+  XLSX.writeFile(wb,expName()+'.xlsx');audLog('Exported student list (XLSX)','',expDesc());toast('Excel file downloaded','ok')}
+function expPDF(){if(!admin)return;if(!window.jspdf)return toast('PDF tools did not load, reload the page','err');
+  const L=expList(),cols=EXC.filter(([k])=>exf.cols[k]);if(!L.length)return toast('No students match this selection.','err');if(!cols.length)return toast('Tick at least one column.','err');
+  const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4',orientation:cols.length>6?'landscape':'portrait'}),PW=doc.internal.pageSize.getWidth(),PH=doc.internal.pageSize.getHeight(),M=12,UW=PW-2*M;
+  const WT={reg:1.7,name:2.8,g:.9,cls:1.5,type:1.1,house:1.1,phone:1.7,email:2.8,st:1.1},tw=cols.reduce((a,[k])=>a+WT[k],0),W=cols.map(([k])=>WT[k]/tw*UW);
+  const title='Student list — '+(exf.c=='ALL'?'All classes':exf.c)+(exf.t!='ALL'?' · '+exf.t:'')+' · '+({active:'Active',withdrawn:'Withdrawn / past',all:'All students'}[exf.s]);
+  const fit=(t,w)=>{t=String(t);if(doc.getTextWidth(t)<=w-2)return t;while(t.length>1&&doc.getTextWidth(t+'…')>w-2)t=t.slice(0,-1);return t+'…'};
+  let y=0;
+  const head=()=>{doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(30);doc.text(String(C.name||'School'),M,M+4);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(90);doc.text(title,M,M+10);doc.text('Generated '+new Date().toLocaleString()+' · '+sesL(C.ses)+' '+T[C.t]+' · '+L.length+' student(s)',M,M+15);y=M+20};
+  const colhead=()=>{doc.setFillColor(228,236,231);doc.rect(M,y,UW,7,'F');doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(30);let x=M;cols.forEach(([k,l],i)=>{doc.text(l,x+1,y+4.8);x+=W[i]});y+=7;doc.setFont('helvetica','normal')};
+  const room=h=>{if(y+h>PH-16){doc.addPage();head();colhead()}};
+  head();colhead();
+  const groups=exf.c=='ALL'&&exf.g?[...new Set(L.map(s=>s.cls))].map(n=>[n,L.filter(s=>s.cls==n)]):[[null,L]];
+  groups.forEach(([n,list])=>{
+    if(n){room(18);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(40,90,70);doc.text(n+'  ('+list.length+')',M,y+5);y+=7.5}
+    list.forEach((s,i)=>{room(7);if(i%2==0){doc.setFillColor(246,249,247);doc.rect(M,y,UW,6.4,'F')}doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(40);let x=M;cols.forEach(([k],ci)=>{doc.text(fit(expVal(s,k),W[ci]),x+1,y+4.4);x+=W[ci]});y+=6.4});
+    y+=3});
+  const N=doc.getNumberOfPages();for(let i=1;i<=N;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(120);doc.text('Confidential — administrator use only',M,PH-7);doc.text('Page '+i+' of '+N,PW-M,PH-7,{align:'right'})}
+  doc.save(expName()+'.pdf');audLog('Exported student list (PDF)','',expDesc());toast('PDF downloaded','ok')}
+
+/* ---------- event wiring ---------- */
+const ACTLBL={print:'Printed report cards',pdf:'Downloaded report cards (PDF)',csv:'Exported scores (CSV)',bxl:'Exported broadsheet (XLSX)',bprint:'Printed broadsheet',xl:'Exported all data (XLSX)',bak:'Downloaded backup',promo:'Ran promotion',rst:'Restored a backup'};
+const CC={
+ 'cc-lock':()=>setLock(true),'cc-unlock':()=>setLock(false),
+ 'cc-recheck':()=>{_ctl=1;ctlInit()},
+ 'cc-copysql':()=>{const t=window._sql||'';const ok=()=>toast('SQL copied. Paste it in the Supabase SQL Editor.','ok');if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,()=>{const r=document.createRange();r.selectNodeContents($('#sqlbox'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Press Ctrl+C to copy the selected SQL.','ok')});else{const r=document.createRange();r.selectNodeContents($('#sqlbox'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Press Ctrl+C to copy the selected SQL.','ok')}},
+ 'cc-actref':()=>loadAct(),'cc-actmore':()=>loadAct(true),
+ 'cc-actxl':()=>{if(!window.XLSX)return toast('The spreadsheet library did not load.','err');const L=actFiltered();if(!L.length)return toast('Nothing to export.','err');const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Time','User','Role','Action','Target','Details','Changes (field: before → after)'],...L.map(r=>[fmtT(r.at),r.email||'',r.role||'',r.action,r.target||'',r.detail||'',(Array.isArray(r.changes)?r.changes:[]).map(c=>hk(c.k)+': '+shw(c.f)+' → '+shw(c.t)).join(' | ')])]),'Activity');XLSX.writeFile(wb,'Activity_log_'+new Date().toISOString().slice(0,10)+'.xlsx');audLog('Exported activity log (XLSX)','',L.length+' entries')},
+ 'cc-dshxl':()=>{if(!window.XLSX||!DSHX)return toast('The spreadsheet library did not load.','err');const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Measure','Value'],...DSHX.k]),'Overview');XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(DSHX.c),'Class summary');XLSX.writeFile(wb,'Dashboard_'+new Date().toISOString().slice(0,10)+'.xlsx');audLog('Exported dashboard (XLSX)','',DSHX.k[0][1])},
+ 'cc-expxl':expXLSX,'cc-exppdf':expPDF};
+document.addEventListener('click',e=>{const el=e.target.closest?e.target.closest('[data-act]'):null,a=el&&el.dataset.act;if(!a||el.disabled)return;
+  if(ACTLBL[a]){const ctx=(a=='print'||a=='pdf')?curC()+(sel.ty!='ALL'?' · '+sel.ty:'')+' · '+(sel.r=='ALL'?'all students':stName(sel.r)):curC();audLog(ACTLBL[a],'',ctx)}
+  if(CC[a]&&admin)CC[a]()});
+document.addEventListener('change',e=>{const t=e.target,d=t.dataset||{};
+  if(d.dsh&&admin){dsh[d.dsh]=t.value;draw()}
+  if(d.exf&&admin){exf[d.exf]=d.exf=='g'?t.checked:t.value;draw()}
+  if(d.excol&&admin){exf.cols[d.excol]=t.checked?1:0;draw()}
+  if(d.actf&&admin&&d.actf!='q'){ACTF[d.actf]=t.value;if(d.actf=='p')loadAct();else{draw()}}});
+document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.actf=='q'&&admin){ACTF.q=t.value;actUI()}});
+let _lv='';$('#nv').addEventListener('click',e=>{const v=e.target.dataset&&e.target.dataset.v;if(v&&v!=_lv){_lv=v;audLog('Opened '+(VL[v]||v),'','')}});
+function postDraw(){
+  lockUI();
+  if(admin){const el=$('#rl');if(el&&!el.querySelector('.js-onl-n'))el.innerHTML=esc(el.textContent)+' · <span class="js-onl-n">'+onlList().length+'</span> online'}
+  const sg=view+'|'+(['scores','reports','board','info','students'].includes(view)?curC():'');if(sg!=_psig){_psig=sg;presDirty()}
+  if(admin&&view=='admin'&&asub=='activity'){actUI();onlUI()}
+  if(admin&&view=='admin'&&asub=='control'){if(!_ctl){_ctl=1;ctlInit()}else{const s=$('#ctlstat');if(s)s.innerHTML=_ctlHTML;const b=$('#sqlbox');if(b&&window._sql)b.textContent=window._sql}}else _ctl=0;
+  if(admin&&view=='dash')onlUI()}
+function ctrlBoot(){try{lockBoot()}catch(e){}presBoot();audLog('Session started','','Role: '+(ROLE=='admin'?'Administrator':'Teacher')+(MYCLASSES.length?' · Classes: '+MYCLASSES.join(', '):''));if(admin){actBoot();loadStaff()}}
+
 (async()=>{try{draw();db=await claude.use('db');user=await claude.use('user');admin=!!(user&&user.canEdit());if(!db){draw();return}
+ctrlBoot();
 db.doc('cfg/school').onSnapshot(s=>{C=s.exists?{...DEF,...s.data()}:DEF;sub();draw(1)});db.collection('students').onSnapshot(q=>{ST=q.docs.map(d=>d.data()).sort((a,b)=>String(a.name).localeCompare(String(b.name)));draw(1)});sub();draw()}catch(e){$('#m').innerHTML='<div class="warn">Could not start: '+esc(e.message||e)+'. Reload the page.</div>'}})();
 </script>
 </body>
