@@ -746,6 +746,12 @@ P.activity=vActivity;P.export=vExport;P.control=vControl;
 const tabs=[['school','School & Term'],['classes','Classes & Subjects'],['brand','Logo & Signature'],['backup','Backup & Restore'],['promo','Promotion'],['activity','Activity & Online'],['export','Student Export'],['control','Lock & Setup']];
 return`<div class="box np"><div class="row" style="margin:0">${tabs.map(([k,l])=>`<button class="${asub==k?'b':''}" data-asub="${k}">${l}</button>`).join('')}</div></div>`+(P[asub]||P.school)()}
 $('#m').addEventListener('click',e=>{const p=e.target.dataset&&e.target.dataset.asub;if(p){asub=p;draw()}});
+/* Activity & Online: switch between Users online now / Activity log / Users */
+let ACTV='online';
+function vActivity(){const t=document.createElement('template');t.innerHTML=vActivityAll();const b=[...t.content.children],i={online:0,log:1,users:2}[ACTV]??0,
+nav=[['online','Users online now'],['log','Activity log'],['users','Users']].map(([k,l])=>`<button class="${ACTV==k?'b':''}" data-aview="${k}">${l}${k=='online'?' <span class="tag js-onl-n">'+onlList().length+'</span>':k=='users'?' <span class="tag">'+STAFF.length+'</span>':''}</button>`).join('');
+return`<div class="row np" style="margin:0 0 10px">${nav}</div>`+(b[i]?b[i].outerHTML:'')}
+$('#m').addEventListener('click',e=>{const v=e.target.closest&&e.target.closest('[data-aview]');if(v){ACTV=v.dataset.aview;draw()}});
 const csvq=v=>'"'+String(v).replace(/"/g,'""')+'"';
 async function addSt(n,c,g,t,h,p,e){if(!n||!C.classes.some(x=>x.n==c))return false;if(ST.some(s=>s.cls==c&&String(s.name).trim().toLowerCase()==n.trim().toLowerCase()))return false;let r;try{const{data,error}=await sb.rpc('next_reg');if(error)throw error;const q=Number(data);if(!Number.isFinite(q)||q<1)throw new Error('The registration counter returned no number.');const dt=new Date();r=(C.pfx||'DEC')+'/'+String(dt.getMonth()+1).padStart(2,'0')+String(dt.getFullYear()).slice(-2)+'/A'+String(q).padStart(4,'0')}catch(x){alert('Could not get a registration number: '+(x.message||x)+'. Student not added.');return false}const o={reg:r,name:n,cls:c,g:g||'',type:t||'Day',house:h||'',phone:p||'',email:e||'',on:true,hist:[]};ST.push(o);try{await db.doc('students/'+r).set(o)}catch(x){ST=ST.filter(y=>y!==o);alert('Could not save student: '+(x.message||x));return false}return true}
 /* keyboard navigation: Enter/Arrow keys move within score grid */
@@ -1042,7 +1048,7 @@ function lockUI(){
   if(LOCK.on){bar.style.display='';bar.innerHTML=admin?`<div class="warn" style="margin:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><b>Editing is LOCKED for all other users.</b><span class="mu">${esc(LOCK.msg)}</span><button class="b" data-act="cc-unlock" style="margin-left:auto">Unlock now</button></div>`:`<div class="warn" style="margin:10px 16px"><b>Editing is locked by the administrator.</b> You can still view, print and export, but changes cannot be saved.${LOCK.msg?' <span class="mu">'+esc(LOCK.msg)+'</span>':''}</div>`}
   else{bar.style.display='none';bar.innerHTML=''}
   if(lockedForMe())document.querySelectorAll('#m input,#m textarea,#m select,#m button').forEach(el=>{
-    if(el.matches('[data-sel],[data-asub],[data-v],[data-pf],[data-dsh]'))return;
+    if(el.matches('[data-sel],[data-asub],[data-aview],[data-v],[data-pf],[data-dsh]'))return;
     if(el.tagName=='BUTTON'&&['csv','print','pdf','bxl','bprint'].includes(el.dataset.act))return;
     el.disabled=true;el.title='Locked by the administrator'})}
 async function setLock(on){if(!admin)return;const m=$('#lockmsg'),msg=on?(m?m.value.trim():LOCK.msg):'';
@@ -1069,7 +1075,7 @@ function actUI(){const box=$('#actbox'),info=$('#actinfo');if(!box)return;
   const L=actFiltered();
   info.textContent=L.length+' entr'+(L.length==1?'y':'ies')+' shown'+(ACT_MORE?' (older entries available)':'')+' · live: new activity appears automatically';
   box.innerHTML=L.length?`<div class="sc"><table><tr><th>Time</th><th>User</th><th>Action</th><th>Target</th><th>Details (before → after)</th></tr>${L.slice(0,400).map(r=>{const ch=Array.isArray(r.changes)?r.changes:[];return`<tr><td style="white-space:nowrap">${esc(fmtT(r.at))}</td><td>${esc(r.email||'')}<div class="mu">${r.role=='admin'?'Admin':'Teacher'}</div></td><td><b>${esc(r.action)}</b></td><td>${esc(r.target||'')}</td><td>${ch.length>1?`<details><summary>${esc(r.detail||'')}</summary><div style="margin-top:6px">${ch.map(c=>esc(hk(c.k))+': '+esc(shw(c.f))+' → <b>'+esc(shw(c.t))+'</b>').join('<br>')}</div></details>`:esc(r.detail||'')}</td></tr>`}).join('')}</table></div>${ACT_MORE?'<p><button data-act="cc-actmore">Load older entries</button></p>':''}`:'<p class="mu">No activity matches these filters.</p>'}
-function vActivity(){
+function vActivityAll(){
   const emails=[...new Set([...STAFF.map(stfEm),...ACT.map(r=>r.email)].filter(Boolean).map(x=>x.toLowerCase()))].sort();
   return `<div class="box"><b>Users online now</b> <span class="tag js-onl-n">0</span> <span class="mu">live · updates automatically</span><div id="onlbox" style="margin-top:10px"></div></div>
 <div class="box"><b>Activity log</b> <span class="mu">sign-ins, pages opened, every save / edit / delete, exports and prints, with before → after values.</span>
