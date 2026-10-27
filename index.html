@@ -137,8 +137,12 @@ td.c,th.c{text-align:center}
 .scs table{width:max-content;min-width:100%}
 .scs thead th,.scs th.sk,.scs td.sk{background-color:var(--bg-elevated)}
 .scs thead th{background-image:linear-gradient(var(--ac-soft),var(--ac-soft));position:sticky;z-index:3;box-sizing:border-box;height:38px;padding-top:0;padding-bottom:0;vertical-align:middle}
-.scs thead tr.r1 th{top:0}
-.scs thead tr.r2 th{top:38px;border-bottom:2px solid var(--bd-strong,var(--bd))}
+.scs thead tr.r1 th{top:46px}
+.scs .tb{position:sticky;top:0;left:0;z-index:7;box-sizing:border-box;height:46px;display:flex;align-items:center;gap:12px;padding:0 10px;background:var(--bg-elevated);border-bottom:1px solid var(--bd);width:100%;overflow:hidden}
+.scs .tb .b{flex:none;padding:7px 16px}.scs .tb .b.pulse{animation:svp 1.4s ease-in-out infinite}@keyframes svp{50%{box-shadow:0 0 0 4px rgba(178,106,0,.28)}}
+.scs .tb .tg{flex:none;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer}.scs .tb .tg input{width:auto;margin:0}
+.svst{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.svst.ok{color:#2e7d4f}.svst.wait{color:var(--fg-muted)}.svst.warn{color:#b26a00}.svst.bad{color:#c25a4f}
+.scs thead tr.r2 th{top:84px;border-bottom:2px solid var(--bd-strong,var(--bd))}
 .scs thead tr.r1 th[rowspan]{border-bottom:2px solid var(--bd-strong,var(--bd))}
 .scs .sk{position:sticky;--w1:128px;--w2:170px}
 .scs .k1{left:0;width:var(--w1);min-width:var(--w1);max-width:var(--w1);box-sizing:border-box}
@@ -625,15 +629,42 @@ function nextOf(n){const cl=C.classes.find(x=>x.n==n);if(!cl)return null;const n
   const cur=C.classes.filter(y=>lvOf(y)==lvOf(cl));if(cur.length==cands.length)return cands[cur.findIndex(y=>y.n==n)].n;return null}
 function cumAvgOf(s){let sum=0,n=0;for(let j=0;j<=C.t;j++){const d=j==C.t?SC[s.reg]:(PV[j]||{})[s.reg];if(!d)continue;const k=calc(d,d.subs&&d.subs.length?d.subs:cd(s.cls).s);if(k.has){sum+=k.avg;n++}}return n?{avg:sum/n,n}:null}
 let POV={};
-function decide(s){const c=cumAvgOf(s),ov=POV[s.reg],pass=passMk(),out=ov=='repeat'?'repeat':ov=='promote'?'promote':(c&&c.avg>=pass?'promote':'repeat');const to=out=='repeat'?s.cls:(ptt[s.reg]||nextOf(s.cls));return{c,out,noscore:!c,to,ty:out=='repeat'||to=='Graduated'?(s.type||''):(pty[s.reg]||s.type||'')}}
+function decide(s){const c=cumAvgOf(s),ov=POV[s.reg],pass=passMk(),out=ov=='repeat'?'repeat':ov=='promote'?'promote':(c&&c.avg>=pass?'promote':'repeat');const to=out=='repeat'?s.cls:(ptt[s.reg]||nextOf(s.cls));return{c,out,noscore:!c,to,ty:out=='repeat'||to=='Graduated'?(s.type||''):((pty[s.reg]!==undefined?pty[s.reg]:s.type)||'')}}
 
 
 const PEND={},INF={},_saveT={},_busy={},TF=['sc','pres','dom'];
 function applyPend(reg,d){[...(INF[reg]||[]),...(PEND[reg]||[])].forEach(f=>f(d));return d}
-function setSaveState(s){const el=document.getElementById('sstat');if(!el)return;
-  if(s=='pending'){el.textContent='Saving…';el.style.background='rgba(255,255,255,.18)';el.style.color='#fff'}
-  else if(s=='saved'){el.textContent='Saved';el.style.background='rgba(255,255,255,.22)';el.style.color='#fff';setTimeout(()=>{if(el.textContent=='Saved'){el.textContent='';el.style.background='transparent'}},1800)}
-  else{el.textContent='Not saved';el.style.background='#c25a4f';el.style.color='#fff'}}
+const SV={err:false,rt:null,at:0,toasted:false},PK={};
+const pendN=()=>Object.keys(PEND).filter(r=>(PEND[r]||[]).length||(INF[r]||[]).length).length;
+const autoOn=()=>{try{return localStorage.getItem('dec_autosave')!=='0'}catch(e){return true}};
+function refreshSaveUI(){
+  const n=pendN(),busy=Object.values(_busy).some(Boolean),off=navigator.onLine===false,au=autoOn();
+  let txt,cls,hd;
+  if(n&&off){txt='Offline · '+n+' unsaved (kept, will save when online)';cls='bad';hd='Offline · not saved'}
+  else if(n&&SV.err){txt='Not saved · '+n+' waiting'+(au?' · retrying…':' · click Save');cls='bad';hd='Not saved'}
+  else if(busy||(n&&au)){txt='Saving…';cls='wait';hd='Saving…'}
+  else if(n){txt='Unsaved · '+n+' pending · click Save';cls='warn';hd='Unsaved'}
+  else{txt='All changes saved'+(SV.at?' · '+new Date(SV.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'');cls='ok';hd='Saved'}
+  const st=document.getElementById('svst');if(st){st.textContent=txt;st.className='svst '+cls}
+  const bt=document.getElementById('svbtn');if(bt){bt.textContent=n?'Save ('+n+')':'Save';bt.classList.toggle('pulse',n>0&&!au)}
+  const el=document.getElementById('sstat');if(!el)return;
+  el.textContent=hd;el.style.color='#fff';el.style.background=cls=='bad'?'#c25a4f':cls=='warn'?'#b26a00':'rgba(255,255,255,.2)';
+  if(cls=='ok')setTimeout(()=>{if(el.textContent=='Saved'){el.textContent='';el.style.background='transparent'}},1800)}
+function setSaveState(s){if(s=='error')SV.err=true;else if(s=='saved'&&pendN()==0){SV.err=false;SV.toasted=false;SV.at=Date.now()}refreshSaveUI()}
+const _tmo=(p,ms)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error('The connection timed out')),ms))]);
+async function flushAll(manual){
+  const regs=Object.keys(PEND).filter(r=>(PEND[r]||[]).length);
+  regs.forEach(r=>clearTimeout(_saveT[r]));
+  await Promise.all(regs.map(r=>flush(r,PK[r]||pid())));
+  const n=pendN();
+  if(manual){if(!n)toast('All scores saved','ok');else toast('Not saved. Check your internet connection, then click Save again.','err')}
+  return !n}
+function scheduleRetry(){if(SV.rt)return;SV.rt=setTimeout(async()=>{SV.rt=null;if(pendN()&&autoOn()){await flushAll(false);if(pendN())scheduleRetry()}},6000)}
+window.addEventListener('online',()=>{refreshSaveUI();if(pendN())flushAll(false)});
+window.addEventListener('offline',refreshSaveUI);
+window.addEventListener('beforeunload',e=>{if(pendN()){e.preventDefault();e.returnValue=''}});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-act="savenow"]');if(b)flushAll(true)});
+document.addEventListener('change',e=>{if(e.target.id!=='autosv')return;try{localStorage.setItem('dec_autosave',e.target.checked?'1':'0')}catch(x){}refreshSaveUI();if(e.target.checked&&pendN())flushAll(false)});
 function save(reg,fn,kind){
   if(lockedForMe()){toast(LOCKMSG(),'err');return}
   const s=ST.find(x=>x.reg==reg);if(!s)return;
@@ -643,21 +674,22 @@ function save(reg,fn,kind){
   }
   const k=pid();(PEND[reg]=PEND[reg]||[]).push(fn);
   const d={...(SC[reg]||{p:k,reg,sc:{},dom:{}})};fn(d);d.cls=s.cls;d.subs=cd(s.cls).s;SC[reg]=d;
-  setSaveState('pending');clearTimeout(_saveT[reg]);_saveT[reg]=setTimeout(()=>flush(reg,k),400)}
+  PK[reg]=k;if(autoOn()){clearTimeout(_saveT[reg]);_saveT[reg]=setTimeout(()=>flush(reg,k),400)}refreshSaveUI()}
 async function flush(reg,k){
-  if(_busy[reg]){_saveT[reg]=setTimeout(()=>flush(reg,k),250);return}
+  while(_busy[reg])await new Promise(r=>setTimeout(r,120));
   const fns=PEND[reg]||[];if(!fns.length)return;
   PEND[reg]=[];INF[reg]=fns;_busy[reg]=1;
   const s=ST.find(x=>x.reg==reg),path='scores/'+k+'_'+reg;
   try{
-    const g=await db.doc(path).get(),d=g.exists?{...g.data()}:{p:k,reg,sc:{},dom:{}};
+    const g=await _tmo(db.doc(path).get(),20000),d=g.exists?{...g.data()}:{p:k,reg,sc:{},dom:{}};
     fns.forEach(f=>f(d));d.p=k;d.reg=reg;if(s){d.cls=s.cls;d.subs=cd(s.cls).s}
-    await db.doc(path).set(d);
+    await _tmo(db.doc(path).set(d),20000);
     INF[reg]=null;if(k==pid())SC[reg]=applyPend(reg,{...d});
     setSaveState((PEND[reg]||[]).length?'pending':'saved')
   }catch(e){
     PEND[reg]=fns.concat(PEND[reg]||[]);INF[reg]=null;setSaveState('error');
-    toast('Could not save: ' + (e.message || e), 'err');
+    if(!SV.toasted){SV.toasted=true;toast('Could not save: ' + (e.message || e) + '. Your entries are kept on this screen.', 'err')}
+    if(autoOn())scheduleRetry();
   }finally{_busy[reg]=0}}
 function sub(){const k=pid();if(!db||k==key)return;key=k;SC={};u2&&u2();UP.forEach(f=>f());UP=[];PV={};for(let j=0;j<C.t;j++)UP.push(db.collection('scores').where('p','==',C.ses+'_'+j).onSnapshot(q=>{PV[j]={};q.docs.forEach(d=>PV[j][d.data().reg]=d.data());draw(1)}));u2=db.collection('scores').where('p','==',k).onSnapshot(q=>{SC={};q.docs.forEach(d=>SC[d.data().reg]=d.data());Object.keys(PEND).forEach(r=>{if((PEND[r]||[]).length||(INF[r]||[]).length)SC[r]=applyPend(r,{...(SC[r]||{p:pid(),reg:r,sc:{},dom:{}})})});draw(1)})}
 function nav(){
@@ -680,7 +712,7 @@ function draw(soft){
   }
   const _sb=document.querySelector('#m .scs'),_sk=view+'|'+(typeof curC=='function'?curC():''),_ss=_sb&&_sb.dataset.k==_sk?[_sb.scrollLeft,_sb.scrollTop]:(window._scr&&window._scr.k==_sk?window._scr.v:null);if(_sb)window._scr={k:_sk,v:[_sb.scrollLeft,_sb.scrollTop]};
   $('#m').innerHTML=(db?'':'<div class="warn">Connecting to the database. If this message stays, sign in again or reload the page.</div>')+
-    ({info:vInfo,scores:vScores,reports:vReports,board:vBoard,students:vStudents,past:vPast,import:vImport,admin:vAdmin,dash:vDash}[view]||vScores)();postDraw();
+    ({info:vInfo,scores:vScores,reports:vReports,board:vBoard,students:vStudents,past:vPast,import:vImport,admin:vAdmin,dash:vDash}[view]||vScores)();postDraw();refreshSaveUI();
   const _nb=document.querySelector('#m .scs');if(_nb){_nb.dataset.k=_sk;if(_ss){_nb.scrollLeft=_ss[0];_nb.scrollTop=_ss[1]}_nb.addEventListener('scroll',()=>{window._scr={k:_sk,v:[_nb.scrollLeft,_nb.scrollTop]}},{passive:true})}
 }
 const clsSel=()=>{
@@ -700,7 +732,7 @@ function vScores(){
   const c=curC(),subs=cd(c).s,L=act(c).filter(s=>sel.ty=='ALL'||(s.type||'')==sel.ty);
   if(!subs||!subs.length)return `<div class="warn">The class <b>${esc(c)}</b> has no subjects yet. Go to Settings to add subjects for this class.</div>`;
   const pm=posMap(c);
-  let h=`<div class="box"><div class="row">${clsSel()}${tySel()}<span class="mu">CA max ${C.ca} · Exam max ${C.ex} · scores save automatically. Press Enter / arrows to move down a column.</span><button class="b" data-act="csv">Export CSV</button></div><div class="sc scs"><table><thead><tr class="r1"><th rowspan=2 class="sk k1">Reg No.</th><th rowspan=2 class="sk k2">Name</th>${subs.map(s=>`<th class="c" colspan=2>${esc(s)}</th>`).join('')}<th rowspan=2 class="c">Total</th><th rowspan=2 class="c">Avg</th><th rowspan=2 class="c">Grade</th><th rowspan=2 class="c">Pos.</th></tr><tr class="r2">${subs.map(()=>`<th class="c">CA</th><th class="c">Exam</th>`).join('')}</tr></thead><tbody>`;
+  let h=`<div class="box"><div class="row">${clsSel()}${tySel()}<span class="mu">CA max ${C.ca} · Exam max ${C.ex} · Press Enter / arrows to move down a column. Use the Save button (or leave Auto-save on).</span><button class="b" data-act="csv">Export CSV</button></div><div class="sc scs"><div class="tb"><button class="b" id="svbtn" data-act="savenow">Save</button><label class="tg"><input type="checkbox" id="autosv" ${autoOn()?'checked':''}> Auto-save</label><span id="svst" class="svst"></span></div><table><thead><tr class="r1"><th rowspan=2 class="sk k1">Reg No.</th><th rowspan=2 class="sk k2">Name</th>${subs.map(s=>`<th class="c" colspan=2>${esc(s)}</th>`).join('')}<th rowspan=2 class="c">Total</th><th rowspan=2 class="c">Avg</th><th rowspan=2 class="c">Grade</th><th rowspan=2 class="c">Pos.</th></tr><tr class="r2">${subs.map(()=>`<th class="c">CA</th><th class="c">Exam</th>`).join('')}</tr></thead><tbody>`;
   for(const s of L){const d=SC[s.reg],k=calc(d,subs),p=pm[s.reg]||{p:0,n:0};h+=`<tr data-r="${esc(s.reg)}"><td class="sk k1">${esc(s.reg)}</td><td class="sk k2">${esc(s.name)}</td>${subs.map(j=>{const v=(d&&d.sc&&d.sc[j])||[];return[0,1].map(i=>`<td class="c"><input type="number" min="0" step="0.5" max="${i?C.ex:C.ca}" data-sc="${esc(j)}" data-k="${i}" value="${v[i]??''}"></td>`).join('')}).join('')}<td class="c tot">${k.tot}</td><td class="c avg">${k.avg.toFixed(1)}</td><td class="c gd">${k.b.g}</td><td class="c ps">${ordp(p)}</td></tr>`}
   return h+`</tbody></table></div>${L.length?'':'<p class="mu">No students in this class yet.</p>'}</div>`
 }
@@ -733,7 +765,7 @@ async function hist(s){const el=$('#hist');if(!db||!el)return;try{const q=await 
 function vBoard(){const c=curC(),subs=cd(c).s;if(!subs||!subs.length)return `<div class="warn">The class <b>${esc(c)}</b> has no subjects yet.</div>`;const pm=posMap(c),L=act(c).map(s=>({s,k:calc(SC[s.reg],subs)})).sort((a,b)=>b.k.tot-a.k.tot);const W=L.filter(x=>x.k.has),cnt={};L.forEach(x=>cnt[x.k.b.g]=(cnt[x.k.b.g]||0)+1);
 return`<div class="box"><div class="row">${clsSel()}<span class="mu">Class average ${W.length?(W.reduce((a,x)=>a+x.k.avg,0)/W.length).toFixed(1):0}% · ${C.bands.map(b=>b.g+': '+(cnt[b.g]||0)).join(' · ')}</span><button class="b" data-act="bprint">Print</button><button class="b" data-act="bxl">Export Excel</button></div><div class="po"><b>${esc(C.name)}</b><br>${esc(c)} broadsheet · ${sesL(C.ses)} · ${T[C.t]}</div><div class="sc"><table><tr><th>Pos.</th><th>Name</th>${subs.map(s=>`<th class="c">${esc(s)}</th>`).join('')}<th class="c">Total</th><th class="c">Avg</th><th class="c">Grade</th></tr>${L.map(x=>`<tr><td>${ordp(pm[x.s.reg]||{p:0})}</td><td>${esc(x.s.name)}</td>${x.k.rows.map(r=>`<td class="c">${r.e?'':r.t}</td>`).join('')}<td class="c">${x.k.has?x.k.tot:''}</td><td class="c">${x.k.has?x.k.avg.toFixed(1):''}</td><td class="c">${x.k.b.g}</td></tr>`).join('')}</table></div></div>`}
 function vPast(){const grads=ST.filter(s=>s.on===false);return`<div class="box"><b>Past students (${grads.length})</b><p class="mu">Graduated or withdrawn. Records are still in the database; reactivate a student to edit them or print an old report card.</p><div class="sc"><table><tr><th>Reg No.</th><th>Name</th><th>Last class</th><th>Last session</th><th>Outcome</th><th></th></tr>${grads.map(s=>{const h=(s.hist||[]).slice(-1)[0]||{};return`<tr><td>${esc(s.reg)}</td><td>${esc(s.name)}</td><td>${esc(h.cls||s.cls)}</td><td>${esc(h.ses||'')}</td><td>${esc(h.out||'—')}</td><td><button data-act="rea" data-r="${esc(s.reg)}">Reactivate</button></td></tr>`}).join('')}</table></div>${grads.length?'':'<p class="mu">No past students yet.</p>'}</div>`}
-function vStudents(){const c=curC(),all=ST.filter(s=>s.cls==c&&(sel.ty=='ALL'||(s.type||'')==sel.ty));return`<div class="box"><b>Add student <span class="tag">ADMIN</span></b><div class="row"><label>Full name<input id="an"></label>${clsSel()}<label>Gender<select id="ag"><option>Male</option><option>Female</option></select></label><label>Class Type<select id="at">${(C.types||['Day','Boarding']).map(t=>`<option>${esc(t)}</option>`).join('')}</select></label><label>House<input id="ah" size=8></label><label>Parent phone<input id="ap" size=12></label><label>Parent email<input id="ae"></label><button class="b" data-act="add">Add</button></div>
+function vStudents(){const c=curC(),all=ST.filter(s=>s.cls==c&&(sel.ty=='ALL'||(s.type||'')==sel.ty));return`<div class="box"><b>Add student <span class="tag">ADMIN</span></b><div class="row"><label>Full name<input id="an"></label>${clsSel()}<label>Gender<select id="ag"><option>Male</option><option>Female</option></select></label><label>Class Type<select id="at"><option value="">— None —</option>${(C.types||['Day','Boarding']).map(t=>`<option>${esc(t)}</option>`).join('')}</select></label><label>House<input id="ah" size=8></label><label>Parent phone<input id="ap" size=12></label><label>Parent email<input id="ae"></label><button class="b" data-act="add">Add</button></div>
 <b>Bulk import</b> <span class="mu">one per line: Name, Class, Gender, Type, House, Phone, Email</span><textarea id="bi"></textarea><button class="b" data-act="imp">Import</button></div>
 <div class="box"><b>Student photos <span class="tag">ADMIN</span></b><p class="mu">Photos appear at the top-right of each report sheet. Upload one per student in the list below, or select many at once here: name each file with the student's Reg No. (e.g. DEC-1026-AB0188.jpg) or full name (e.g. Abduljalal Abdulkadir.jpg). Photos are auto-cropped to passport shape and compressed.</p><div class="row"><input type="file" id="phbulk" accept="image/*" multiple></div></div>
 <div class="box"><b>${esc(c)} (${all.length})</b><div class="row">${tySelAdd()}</div><div class="sc"><table><tr><th>Photo</th><th>Reg No.</th><th>Name</th><th>Gender</th><th>Type</th><th>House</th><th>Phone</th><th>Status</th><th>Move to</th><th></th></tr>${all.map(s=>`<tr><td><div class="pht">${s.ph?`<img src="${s.ph}" alt="">`:'<span class="nop">No photo</span>'}<label class="pb">${s.ph?'Change':'Upload'}<input type="file" accept="image/*" hidden data-ph="${esc(s.reg)}"></label>${s.ph?`<button class="w" data-act="phrm" data-r="${esc(s.reg)}">Remove</button>`:''}</div></td><td>${esc(s.reg)}</td><td>${esc(s.name)}</td><td>${esc(s.g)}</td><td>${esc(s.type||'')}</td><td>${esc(s.house||'')}</td><td>${esc(s.phone||'')}</td><td>${s.on===false?'Withdrawn':'Active'}</td><td><select data-mv="${esc(s.reg)}"${s.on===false?' disabled title="Reactivate first"':''}>${C.classes.map(x=>`<option ${x.n==s.cls?'selected':''}>${esc(x.n)}</option>`).join('')}</select></td><td><button data-act="tog" data-r="${esc(s.reg)}">${s.on===false?'Reactivate':'Withdraw'}</button> <button class="w" data-act="del" data-r="${esc(s.reg)}">Delete</button></td></tr>`).join('')}</table></div></div>`}
@@ -767,7 +799,7 @@ promo:()=>`<div class="box"><b>End-of-session promotion <span class="tag">ADMIN<
 ${(()=>{const bad=L.filter(s=>!idx.includes(s.cls));return bad.length?`<div class="warn">${bad.length} active student(s) are in a class that is not in the class list and will be skipped: ${bad.slice(0,6).map(s=>esc(s.name)+' ('+esc(s.cls)+')').join(', ')}.</div>`:''})()}
 ${(()=>{const un=[...new Set(L.filter(s=>idx.includes(s.cls)).filter(s=>{const p=decide(s);return p.out=='promote'&&!p.to}).map(s=>s.cls))];return un.length?`<div class="warn">${un.map(c=>`<div class="row" style="margin:4px 0">The next class for <b>${esc(c)}</b> is not in your class list. Move all its promoted students to: <select data-pbulk="${esc(c)}"><option value="">— choose —</option>${[...idx,'Graduated'].map(n=>`<option>${esc(n)}</option>`).join('')}</select></div>`).join('')}</div>`:''})()}
 ${(()=>{const ty=C.types||['Day','Boarding'],cnt=L.filter(s=>idx.includes(s.cls)&&(pf.c=='ALL'||s.cls==pf.c)&&(pf.t=='ALL'||(s.type||'')==pf.t)).length;return`<div class="row" style="background:var(--bg);padding:12px;border-radius:8px;border:1px solid var(--bd);margin-bottom:16px;"><label>Class<select data-pf="c"><option value="ALL">All classes</option>${idx.map(n=>`<option ${n==pf.c?'selected':''}>${esc(n)}</option>`).join('')}</select></label><label>Class type<select data-pf="t"><option value="ALL">All types</option>${ty.map(n=>`<option ${n==pf.t?'selected':''}>${esc(n)}</option>`).join('')}</select></label><span class="mu" style="margin-left:auto">Showing ${cnt} student(s). Filters only change what you see; Run promotion still applies to every active student.</span></div>`})()}
-<div class="sc"><table><tr><th>#</th><th>Name</th><th>Type</th><th class="c">Cum. Avg</th><th>Result</th><th>Override</th><th>Moves to (class + type)</th></tr>${C.classes.map(x=>{const ss=(pf.c=='ALL'||pf.c==x.n?L.filter(s=>s.cls==x.n&&(pf.t=='ALL'||(s.type||'')==pf.t)):[]).sort((a,b)=>String(a.name).localeCompare(String(b.name)));if(!ss.length)return'';const ps=ss.map(decide),up=ps.filter(p=>p.out=='promote').length,dn=nextOf(x.n);return`<tr><td colspan="7" style="background:var(--bg);font-weight:700">${esc(x.n)} <span class="mu" style="font-weight:400">— ${ss.length} student${ss.length>1?'s':''} · ${up} promoted · ${ss.length-up} repeating · next class: ${esc(dn||'(choose below)')}</span></td></tr>`+ss.map((s,i)=>{const p=ps[i],ov=POV[s.reg]||'auto';return`<tr><td>${i+1}</td><td>${esc(s.name)}</td><td>${esc(s.type||'—')}</td><td class="c">${p.c?'<b>'+p.c.avg.toFixed(1)+'</b> <span class="mu">('+p.c.n+' term'+(p.c.n>1?'s':'')+')</span>':'<span class="mu">no scores</span>'}</td><td>${p.out=='promote'?'<b style="color:#2e8b57">Promote</b>':'<b style="color:#c0392b">Repeat</b>'+(p.noscore?' <span class="mu">(no scores)</span>':'')}</td><td><select data-pov="${esc(s.reg)}">${[['auto','Auto'],['promote','Promote'],['repeat','Repeat']].map(([v,l])=>`<option value="${v}" ${v==ov?'selected':''}>${l}</option>`).join('')}</select></td><td>${p.out=='repeat'?'<span class="mu">stays in</span> '+esc(s.cls):`<select data-pto="${esc(s.reg)}">${p.to?'':'<option value="">— choose —</option>'}${[...idx,'Graduated'].map(n=>`<option ${n==p.to?'selected':''}>${esc(n)}</option>`).join('')}</select>${p.to=='Graduated'?'':`<select data-pty="${esc(s.reg)}" title="Class type">${[...new Set([...(C.types||['Day','Boarding']),...(p.ty?[p.ty]:[])])].map(n=>`<option ${n==p.ty?'selected':''}>${esc(n)}</option>`).join('')}</select>`}`}</td></tr>`}).join('')}).join('')}</table></div>
+<div class="sc"><table><tr><th>#</th><th>Name</th><th>Type</th><th class="c">Cum. Avg</th><th>Result</th><th>Override</th><th>Moves to (class + type)</th></tr>${C.classes.map(x=>{const ss=(pf.c=='ALL'||pf.c==x.n?L.filter(s=>s.cls==x.n&&(pf.t=='ALL'||(s.type||'')==pf.t)):[]).sort((a,b)=>String(a.name).localeCompare(String(b.name)));if(!ss.length)return'';const ps=ss.map(decide),up=ps.filter(p=>p.out=='promote').length,dn=nextOf(x.n);return`<tr><td colspan="7" style="background:var(--bg);font-weight:700">${esc(x.n)} <span class="mu" style="font-weight:400">— ${ss.length} student${ss.length>1?'s':''} · ${up} promoted · ${ss.length-up} repeating · next class: ${esc(dn||'(choose below)')}</span></td></tr>`+ss.map((s,i)=>{const p=ps[i],ov=POV[s.reg]||'auto';return`<tr><td>${i+1}</td><td>${esc(s.name)}</td><td>${esc(s.type||'—')}</td><td class="c">${p.c?'<b>'+p.c.avg.toFixed(1)+'</b> <span class="mu">('+p.c.n+' term'+(p.c.n>1?'s':'')+')</span>':'<span class="mu">no scores</span>'}</td><td>${p.out=='promote'?'<b style="color:#2e8b57">Promote</b>':'<b style="color:#c0392b">Repeat</b>'+(p.noscore?' <span class="mu">(no scores)</span>':'')}</td><td><select data-pov="${esc(s.reg)}">${[['auto','Auto'],['promote','Promote'],['repeat','Repeat']].map(([v,l])=>`<option value="${v}" ${v==ov?'selected':''}>${l}</option>`).join('')}</select></td><td>${p.out=='repeat'?'<span class="mu">stays in</span> '+esc(s.cls):`<select data-pto="${esc(s.reg)}">${p.to?'':'<option value="">— choose —</option>'}${[...idx,'Graduated'].map(n=>`<option ${n==p.to?'selected':''}>${esc(n)}</option>`).join('')}</select>${p.to=='Graduated'?'':`<select data-pty="${esc(s.reg)}" title="Class type"><option value="" ${p.ty?'':'selected'}>— None —</option>${[...new Set([...(C.types||['Day','Boarding']),...(p.ty?[p.ty]:[])])].map(n=>`<option ${n==p.ty?'selected':''}>${esc(n)}</option>`).join('')}</select>`}`}</td></tr>`}).join('')}).join('')}</table></div>
 ${C.t<2?'<div class="warn">It is currently '+T[C.t]+'. Promotion is normally run after Third Term.</div>':''}<button class="w" data-act="promo" style="margin-top:16px;">Run promotion</button></div>${dangerBox()}`};
 P.activity=vActivity;P.export=vExport;P.control=vControl;
 const tabs=[['school','School & Term'],['classes','Classes & Subjects'],['brand','Logo & Signature'],['backup','Backup & Restore'],['promo','Promotion'],['activity','Activity & Online'],['export','Student Export'],['control','Lock & Setup']];
@@ -791,7 +823,7 @@ $('#m').addEventListener('change',async e=>{const t=e.target;if(!t.dataset||!db|
     overlayHide();draw();toast(ok+' photo(s) saved'+(bad.length?', '+bad.length+' skipped':''),bad.length?'err':'ok');if(bad.length)alert('These files were not matched or could not be saved:\n\n'+bad.join('\n'))}
 });
 $('#m').addEventListener('click',async e=>{if(e.target.dataset.act!=='phrm'||!db||!admin)return;const s=ST.find(x=>x.reg==e.target.dataset.r);if(!s||!confirm('Remove the photo of '+s.name+'?'))return;try{await db.doc('students/'+s.reg).update({ph:''});s.ph='';draw();toast('Photo removed','ok')}catch(x){toast('Could not remove: '+(x.message||x),'err')}});
-async function addSt(n,c,g,t,h,p,e){if(!n||!C.classes.some(x=>x.n==c))return false;if(ST.some(s=>s.cls==c&&String(s.name).trim().toLowerCase()==n.trim().toLowerCase()))return false;let r;try{const{data,error}=await sb.rpc('next_reg');if(error)throw error;const q=Number(data);if(!Number.isFinite(q)||q<1)throw new Error('The registration counter returned no number.');const dt=new Date();r=(C.pfx||'DEC')+'/'+String(dt.getMonth()+1).padStart(2,'0')+String(dt.getFullYear()).slice(-2)+'/A'+String(q).padStart(4,'0')}catch(x){alert('Could not get a registration number: '+(x.message||x)+'. Student not added.');return false}const o={reg:r,name:n,cls:c,g:g||'',type:t||'Day',house:h||'',phone:p||'',email:e||'',on:true,hist:[]};ST.push(o);try{await db.doc('students/'+r).set(o)}catch(x){ST=ST.filter(y=>y!==o);alert('Could not save student: '+(x.message||x));return false}return true}
+async function addSt(n,c,g,t,h,p,e){if(!n||!C.classes.some(x=>x.n==c))return false;if(ST.some(s=>s.cls==c&&String(s.name).trim().toLowerCase()==n.trim().toLowerCase()))return false;let r;try{const{data,error}=await sb.rpc('next_reg');if(error)throw error;const q=Number(data);if(!Number.isFinite(q)||q<1)throw new Error('The registration counter returned no number.');const dt=new Date();r=(C.pfx||'DEC')+'/'+String(dt.getMonth()+1).padStart(2,'0')+String(dt.getFullYear()).slice(-2)+'/A'+String(q).padStart(4,'0')}catch(x){alert('Could not get a registration number: '+(x.message||x)+'. Student not added.');return false}const o={reg:r,name:n,cls:c,g:g||'',type:t||'',house:h||'',phone:p||'',email:e||'',on:true,hist:[]};ST.push(o);try{await db.doc('students/'+r).set(o)}catch(x){ST=ST.filter(y=>y!==o);alert('Could not save student: '+(x.message||x));return false}return true}
 /* keyboard navigation: Enter/Arrow keys move within score grid */
 $('#m').addEventListener('keydown',e=>{
   if(!['Enter','ArrowDown','ArrowUp'].includes(e.key))return;
@@ -858,7 +890,7 @@ const nz=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
 function vInfo(){
   const c=curC(),L=act(c).filter(s=>sel.ty=='ALL'||(s.type||'')==sel.ty);
   const bio=admin?(s,k,w)=>{
-    if(k==='type') return `<td><select data-st="${k}" data-r="${esc(s.reg)}">${(C.types||['Day','Boarding']).map(t=>`<option ${s[k]==t?'selected':''}>${esc(t)}</option>`).join('')}</select></td>`;
+    if(k==='type') return `<td><select data-st="${k}" data-r="${esc(s.reg)}"><option value="" ${s[k]?'':'selected'}>— None —</option>${(C.types||['Day','Boarding']).map(t=>`<option ${s[k]==t?'selected':''}>${esc(t)}</option>`).join('')}</select></td>`;
     return `<td><input data-st="${k}" data-r="${esc(s.reg)}" value="${esc(s[k]||'')}" size="${w}"></td>`;
   }:(s,k,w)=>`<td>${esc(s[k]||'')}</td>`;
   return`<div class="box"><div class="row">${clsSel()}${tySel()}<span class="mu">${admin
