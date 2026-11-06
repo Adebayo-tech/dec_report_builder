@@ -474,12 +474,66 @@ function toast(msg, kind) {
 let sb,ROLE=null,MYCLASSES=[],ME={id:'',email:''},AUD_BULK=0;
 const Q=s=>document.querySelector(s);
 const rowDoc=r=>({id:r.id,exists:true,data:()=>r.data});
-function snap(get,col){return function(next,err){let on=1,t,last,first=1;const run=()=>get().then(r=>{if(!on)return;const g=JSON.stringify(r.docs?r.docs.map(d=>[d.id,d.data()]):[r.exists,r.data()]);if(g===last)return;last=g;next(r)}).catch(e=>err&&err(e));run();const cfg={event:'*',schema:'public',table:'docs'};if(col)cfg.filter='col=eq.'+col;
-const ch=sb.channel('c'+Math.random().toString(36).slice(2)).on('postgres_changes',cfg,()=>{clearTimeout(t);t=setTimeout(run,200)}).subscribe(st=>{if(st=='SUBSCRIBED'){if(first)first=0;else run()}});
-const poll=setInterval(()=>{if(!document.hidden)run()},60000);
-return()=>{on=0;clearInterval(poll);clearTimeout(t);sb.removeChannel(ch)}}}
-function query(col,flt){const q={where:(f,o,v)=>query(col,[...flt,[f,v]]),async get(){let all=[],from=0;for(;;){let r=sb.from('docs').select('id,data').eq('col',col).order('id').range(from,from+999);flt.forEach(([f,v])=>r=r.eq('data->>'+f,v));const{data,error}=await r;if(error)throw error;all=all.concat(data);if(data.length<1000)break;from+=1000}return{docs:all.map(rowDoc),size:all.length,empty:!all.length}}};q.onSnapshot=snap(()=>q.get(),col);return q}
-function ref(p){const sl=p.indexOf('/'),col=p.slice(0,sl),id=p.slice(sl+1);const chk=()=>{if(typeof lockedForMe=='function'&&lockedForMe())throw new Error(LOCKMSG())};const w=async(o,old)=>{chk();const{error}=await sb.from('docs').upsert({col,id,data:o,updated_at:new Date().toISOString()});if(error)throw error;if(!AUD_BULK&&typeof audWrite=='function')audWrite(col,id,old,o)};const r={async get(){const{data,error}=await sb.from('docs').select('data').eq('col',col).eq('id',id).maybeSingle();if(error)throw error;return{id,exists:!!data,data:()=>data&&data.data}},async set(o){chk();let old;if(!AUD_BULK){try{old=(await r.get()).data()}catch(e){}}return w(o,old)},async update(o){chk();const s=await r.get(),old=s.data();return w({...(old||{}),...o},old)},async delete(){chk();let old;try{old=(await r.get()).data()}catch(e){}const{error}=await sb.from('docs').delete().eq('col',col).eq('id',id);if(error)throw error;if(typeof audDel=='function')audDel(col,id,old)}};r.onSnapshot=snap(()=>r.get(),col);return r}
+/* ---- Efficient sync: live changes are applied straight from the realtime message, so the whole collection is never re-downloaded. A cheap catch-up check runs every 10 minutes and when the tab comes back. ---- */
+const SYNC_POLL=600000,SYNC_POLL_T=300000,SYNC_OVERLAP=900000,SYNC_MIN=30000;
+const _ts=v=>{const n=Date.parse(v);return isNaN(n)?0:n},_same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+function snapQ(col,flt,ins){return function(next,err){
+  let on=1,ready=0,busy=0,again=0,started=0,m=new Map(),since=0,buf=[],timer,ch,lastSync=0;
+  const val=(r,f)=>String((r.data||{})[f]);
+  const match=r=>!!r&&r.col==col&&flt.every(([f,v])=>val(r,f)===String(v))&&ins.every(([f,a])=>a.map(String).includes(val(r,f)));
+  const ap=q=>{flt.forEach(([f,v])=>q=q.eq('data->>'+f,v));ins.forEach(([f,a])=>q=q.in('data->>'+f,a));return q};
+  const emit=()=>{if(!on)return;const docs=[...m.values()].map(rowDoc);next({docs,size:docs.length,empty:!docs.length})};
+  const put=r=>{m.set(r.id,{id:r.id,data:r.data,updated_at:r.updated_at});const t=_ts(r.updated_at);if(t>since)since=t};
+  const full=async()=>{let all=[],from=0;for(;;){const{data,error}=await ap(sb.from('docs').select('id,data,updated_at').eq('col',col)).order('id').range(from,from+999);if(error)throw error;all=all.concat(data);if(data.length<1000)break;from+=1000}
+    m=new Map();since=0;all.forEach(put);ready=1;return 1};
+  const delta=async()=>{
+    const cq=await ap(sb.from('docs').select('id',{count:'exact',head:true}).eq('col',col));if(cq.error)throw cq.error;
+    const dq=await ap(sb.from('docs').select('id,data,updated_at').eq('col',col)).gte('updated_at',new Date(Math.max(0,since-SYNC_OVERLAP)).toISOString()).order('updated_at').range(0,999);if(dq.error)throw dq.error;
+    if(dq.data.length>=1000||cq.count==null)return full();
+    let ch=0;dq.data.forEach(r=>{const o=m.get(r.id);if(!o||!_same(o.data,r.data))ch=1;put(r)});
+    if(m.size!==cq.count)return full();
+    return ch};
+  const apply=(p,guard)=>{
+    if(p.eventType=='DELETE'){const o=p.old||{};return o.id!=null&&(!o.col||o.col==col)&&m.delete(o.id)?1:0}
+    const r=p.new;if(!r||r.col!==col)return 0;
+    if(r.data===undefined||r.data===null){Promise.resolve().then(sync);return 0}
+    const o=m.get(r.id);
+    if(!match(r))return m.delete(r.id)?1:0;
+    if(guard&&o&&_ts(o.updated_at)>_ts(r.updated_at))return 0;
+    if(o&&_same(o.data,r.data))return 0;
+    put(r);return 1};
+  const sync=async()=>{if(!on)return;if(busy){again=1;return}busy=1;lastSync=Date.now();
+    try{do{again=0;let c=ready?await delta():await full();const b=buf;buf=[];b.forEach(p=>{if(apply(p,1))c=1});if(c||!ready)emit()}while(again&&on)}
+    catch(e){err&&err(e)}finally{busy=0}};
+  const onEv=p=>{if(!on)return;if(!ready||busy){buf.push(p);return}if(apply(p,0))emit()};
+  const vis=()=>{if(!document.hidden&&Date.now()-lastSync>SYNC_MIN)sync()};
+  /* Administrator: live channel. Teachers: no live channel for students/scores (every save by any teacher would otherwise be pushed to all 50 phones); they get a cheap catch-up check every few minutes instead. Their own saves show instantly. */
+  const LIVE=typeof ROLE!=='undefined'&&ROLE=='admin';
+  if(LIVE)ch=sb.channel('c'+Math.random().toString(36).slice(2)).on('postgres_changes',{event:'*',schema:'public',table:'docs',filter:'col=eq.'+col},onEv).subscribe(st=>{if(st=='SUBSCRIBED'){started=1;sync()}});
+  /* first load starts once the live channel is open (so nothing can slip through), or after 3s if it cannot connect; teachers start at once */
+  const boot=setTimeout(()=>{if(!started){started=1;sync()}},LIVE?3000:0);
+  timer=setInterval(()=>{if(!document.hidden)sync()},LIVE?SYNC_POLL:SYNC_POLL_T);
+  document.addEventListener('visibilitychange',vis);
+  return()=>{on=0;clearTimeout(boot);clearInterval(timer);document.removeEventListener('visibilitychange',vis);if(ch)sb.removeChannel(ch)}}}
+function snapR(col,id,get){return function(next,err){
+  let on=1,last,timer,busy=0,seq=0,lastRun=0;
+  const push=(ex,d)=>{if(!on)return;const g=JSON.stringify([ex,d]);if(g===last)return;last=g;next({id,exists:ex,data:()=>d})};
+  const run=()=>{if(busy||!on)return;busy=1;lastRun=Date.now();const s=seq;return get().then(r=>{if(on&&s===seq)push(r.exists,r.data())}).catch(e=>err&&err(e)).finally(()=>{busy=0})};
+  const onEv=p=>{if(!on)return;
+    if(p.eventType=='DELETE'){const o=p.old||{};if(o.id===id&&(!o.col||o.col==col)){seq++;push(false,null)}return}
+    const r=p.new;if(!r||r.col!==col||r.id!==id)return;seq++;
+    if(r.data===undefined||r.data===null){busy=0;run();return}
+    push(true,r.data)};
+  const vis=()=>{if(!document.hidden&&Date.now()-lastRun>SYNC_MIN)run()};
+  const ch=sb.channel('c'+Math.random().toString(36).slice(2)).on('postgres_changes',{event:'*',schema:'public',table:'docs',filter:'col=eq.'+col},onEv).subscribe(st=>{if(st=='SUBSCRIBED')run()});
+  timer=setInterval(()=>{if(!document.hidden)run()},SYNC_POLL);
+  document.addEventListener('visibilitychange',vis);
+  run();
+  return()=>{on=0;clearInterval(timer);document.removeEventListener('visibilitychange',vis);sb.removeChannel(ch)}}}
+function query(col,flt,ins){ins=ins||[];const ap=r=>{flt.forEach(([f,v])=>r=r.eq('data->>'+f,v));ins.forEach(([f,a])=>r=r.in('data->>'+f,a));return r};
+  const q={where:(f,o,v)=>query(col,[...flt,[f,v]],ins),whereIn:(f,a)=>query(col,flt,[...ins,[f,a]]),async get(){let all=[],from=0;for(;;){const{data,error}=await ap(sb.from('docs').select('id,data').eq('col',col).order('id').range(from,from+999));if(error)throw error;all=all.concat(data);if(data.length<1000)break;from+=1000}return{docs:all.map(rowDoc),size:all.length,empty:!all.length}}};
+  q.onSnapshot=snapQ(col,flt,ins);return q}
+function ref(p){const sl=p.indexOf('/'),col=p.slice(0,sl),id=p.slice(sl+1);const chk=()=>{if(typeof lockedForMe=='function'&&lockedForMe())throw new Error(LOCKMSG())};const w=async(o,old)=>{chk();const{error}=await sb.from('docs').upsert({col,id,data:o,updated_at:new Date().toISOString()});if(error)throw error;if(!AUD_BULK&&typeof audWrite=='function')audWrite(col,id,old,o)};const r={async get(){const{data,error}=await sb.from('docs').select('data').eq('col',col).eq('id',id).maybeSingle();if(error)throw error;return{id,exists:!!data,data:()=>data&&data.data}},async set(o){chk();let old;if(!AUD_BULK){try{old=(await r.get()).data()}catch(e){}}return w(o,old)},async update(o){chk();const s=await r.get(),old=s.data();return w({...(old||{}),...o},old)},async delete(){chk();let old;try{old=(await r.get()).data()}catch(e){}const{error}=await sb.from('docs').delete().eq('col',col).eq('id',id);if(error)throw error;if(typeof audDel=='function')audDel(col,id,old)}};r.onSnapshot=snapR(col,id,()=>r.get());return r}
 const DB={doc:ref,collection:c=>({...query(c,[]),doc:id=>ref(c+'/'+id)})};
 
 /* ============ SIGN-IN MODAL ============ */
@@ -691,7 +745,40 @@ async function flush(reg,k){
     if(!SV.toasted){SV.toasted=true;toast('Could not save: ' + (e.message || e) + '. Your entries are kept on this screen.', 'err')}
     if(autoOn())scheduleRetry();
   }finally{_busy[reg]=0}}
-function sub(){const k=pid();if(!db||k==key)return;key=k;SC={};u2&&u2();UP.forEach(f=>f());UP=[];PV={};for(let j=0;j<C.t;j++)UP.push(db.collection('scores').where('p','==',C.ses+'_'+j).onSnapshot(q=>{PV[j]={};q.docs.forEach(d=>PV[j][d.data().reg]=d.data());draw(1)}));u2=db.collection('scores').where('p','==',k).onSnapshot(q=>{SC={};q.docs.forEach(d=>SC[d.data().reg]=d.data());Object.keys(PEND).forEach(r=>{if((PEND[r]||[]).length||(INF[r]||[]).length)SC[r]=applyPend(r,{...(SC[r]||{p:pid(),reg:r,sc:{},dom:{}})})});draw(1)})}
+/* ---- Images live in Supabase Storage (bucket "photos"); the database keeps only a short link ---- */
+const IMG_BUCKET='photos';
+const imgName=()=>{try{if(crypto.randomUUID)return crypto.randomUUID()}catch(e){}return Date.now().toString(36)+Math.random().toString(36).slice(2,12)+Math.random().toString(36).slice(2,12)};
+async function putImage(folder,dataUrl,ext,type){
+  const blob=await(await fetch(dataUrl)).blob(),path=folder+'/'+imgName()+'.'+ext,bk=sb.storage.from(IMG_BUCKET);
+  const{error}=await bk.upload(path,blob,{contentType:type,cacheControl:'31536000',upsert:false});
+  if(error){const m=String(error.message||error);throw new Error(/bucket not found/i.test(m)?'Image storage is not set up yet. Create the "photos" bucket in Supabase first (run the storage setup SQL).':/row-level security|policy|not authorized|unauthorized/i.test(m)?'Image storage permissions are not set up yet. Run the storage setup SQL in Supabase.':m)}
+  return bk.getPublicUrl(path).data.publicUrl}
+const imgPath=u=>{const m=/\/storage\/v1\/object\/public\/photos\/([^?#]+)/.exec(String(u||''));return m?decodeURIComponent(m[1]):null};
+async function dropImage(u){const p=imgPath(u);if(!p)return;try{await sb.storage.from(IMG_BUCKET).remove([p])}catch(e){}}
+/* Teachers only download the classes they are assigned to; the administrator gets everything. */
+const SCP=q=>admin?q:q.whereIn('cls',MYCLASSES);
+function imgBox(){const n=ST.filter(s=>String(s.ph||'').startsWith('data:')).length,b=['logo','sig','psig'].filter(k=>String(C[k]||'').startsWith('data:')).length;
+  return`<div class="box"><b>Image storage <span class="tag">ADMIN</span></b><p class="mu">Moves student photos, the logo and signatures out of the database into Supabase Storage, so the app loads faster and uses far less data. Still to move: <b>${n}</b> student photo(s) and <b>${b}</b> school image(s). Download a backup first. It is safe to run more than once and skips anything already moved. New uploads go straight to Storage.</p><div class="row"><button class="b" data-act="mvimg" ${n+b?'':'disabled'}>Move images to Storage</button><span id="mvst" class="mu"></span></div></div>`}
+async function mvImages(){
+  if(!admin||!db)return;
+  const todo=ST.filter(s=>String(s.ph||'').startsWith('data:')),brand=['logo','sig','psig'].filter(k=>String(C[k]||'').startsWith('data:')),tot=todo.length+brand.length;
+  if(!tot)return toast('Nothing to move. All images are already in Storage.','ok');
+  if(!confirm('Move '+tot+' image(s) to Storage?\n\nMake sure you have downloaded a backup first. This can take a few minutes; keep this page open.'))return;
+  const bad=[];let done=0,ok=0,i=0;AUD_BULK=1;overlay('Moving images…','0 of '+tot);
+  const step=()=>{done++;const e=document.getElementById('ovSub');if(e)e.textContent=done+' of '+tot};
+  try{
+    const worker=async()=>{for(;;){const s=todo[i++];if(!s)return;let url;
+      try{url=await putImage('students',s.ph,'jpg','image/jpeg');const chk=await fetch(url,{method:'HEAD'});if(!chk.ok)throw new Error('the uploaded file could not be read back');await db.doc('students/'+s.reg).update({ph:url});s.ph=url;ok++}
+      catch(x){if(url)dropImage(url);bad.push((s.name||s.reg)+': '+(x.message||x));if(!ok&&bad.length>=3)i=todo.length}
+      step()}};
+    await Promise.all([worker(),worker(),worker(),worker()]);
+    if(ok||!bad.length)for(const k of brand){try{const url=await putImage('brand',C[k],'png','image/png'),o={...C,[k]:url};await db.doc('cfg/school').set(o);C=o;ok++}catch(x){bad.push(k+': '+(x.message||x))}step()}
+  }finally{AUD_BULK=0;overlayHide()}
+  try{audLog('Moved images to Storage','',ok+' of '+tot+(bad.length?' · '+bad.length+' failed':''))}catch(e){}
+  draw();toast(ok+' image(s) moved'+(bad.length?', '+bad.length+' failed':''),bad.length?'err':'ok');
+  if(bad.length)alert('Some images were not moved (they still work as before):\n\n'+bad.slice(0,8).join('\n')+(bad.length>8?'\n…and '+(bad.length-8)+' more':''))}
+$('#m').addEventListener('click',e=>{if(e.target.dataset&&e.target.dataset.act=='mvimg'&&admin)mvImages()});
+function sub(){const k=pid();if(!db||k==key)return;key=k;SC={};u2&&u2();UP.forEach(f=>f());UP=[];PV={};for(let j=0;j<C.t;j++)UP.push(SCP(db.collection('scores').where('p','==',C.ses+'_'+j)).onSnapshot(q=>{PV[j]={};q.docs.forEach(d=>PV[j][d.data().reg]=d.data());draw(1)}));u2=SCP(db.collection('scores').where('p','==',k)).onSnapshot(q=>{SC={};q.docs.forEach(d=>SC[d.data().reg]=d.data());Object.keys(PEND).forEach(r=>{if((PEND[r]||[]).length||(INF[r]||[]).length)SC[r]=applyPend(r,{...(SC[r]||{p:pid(),reg:r,sc:{},dom:{}})})});draw(1)})}
 function nav(){
   const t=[['scores','Score Entry'],['reports','Report Cards'],['board','Broadsheet'],['info','Class Info']];
   if(admin)t.unshift(['dash','Dashboard']);
@@ -768,7 +855,7 @@ function vPast(){const grads=ST.filter(s=>s.on===false);return`<div class="box">
 function vStudents(){const c=curC(),all=ST.filter(s=>s.cls==c&&(sel.ty=='ALL'||(s.type||'')==sel.ty));return`<div class="box"><b>Add student <span class="tag">ADMIN</span></b><div class="row"><label>Full name<input id="an"></label>${clsSel()}<label>Gender<select id="ag"><option>Male</option><option>Female</option></select></label><label>Class Type<select id="at"><option value="">— None —</option>${(C.types||['Day','Boarding']).map(t=>`<option>${esc(t)}</option>`).join('')}</select></label><label>House<input id="ah" size=8></label><label>Parent phone<input id="ap" size=12></label><label>Parent email<input id="ae"></label><button class="b" data-act="add">Add</button></div>
 <b>Bulk import</b> <span class="mu">one per line: Name, Class, Gender, Type, House, Phone, Email</span><textarea id="bi"></textarea><button class="b" data-act="imp">Import</button></div>
 <div class="box"><b>Student photos <span class="tag">ADMIN</span></b><p class="mu">Photos appear at the top-right of each report sheet. Upload one per student in the list below, or select many at once here: name each file with the student's Reg No. (e.g. DEC-1026-AB0188.jpg) or full name (e.g. Abduljalal Abdulkadir.jpg). Photos are auto-cropped to passport shape and compressed.</p><div class="row"><input type="file" id="phbulk" accept="image/*" multiple></div></div>
-<div class="box"><b>${esc(c)} (${all.length})</b><div class="row">${tySelAdd()}</div><div class="sc"><table><tr><th>Photo</th><th>Reg No.</th><th>Name</th><th>Gender</th><th>Type</th><th>House</th><th>Phone</th><th>Status</th><th>Move to</th><th></th></tr>${all.map(s=>`<tr><td><div class="pht">${s.ph?`<img src="${s.ph}" alt="">`:'<span class="nop">No photo</span>'}<label class="pb">${s.ph?'Change':'Upload'}<input type="file" accept="image/*" hidden data-ph="${esc(s.reg)}"></label>${s.ph?`<button class="w" data-act="phrm" data-r="${esc(s.reg)}">Remove</button>`:''}</div></td><td>${esc(s.reg)}</td><td>${esc(s.name)}</td><td>${esc(s.g)}</td><td>${esc(s.type||'')}</td><td>${esc(s.house||'')}</td><td>${esc(s.phone||'')}</td><td>${s.on===false?'Withdrawn':'Active'}</td><td><select data-mv="${esc(s.reg)}"${s.on===false?' disabled title="Reactivate first"':''}>${C.classes.map(x=>`<option ${x.n==s.cls?'selected':''}>${esc(x.n)}</option>`).join('')}</select></td><td><button data-act="tog" data-r="${esc(s.reg)}">${s.on===false?'Reactivate':'Withdraw'}</button> <button class="w" data-act="del" data-r="${esc(s.reg)}">Delete</button></td></tr>`).join('')}</table></div></div>`}
+<div class="box"><b>${esc(c)} (${all.length})</b><div class="row">${tySelAdd()}</div><div class="sc"><table><tr><th>Photo</th><th>Reg No.</th><th>Name</th><th>Gender</th><th>Type</th><th>House</th><th>Phone</th><th>Status</th><th>Move to</th><th></th></tr>${all.map(s=>`<tr><td><div class="pht">${s.ph?`<img src="${s.ph}" alt="" loading="lazy" decoding="async">`:'<span class="nop">No photo</span>'}<label class="pb">${s.ph?'Change':'Upload'}<input type="file" accept="image/*" hidden data-ph="${esc(s.reg)}"></label>${s.ph?`<button class="w" data-act="phrm" data-r="${esc(s.reg)}">Remove</button>`:''}</div></td><td>${esc(s.reg)}</td><td>${esc(s.name)}</td><td>${esc(s.g)}</td><td>${esc(s.type||'')}</td><td>${esc(s.house||'')}</td><td>${esc(s.phone||'')}</td><td>${s.on===false?'Withdrawn':'Active'}</td><td><select data-mv="${esc(s.reg)}"${s.on===false?' disabled title="Reactivate first"':''}>${C.classes.map(x=>`<option ${x.n==s.cls?'selected':''}>${esc(x.n)}</option>`).join('')}</select></td><td><button data-act="tog" data-r="${esc(s.reg)}">${s.on===false?'Reactivate':'Withdraw'}</button> <button class="w" data-act="del" data-r="${esc(s.reg)}">Delete</button></td></tr>`).join('')}</table></div></div>`}
 let asub='school';
 function vAdmin(){const f=(k,l,t='text')=>`<label>${l}<input type="${t}" data-cfg="${k}" value="${esc(C[k])}"></label>`,idx=C.classes.map(x=>x.n),L=ST.filter(s=>s.on!==false);
 const P={
@@ -789,7 +876,7 @@ ${C.classes.map((x,i)=>{const first=C.classes.findIndex(y=>lvOf(y)==lvOf(x))==i;
 brand:()=>`<div class="box"><b>Headmaster's signature <span class="tag">ADMIN</span></b> <span class="mu">signs Creche, Pre Nursery, Nursery and Basic sheets</span><div class="row">${C.sig?`<img src="${C.sig}" style="height:60px;background:#fff;border:1px solid var(--bd);border-radius:6px">`:'<span class="mu">No signature yet.</span>'}<input type="file" id="sg" accept="image/*">${C.sig?'<button class="w" data-act="rmsig">Remove</button>':''}</div><span class="mu">Upload a photo or scan of the signature, ideally on a plain white background or as a transparent PNG.</span></div>
 <div class="box"><b>Principal's signature <span class="tag">ADMIN</span></b> <span class="mu">signs Basic 7–9, JSS and SS sheets</span><div class="row">${C.psig?`<img src="${C.psig}" style="height:60px;background:#fff;border:1px solid var(--bd);border-radius:6px">`:'<span class="mu">No signature yet.</span>'}<input type="file" id="psg" accept="image/*">${C.psig?'<button class="w" data-act="rmpsig">Remove</button>':''}</div><span class="mu">Applies to: ${esc(C.classes.filter(x=>isSec(x.n)).map(x=>x.n).join(', ')||'no classes yet')}. These sheets say "Principal" and use the principal's name and signature above; all other classes say "Headmaster".</span></div>
 <div class="box"><b>School logo</b><div class="row">${C.logo?`<img src="${C.logo}" style="height:70px;background:#fff;border:1px solid var(--bd);border-radius:6px">`:'<span class="mu">No logo yet.</span>'}<input type="file" id="lg" accept="image/*">${C.logo?'<button class="w" data-act="rmlogo">Remove</button>':''}</div><span class="mu">Upload once: it appears on every report card and in the header.</span></div>`,
-backup:()=>`<div class="box"><b>Backup &amp; restore <span class="tag">ADMIN</span></b><p class="mu">Downloads every student, score and setting as one file. Do this before promotion and at the end of each term.</p><div class="row"><button class="b" data-act="bak">Download backup</button><input type="file" id="rf" accept=".json"><button class="w" data-act="rst">Restore from file</button></div></div>`,
+backup:()=>`<div class="box"><b>Backup &amp; restore <span class="tag">ADMIN</span></b><p class="mu">Downloads every student, score and setting as one file. Do this before promotion and at the end of each term.</p><div class="row"><button class="b" data-act="bak">Download backup</button><input type="file" id="rf" accept=".json"><button class="w" data-act="rst">Restore from file</button></div></div>${imgBox()}`,
 promo:()=>`<div class="box"><b>End-of-session promotion <span class="tag">ADMIN</span></b><p class="mu">Automatic, class by class, from each student's <b>cumulative average</b> (the average of all terms this session). Students keep their arm (White stays White, Science stays Science) when the next level has it. Path: Creche → Nursery 1 → Nursery 2 → Basic 1–5 → JSS 1–3 → SS 1–3 → graduate.</p>
 <div class="row" style="background:var(--bg);padding:12px;border-radius:8px;border:1px solid var(--bd);margin-bottom:16px;">
   <label>Promotion pass mark <input type="number" id="promoPassInput" value="${passMk()}" min="0" max="100"></label>
@@ -815,14 +902,14 @@ const csvq=v=>'"'+String(v).replace(/"/g,'""')+'"';
 
 /* ---- Student passport photos ---- */
 function photoData(f){return new Promise((ok,no)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{try{const W=240,H=320,r=W/H,sw=im.naturalWidth,sh=im.naturalHeight;let cw,ch;if(sw/sh>r){ch=sh;cw=sh*r}else{cw=sw;ch=sw/r}const sx=(sw-cw)/2,sy=Math.max(0,Math.min(sh-ch,(sh-ch)*.25)),cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);x.drawImage(im,sx,sy,cw,ch,0,0,W,H);ok(cv.toDataURL('image/jpeg',.85))}catch(e){no(e)}finally{URL.revokeObjectURL(u)}};im.onerror=()=>{URL.revokeObjectURL(u);no(new Error('That file is not a readable image.'))};im.src=u})}
-async function savePhoto(reg,data){const s=ST.find(x=>x.reg==reg);if(!s)throw new Error('Student not found');await db.doc('students/'+reg).update({ph:data});s.ph=data}
+async function savePhoto(reg,data){const s=ST.find(x=>x.reg==reg);if(!s)throw new Error('Student not found');const old=s.ph,url=await putImage('students',data,'jpg','image/jpeg');try{await db.doc('students/'+reg).update({ph:url})}catch(e){dropImage(url);throw e}s.ph=url;if(old)dropImage(old)}
 $('#m').addEventListener('change',async e=>{const t=e.target;if(!t.dataset||!db||!admin||!t.files||!t.files.length)return;
   if(t.dataset.ph!==undefined){const reg=t.dataset.ph,f=t.files[0];overlay('Saving photo…','Cropping and compressing.');try{await savePhoto(reg,await photoData(f));toast('Photo saved','ok')}catch(x){toast('Photo could not be saved: '+(x.message||x),'err')}finally{overlayHide();draw()}return}
   if(t.id==='phbulk'){const files=[...t.files],byK={},dup=new Set();ST.forEach(s=>{[nz(s.reg),nz(s.name)].forEach(k=>{if(!k)return;if(byK[k]&&byK[k]!==s)dup.add(k);else byK[k]=s})});let ok=0;const bad=[];
     for(let i=0;i<files.length;i++){const f=files[i],k=nz(f.name.replace(/\.[^.]+$/,'')),s=dup.has(k)?null:byK[k];overlay('Uploading photos… '+(i+1)+' of '+files.length,f.name);if(!s){bad.push(f.name+(dup.has(k)?' (name matches more than one student, use Reg No.)':''));continue}try{await savePhoto(s.reg,await photoData(f));ok++}catch(x){bad.push(f.name+' ('+(x.message||x)+')')}}
     overlayHide();draw();toast(ok+' photo(s) saved'+(bad.length?', '+bad.length+' skipped':''),bad.length?'err':'ok');if(bad.length)alert('These files were not matched or could not be saved:\n\n'+bad.join('\n'))}
 });
-$('#m').addEventListener('click',async e=>{if(e.target.dataset.act!=='phrm'||!db||!admin)return;const s=ST.find(x=>x.reg==e.target.dataset.r);if(!s||!confirm('Remove the photo of '+s.name+'?'))return;try{await db.doc('students/'+s.reg).update({ph:''});s.ph='';draw();toast('Photo removed','ok')}catch(x){toast('Could not remove: '+(x.message||x),'err')}});
+$('#m').addEventListener('click',async e=>{if(e.target.dataset.act!=='phrm'||!db||!admin)return;const s=ST.find(x=>x.reg==e.target.dataset.r);if(!s||!confirm('Remove the photo of '+s.name+'?'))return;const oldPh=s.ph;try{await db.doc('students/'+s.reg).update({ph:''});s.ph='';dropImage(oldPh);draw();toast('Photo removed','ok')}catch(x){toast('Could not remove: '+(x.message||x),'err')}});
 async function addSt(n,c,g,t,h,p,e){if(!n||!C.classes.some(x=>x.n==c))return false;if(ST.some(s=>s.cls==c&&String(s.name).trim().toLowerCase()==n.trim().toLowerCase()))return false;let r;try{const{data,error}=await sb.rpc('next_reg');if(error)throw error;const q=Number(data);if(!Number.isFinite(q)||q<1)throw new Error('The registration counter returned no number.');const dt=new Date();r=(C.pfx||'DEC')+'/'+String(dt.getMonth()+1).padStart(2,'0')+String(dt.getFullYear()).slice(-2)+'/A'+String(q).padStart(4,'0')}catch(x){alert('Could not get a registration number: '+(x.message||x)+'. Student not added.');return false}const o={reg:r,name:n,cls:c,g:g||'',type:t||'',house:h||'',phone:p||'',email:e||'',on:true,hist:[]};ST.push(o);try{await db.doc('students/'+r).set(o)}catch(x){ST=ST.filter(y=>y!==o);alert('Could not save student: '+(x.message||x));return false}return true}
 /* keyboard navigation: Enter/Arrow keys move within score grid */
 $('#m').addEventListener('keydown',e=>{
@@ -884,8 +971,8 @@ if(a=='rst'){const f=$('#rf').files[0];if(!f)return toast('Choose a backup file 
 if(a=='cfg'){const o={...C};document.querySelectorAll('[data-cfg]').forEach(i=>{const k=i.dataset.cfg;if(k==='types')o.types=i.value.split(',').map(x=>x.trim()).filter(Boolean);else o[k]=['t','days','ca','ex'].includes(k)?+i.value:i.value.trim()});if(document.querySelector('[data-fee]')){o.fees={};document.querySelectorAll('[data-fee]').forEach(i=>{if(i.value.trim())o.fees[i.dataset.fee]=i.value.trim()})}if(!o.types||!o.types.length)o.types=['Day','Boarding'];if($('#bd'))o.bands=$('#bd').value.split('\n').map(l=>l.split(',').map(x=>x.trim())).filter(p=>p[1]).map(p=>({m:+p[0],g:p[1],r:p[2]||''})).sort((a,b)=>b.m-a.m);if(document.querySelector('[data-sj]'))o.classes=C.classes.map((x,i)=>({...x,s:document.querySelector(`[data-sj="${i}"]`).value.split(',').map(z=>z.trim()).filter(Boolean)}));if(!/^\d{4}-\d{4}$/.test(o.ses))return toast('Session must look like 2025-2026.','err');if(!(o.days>0)||!(o.ca>=0)||!(o.ex>=0)||o.ca+o.ex!==100)return toast('CA max + Exam max must equal 100, and school days must be more than 0.','err');if(!o.bands.length||o.bands.some(b=>isNaN(b.m))||!o.bands.some(b=>b.m<=0))return toast('Grading: each line needs "min, grade, remark", and one band must start at 0.','err');if(o.classes.some(x=>!x.s.length))return toast('Every class needs at least one subject.','err');overlay('Saving settings…','Writing to the database.');try{await db.doc('cfg/school').set(o);C=o;sub();draw();toast('Settings saved','ok')}catch(x){toast('Could not save settings: '+(x.message||x),'err')}finally{overlayHide()}}
 if(a=='save-pass'){const v=+$('#promoPassInput').value;if(!(v>=0&&v<=100))return toast('Pass mark must be between 0 and 100.','err');overlay('Saving pass mark…','Writing to the database.');try{const o={...C,promoPass:v};await db.doc('cfg/school').set(o);C=o;setSaveState('saved');draw();toast('Pass mark updated to '+v,'ok')}catch(x){toast('Could not save pass mark: '+(x.message||x),'err')}finally{overlayHide()}}
 if(a=='promo'){if(!/^\d{4}-\d{4}$/.test(C.ses))return toast('Fix the session format (e.g. 2025-2026) in Settings first.','err');if(C.t<2&&prompt('Promotion is normally run after Third Term. It is currently '+T[C.t]+'. Type the session name ('+C.ses+') to confirm:')!==C.ses)return;const idx=C.classes.map(x=>x.n),done=h=>h.ses==C.ses&&['Promoted','Repeated','Graduated'].includes(h.out),plan=ST.filter(x=>x.on!==false&&idx.includes(x.cls)&&!(x.hist||[]).some(done)).map(s=>({s,...decide(s)})),bad=plan.filter(p=>p.out=='promote'&&!p.to);if(bad.length)return alert(bad.length+' promoted student(s) have no next class yet (e.g. '+bad.slice(0,5).map(p=>p.s.name+' / '+p.s.cls).join(', ')+'). Choose their class in the yellow box or in the "Moves to" column first.');const up=plan.filter(p=>p.out=='promote').length;if(!confirm('Promote '+up+' student(s) and keep '+(plan.length-up)+' in their class (repeat, cumulative average below '+passMk()+')?\n\nDownload a backup first (Settings → Backup). This cannot be undone automatically.'))return;overlay('Running promotion…','Moving students to the next class.');try{for(const p of plan){const s=p.s,rep=p.out=='repeat',to=p.to,u={cls:to,...(!rep&&to!='Graduated'&&p.ty&&p.ty!=s.type?{type:p.ty}:{}),hist:[...(s.hist||[]),{ses:C.ses,cls:s.cls,out:rep?'Repeated':to=='Graduated'?'Graduated':'Promoted',avg:p.c?+p.c.avg.toFixed(1):null}]};if(to=='Graduated')u.on=false;await db.doc('students/'+s.reg).update(u)}const o={...C,ses:C.ses.split('-').map(n=>+n+1).join('-'),t:0};await db.doc('cfg/school').set(o);C=o;ptt={};pty={};POV={};sub();draw();toast('Promotion complete. New session opened.','ok')}catch(x){toast('Promotion stopped: '+(x.message||x)+'. Students already moved are skipped if you run it again.','err')}finally{overlayHide()}}});
-$('#m').addEventListener('change',e=>{const t=e.target;if(t.id!='lg'||!db||!admin||!t.files[0])return;overlay('Uploading logo…','Resizing and saving.');const im=new Image();im.onload=async()=>{const k=Math.min(1,600/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k)||1;cv.height=Math.round(im.height*k)||1;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);const o={...C,logo:cv.toDataURL('image/png')};try{await db.doc('cfg/school').set(o);C=o;draw();toast('Logo saved','ok')}catch(x){toast('Logo could not be saved: '+(x.message||x),'err')}finally{overlayHide()}};im.onerror=()=>{toast('Could not read that image.','err');overlayForceHide()};im.src=URL.createObjectURL(t.files[0])});
-$('#m').addEventListener('click',async e=>{if(e.target.dataset.act=='rmlogo'&&db&&admin){const o={...C};delete o.logo;await db.doc('cfg/school').set(o);C=o;draw();toast('Logo removed','ok')}});
+$('#m').addEventListener('change',e=>{const t=e.target;if(t.id!='lg'||!db||!admin||!t.files[0])return;overlay('Uploading logo…','Resizing and saving.');const im=new Image();im.onload=async()=>{const k=Math.min(1,600/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k)||1;cv.height=Math.round(im.height*k)||1;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);try{const o={...C,logo:await putImage('brand',cv.toDataURL('image/png'),'png','image/png')},old=C.logo;await db.doc('cfg/school').set(o);C=o;if(old)dropImage(old);draw();toast('Logo saved','ok')}catch(x){toast('Logo could not be saved: '+(x.message||x),'err')}finally{overlayHide()}};im.onerror=()=>{toast('Could not read that image.','err');overlayForceHide()};im.src=URL.createObjectURL(t.files[0])});
+$('#m').addEventListener('click',async e=>{if(e.target.dataset.act=='rmlogo'&&db&&admin){const o={...C},old=C.logo;delete o.logo;await db.doc('cfg/school').set(o);C=o;dropImage(old);draw();toast('Logo removed','ok')}});
 const nz=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
 function vInfo(){
   const c=curC(),L=act(c).filter(s=>sel.ty=='ALL'||(s.type||'')==sel.ty);
@@ -934,7 +1021,7 @@ async function pdf(){
       st.textContent='Building page '+(i+1)+' of '+cs.length+'…';
       document.getElementById('ovSub').textContent='Rendering page ' + (i+1) + ' of ' + cs.length + '…';
       const cl=cs[i].cloneNode(true);Object.assign(cl.style,{width:FIT_W+'px',maxWidth:'none',margin:'0',border:'0',paddingTop:'0'});host.append(cl);
-      const cv=await html2canvas(cl,{scale:3,backgroundColor:'#fff',windowWidth:FIT_W+40});
+      const cv=await html2canvas(cl,{scale:3,backgroundColor:'#fff',windowWidth:FIT_W+40,useCORS:true});
       host.removeChild(cl);
       if(i)doc.addPage();
       let w=172,h=cv.height*w/cv.width;
@@ -1016,8 +1103,8 @@ if(C.t==2){
 
 return{t:t.trim(),p:q.trim()}}
 function rmkBox(one,d,pm){const R=remarks(one,calc(d,cd(one.cls).s),d,pm?(pm[one.reg]||{p:0,n:0}):pos(one.reg,one.cls));return`<label class="mu">Class teacher's remark (auto-written; type to override)<textarea placeholder="${esc(R.t)}" data-f="tr" data-r="${esc(one.reg)}">${esc(d.tr||'')}</textarea></label><label class="mu">${headOf(one.cls).role}'s remark (auto-written; type to override)<textarea placeholder="${esc(R.p)}" data-f="pr" data-r="${esc(one.reg)}">${esc(d.pr||'')}</textarea></label>`}
-$('#m').addEventListener('change',e=>{const t=e.target;if(!['sg','psg'].includes(t.id)||!db||!admin||!t.files[0])return;overlay('Uploading signature…','Resizing and saving.');const fld=t.id=='psg'?'psig':'sig';const im=new Image();im.onload=async()=>{const k=Math.min(1,400/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k)||1;cv.height=Math.round(im.height*k)||1;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);const o={...C,[fld]:cv.toDataURL('image/png')};try{await db.doc('cfg/school').set(o);C=o;draw();toast('Signature saved','ok')}catch(x){toast('Signature could not be saved: '+(x.message||x),'err')}finally{overlayHide()}};im.onerror=()=>{toast('Could not read that image.','err');overlayForceHide()};im.src=URL.createObjectURL(t.files[0])});
-$('#m').addEventListener('click',async e=>{const a0=e.target.dataset.act;if((a0=='rmsig'||a0=='rmpsig')&&db&&admin){const o={...C};delete o[a0=='rmpsig'?'psig':'sig'];await db.doc('cfg/school').set(o);C=o;draw();toast('Signature removed','ok')}});
+$('#m').addEventListener('change',e=>{const t=e.target;if(!['sg','psg'].includes(t.id)||!db||!admin||!t.files[0])return;overlay('Uploading signature…','Resizing and saving.');const fld=t.id=='psg'?'psig':'sig';const im=new Image();im.onload=async()=>{const k=Math.min(1,400/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k)||1;cv.height=Math.round(im.height*k)||1;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);try{const o={...C,[fld]:await putImage('brand',cv.toDataURL('image/png'),'png','image/png')},old=C[fld];await db.doc('cfg/school').set(o);C=o;if(old)dropImage(old);draw();toast('Signature saved','ok')}catch(x){toast('Signature could not be saved: '+(x.message||x),'err')}finally{overlayHide()}};im.onerror=()=>{toast('Could not read that image.','err');overlayForceHide()};im.src=URL.createObjectURL(t.files[0])});
+$('#m').addEventListener('click',async e=>{const a0=e.target.dataset.act;if((a0=='rmsig'||a0=='rmpsig')&&db&&admin){const fk=a0=='rmpsig'?'psig':'sig',o={...C},old=C[fk];delete o[fk];await db.doc('cfg/school').set(o);C=o;dropImage(old);draw();toast('Signature removed','ok')}});
 let PV={},UP=[];
 function cum(s,k){if(!C.t)return'';let sum=k.tot,av=k.avg,n=1;const row=(a,b,c,e)=>`<tr><td>${a}</td><td>${b}</td><td>${c}</td><td>${e}</td></tr>`,R=[];for(let j=0;j<C.t;j++){const d=(PV[j]||{})[s.reg],x=d?calc(d,d.subs||Object.keys(d.sc||{})):null;R.push(row(T[j],x?x.tot:'—',x?x.avg.toFixed(1):'—',x?x.b.g:'—'));if(x){sum+=x.tot;av+=x.avg;n++}}R.push(row(T[C.t]+' (this term)',k.tot,k.avg.toFixed(1),k.b.g));if(C.t==2)R.push(row('Cumulative ('+n+' terms)',sum,(av/n).toFixed(1),gr(av/n).g));return`<div class="bar m2">TERMLY RECORD</div><table class="cm"><tr><th>Term</th><th>Total Score</th><th>Average</th><th>Grade</th></tr>${R.join('')}</table>`}
 function bprint(){let st=document.getElementById('pg');if(!st){st=document.createElement('style');st.id='pg';document.head.append(st)}st.textContent='@media print{@page{size:A4 landscape;margin:10mm}}';const off=()=>{st.textContent='';window.removeEventListener('afterprint',off)};window.addEventListener('afterprint',off);try{window.print()}catch(x){}}
@@ -1092,7 +1179,7 @@ function audLog(action,target,detail,changes){
 /* ---------- live presence ---------- */
 let PRCH=null,ONL={},_prT,_psig='';
 const pmeta=()=>({email:ME.email,role:ROLE,view:VL[view]||view,cls:['scores','reports','board','info','students'].includes(view)?curC():'',vis:document.hidden?'away':'active',since:ME.since||Date.now(),last:ME.last?ME.last.a+(ME.last.t?' · '+ME.last.t:''):'',lat:ME.last?ME.last.at:0});
-function presDirty(){clearTimeout(_prT);_prT=setTimeout(()=>{if(PRCH&&PRCH._ok)PRCH.track(pmeta())},1200)}
+let _prLast=0;const PRES_GAP=300000;function presDirty(){if(ROLE=='admin'){clearTimeout(_prT);_prT=setTimeout(()=>{if(PRCH&&PRCH._ok){_prLast=Date.now();PRCH.track(pmeta())}},1200);return}if(_prT)return;_prT=setTimeout(()=>{_prT=0;if(PRCH&&PRCH._ok){_prLast=Date.now();PRCH.track(pmeta())}},Math.max(1200,PRES_GAP-(Date.now()-_prLast)))}
 function presBoot(){if(!sb||!ME.id||PRCH)return;ME.since=Date.now();
   PRCH=sb.channel('dec-online',{config:{presence:{key:ME.id}}});
   PRCH.on('presence',{event:'sync'},()=>{ONL=PRCH.presenceState();onlUI()}).subscribe(st=>{if(st=='SUBSCRIBED'){PRCH._ok=1;PRCH.track(pmeta())}});
@@ -1359,7 +1446,7 @@ function ctrlBoot(){try{lockBoot()}catch(e){}presBoot();audLog('Session started'
 
 (async()=>{try{draw();db=await claude.use('db');user=await claude.use('user');admin=!!(user&&user.canEdit());if(!db){draw();return}
 ctrlBoot();
-db.doc('cfg/school').onSnapshot(s=>{C=s.exists?{...DEF,...s.data()}:DEF;sub();draw(1)});db.collection('students').onSnapshot(q=>{ST=q.docs.map(d=>d.data()).sort((a,b)=>String(a.name).localeCompare(String(b.name)));draw(1)});sub();draw()}catch(e){$('#m').innerHTML='<div class="warn">Could not start: '+esc(e.message||e)+'. Reload the page.</div>'}})();
+db.doc('cfg/school').onSnapshot(s=>{C=s.exists?{...DEF,...s.data()}:DEF;sub();draw(1)});SCP(db.collection('students')).onSnapshot(q=>{ST=q.docs.map(d=>d.data()).sort((a,b)=>String(a.name).localeCompare(String(b.name)));draw(1)});sub();draw()}catch(e){$('#m').innerHTML='<div class="warn">Could not start: '+esc(e.message||e)+'. Reload the page.</div>'}})();
 </script>
 </body>
 </html>
