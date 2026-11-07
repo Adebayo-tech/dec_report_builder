@@ -305,12 +305,12 @@ button:active{transform:translateY(0)}
 .lg{width:var(--lw,170px);height:var(--lh,92px);flex:none;display:flex;align-items:center;justify-content:center}.lg img{width:100%;height:100%;object-fit:contain;display:block}
 .pht{display:flex;align-items:center;gap:8px;min-width:150px}.pht img{width:36px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--bd)}.pht .nop{width:36px;height:48px;border-radius:4px;border:1px dashed var(--bd-strong);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fg-muted)}.pht label.pb{cursor:pointer;display:inline-block;padding:6px 10px;border:1.5px solid var(--bd);border-radius:10px;font-size:12.5px;font-weight:600;background:var(--bg-elevated)}.pht label.pb:hover{border-color:var(--ac)}.pht button{padding:6px 10px;font-size:12.5px}
 .hd{flex:1;text-align:center}.hd h2{margin:0;color:#1f3864;font-size:var(--h2,21px)}.hd .ad{color:#2f6db5}.hd .srs{font-weight:700;color:#1f3864;margin-top:var(--sm,10px)}
-.inf{display:flex;gap:12px;margin-top:6px;align-items:stretch}.inf table{flex:1;min-width:0;height:var(--ih,124px)}.inf .pp{flex:none;box-sizing:border-box;width:calc(var(--ih,124px)*.75);height:var(--ih,124px);border:1px solid #8a8a8a;background:#f4f4f4;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#9a9a9a;font-size:10px;letter-spacing:.06em;text-align:center}.inf .pp img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}.inf th{background:#d9e4f0;color:#1f3864;text-align:left;width:40%}.inf td{text-align:center;background:#fff}.inf .rt th{text-align:right}.inf .rt td{text-align:left}
+.inf{display:flex;gap:12px;margin-top:6px;align-items:stretch}.inf table{flex:1;min-width:0;height:var(--ih,124px)}.inf .pp{flex:none;box-sizing:border-box;width:calc(var(--ih,124px)*.75);height:var(--ih,124px);border:1px solid #8a8a8a;background:#f4f4f4;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#9a9a9a;font-size:10px;letter-spacing:.06em;text-align:center}.inf .pp img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}.inf th{background:#d9e4f0;color:#1f3864;text-align:left;width:40%}.inf td{text-align:left;background:#fff;padding-left:10px}.inf th{padding-left:10px;vertical-align:middle}.inf td{vertical-align:middle}
 .bar{background:#1f3864;color:#fff;text-align:center;font-weight:700;padding:var(--bp,3px);margin-top:var(--bm,8px)}
 .ac th{background:#c9a84c;color:#fff;text-align:center}.ac td{text-align:center;padding:var(--rp,7px) var(--ph,6px)}.ac td:nth-child(2){text-align:left}.ac tr:nth-child(even) td{background:#f2f2f2}.ac td:nth-child(6){font-weight:700;font-style:italic}.ac .tt td{background:#d0d0d0!important;font-weight:700;font-size:var(--fs2,14px)}
-.tri{display:flex;gap:12px;align-items:flex-start;margin-top:var(--tm,14px)}.tri table{flex:1;min-width:0}
+.tri{display:flex;gap:12px;align-items:stretch;margin-top:var(--tm,14px)}.tri table{flex:1;min-width:0}
 .rc th.h{background:#2f3b4c;color:#fff;text-align:center}.tri td{text-align:center}
-.dm th{background:#d9e4f0;color:#1f3864;text-align:left;font-weight:400}.dm th.r{text-align:right}.dm td{width:18%;background:#fff;text-align:center}
+.dm{table-layout:fixed}.dm th{background:#d9e4f0;color:#1f3864;text-align:left;font-weight:400;width:32%;padding-left:10px}.dm th.r{text-align:left}.dm td{width:18%;background:#fff;text-align:center}
 .rs{text-align:center;margin:var(--rsm,6px) auto;width:46%}.rs div{padding:3px;font-style:italic;background:#d0d0d0}.rs div+div{background:#c6e0b4}
 .rm th{background:#d9e4f0;color:#1f3864;width:22%}.rm td{height:var(--rh,24px)}
 .sg{text-align:center;margin-top:var(--sg,30px)}.ft{background:#f8e6c0;color:#555;text-align:right;font-style:italic;font-size:10px;padding:4px 8px;border-top:3px solid #c9a84c;margin:var(--fm,16px) -8px 0}
@@ -475,22 +475,38 @@ let sb,ROLE=null,MYCLASSES=[],ME={id:'',email:''},AUD_BULK=0;
 const Q=s=>document.querySelector(s);
 const rowDoc=r=>({id:r.id,exists:true,data:()=>r.data});
 /* ---- Efficient sync: live changes are applied straight from the realtime message, so the whole collection is never re-downloaded. A cheap catch-up check runs every 10 minutes and when the tab comes back. ---- */
-const SYNC_POLL=600000,SYNC_POLL_T=300000,SYNC_OVERLAP=900000,SYNC_MIN=30000;
+const SYNC_POLL=600000,SYNC_POLL_T=300000,SYNC_OVERLAP=120000,SYNC_MIN=30000;
 const _ts=v=>{const n=Date.parse(v);return isNaN(n)?0:n},_same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+/* ---- Browser memory: the last student/score data is kept on the device (per signed-in user), shown at once on open, and only changes are fetched. Cleared on sign-out. ---- */
+const CACHE_VER='v1',CACHE_TTL=14*864e5,FULL_EVERY=20*36e5;
+const CACHE={off:0,_db:null,
+  open(){return this._db||(this._db=new Promise((res,rej)=>{try{const r=indexedDB.open('srb-cache',1);r.onupgradeneeded=()=>r.result.createObjectStore('c');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);r.onblocked=()=>rej(new Error('blocked'))}catch(e){rej(e)}}))},
+  async tx(mode,fn){const d=await this.open();return new Promise((res,rej)=>{let out;const t=d.transaction('c',mode);try{out=fn(t.objectStore('c'))}catch(e){return rej(e)}t.oncomplete=()=>res(out&&out.result);t.onerror=t.onabort=()=>rej(t.error||new Error('cache error'))})},
+  get(k){return this.tx('readonly',s=>s.get(k))},
+  put(k,v){return this.off?Promise.resolve():this.tx('readwrite',s=>s.put(v,k))},
+  clear(){this.off=1;return this.tx('readwrite',s=>s.clear())},
+  prune(prefix){return this.tx('readwrite',s=>{const r=s.openCursor();r.onsuccess=()=>{const c=r.result;if(c){if(!String(c.key).startsWith(prefix))c.delete();c.continue()}};return r})}};
 function snapQ(col,flt,ins){return function(next,err){
-  let on=1,ready=0,busy=0,again=0,started=0,m=new Map(),since=0,buf=[],timer,ch,lastSync=0;
+  let on=1,ready=0,busy=0,again=0,started=0,m=new Map(),since=0,buf=[],timer,ch,lastSync=0,fullAt=0,needFull=0,saveT;
+  const uid=(typeof ME!=='undefined'&&ME&&ME.id)||'',ckey=uid?CACHE_VER+'|'+uid+'|'+col+'|'+JSON.stringify([flt,ins]):'';
+  const save=()=>{if(!ckey||!on||CACHE.off)return;clearTimeout(saveT);saveT=setTimeout(()=>{if(CACHE.off)return;CACHE.put(ckey,{t:Date.now(),since,fullAt,rows:[...m.values()]}).catch(()=>{})},400)};
   const val=(r,f)=>String((r.data||{})[f]);
   const match=r=>!!r&&r.col==col&&flt.every(([f,v])=>val(r,f)===String(v))&&ins.every(([f,a])=>a.map(String).includes(val(r,f)));
   const ap=q=>{flt.forEach(([f,v])=>q=q.eq('data->>'+f,v));ins.forEach(([f,a])=>q=q.in('data->>'+f,a));return q};
-  const emit=()=>{if(!on)return;const docs=[...m.values()].map(rowDoc);next({docs,size:docs.length,empty:!docs.length})};
-  const put=r=>{m.set(r.id,{id:r.id,data:r.data,updated_at:r.updated_at});const t=_ts(r.updated_at);if(t>since)since=t};
+  const emit=()=>{if(!on)return;const docs=[...m.values()].map(rowDoc);next({docs,size:docs.length,empty:!docs.length});save()};
+  const put=r=>{m.set(r.id,{id:r.id,data:r.data,updated_at:r.updated_at});const t=_ts(r.updated_at);if(t>since&&t<=Date.now()+60000)since=t};
   const full=async()=>{let all=[],from=0;for(;;){const{data,error}=await ap(sb.from('docs').select('id,data,updated_at').eq('col',col)).order('id').range(from,from+999);if(error)throw error;all=all.concat(data);if(data.length<1000)break;from+=1000}
-    m=new Map();since=0;all.forEach(put);ready=1;return 1};
+    m=new Map();since=0;all.forEach(put);ready=1;fullAt=Date.now();needFull=0;return 1};
   const delta=async()=>{
     const cq=await ap(sb.from('docs').select('id',{count:'exact',head:true}).eq('col',col));if(cq.error)throw cq.error;
-    const dq=await ap(sb.from('docs').select('id,data,updated_at').eq('col',col)).gte('updated_at',new Date(Math.max(0,since-SYNC_OVERLAP)).toISOString()).order('updated_at').range(0,999);if(dq.error)throw dq.error;
-    if(dq.data.length>=1000||cq.count==null)return full();
-    let ch=0;dq.data.forEach(r=>{const o=m.get(r.id);if(!o||!_same(o.data,r.data))ch=1;put(r)});
+    /* step 1: only id + timestamp of recently touched rows (a few bytes each) */
+    const mq=await ap(sb.from('docs').select('id,updated_at').eq('col',col)).gte('updated_at',new Date(Math.max(0,since-SYNC_OVERLAP)).toISOString()).order('updated_at').range(0,999);if(mq.error)throw mq.error;
+    if(mq.data.length>=1000||cq.count==null)return full();
+    /* step 2: download full records only for rows we do not already hold in that exact version */
+    const need=mq.data.filter(r=>{const o=m.get(r.id);return !o||_ts(o.updated_at)!==_ts(r.updated_at)}).map(r=>r.id);
+    let ch=0;
+    for(let i=0;i<need.length;i+=100){const dq=await ap(sb.from('docs').select('id,data,updated_at').eq('col',col)).in('id',need.slice(i,i+100));if(dq.error)throw dq.error;dq.data.forEach(r=>{const o=m.get(r.id);if(!o||!_same(o.data,r.data))ch=1;put(r)})}
+    mq.data.forEach(r=>{const t=_ts(r.updated_at);if(t>since&&t<=Date.now()+60000)since=t});
     if(m.size!==cq.count)return full();
     return ch};
   const apply=(p,guard)=>{
@@ -502,8 +518,10 @@ function snapQ(col,flt,ins){return function(next,err){
     if(guard&&o&&_ts(o.updated_at)>_ts(r.updated_at))return 0;
     if(o&&_same(o.data,r.data))return 0;
     put(r);return 1};
+  /* show the remembered copy immediately; the next sync then asks only for what changed (or reloads everything if the copy is over ~20 hours old) */
+  const initP=ckey?(async()=>{try{await CACHE.prune(CACHE_VER+'|'+uid+'|');const c=await CACHE.get(ckey);if(!on||!c||!Array.isArray(c.rows)||Date.now()-c.t>CACHE_TTL)return;m=new Map(c.rows.map(r=>[r.id,r]));since=c.since||0;fullAt=c.fullAt||0;ready=1;if(Date.now()-fullAt>FULL_EVERY)needFull=1;emit()}catch(e){}})():Promise.resolve();
   const sync=async()=>{if(!on)return;if(busy){again=1;return}busy=1;lastSync=Date.now();
-    try{do{again=0;let c=ready?await delta():await full();const b=buf;buf=[];b.forEach(p=>{if(apply(p,1))c=1});if(c||!ready)emit()}while(again&&on)}
+    try{await initP;do{again=0;let c=(ready&&!needFull)?await delta():await full();const b=buf;buf=[];b.forEach(p=>{if(apply(p,1))c=1});if(c||!ready)emit();else save()}while(again&&on)}
     catch(e){err&&err(e)}finally{busy=0}};
   const onEv=p=>{if(!on)return;if(!ready||busy){buf.push(p);return}if(apply(p,0))emit()};
   const vis=()=>{if(!document.hidden&&Date.now()-lastSync>SYNC_MIN)sync()};
@@ -625,7 +643,7 @@ const ready = (async () => {
   Q('#so').onclick = async e => {
     e.preventDefault();
     try { if (typeof audLog == 'function') audLog('Signed out'); } catch (x) {}
-    overlay('Signing out…', 'See you next time.');
+    overlay('Signing out…', 'See you next time.');try{await CACHE.clear()}catch(x){}
     await new Promise(r => setTimeout(r, 300));
     await sb.auth.signOut();
     location.reload();
@@ -828,7 +846,7 @@ const headOf=c=>isSec(c)?{role:'Principal',name:C.pname,sig:C.psig}:{role:'Headm
 function card(s,pm){
   const c=s.cls,fee=feeOf(c),hd=headOf(s.cls),subs=cd(c).s,d=SC[s.reg]||{},k=calc(d,subs),p=pm?(pm[s.reg]||{p:0,n:0}):pos(s.reg,c),pres=+d.pres||0,ab=Math.max(0,C.days-pres),pc=C.days?(pres/C.days*100).toFixed(2):'0.00',dm=d.dom||{},R=remarks(s,k,d,p),B=C.bands,ca=k.rows.reduce((a,r)=>a+r.ca,0),ex=k.rows.reduce((a,r)=>a+r.ex,0),kv=(l,v)=>`<tr><th>${l}</th><td>${v}</td></tr>`,dr=(a,b)=>`<tr><th>${a}</th><td>${esc(dm[a]??'')}</td><th class="r">${b}</th><td>${esc(dm[b]??'')}</td></tr>`;
   return`<div class="rc"><div class="top"><div class="lg">${C.logo?`<img src="${C.logo}">`:''}</div><div class="hd"><h2>${esc(C.name)}</h2><div class="ad">${esc(C.address)}</div><i>${esc(C.motto)}</i><div class="srs">STUDENT REPORT SHEET</div></div><div class="lg"></div></div>
-<div class="inf"><table>${kv('Student Name:',esc(s.name))}${kv('Class:',esc(c)+(s.type?' '+esc(s.type):''))}${kv('Academic Session:',sesL(C.ses))}${kv('Days Present:',pres)}${kv('Attendance %:',pc)}</table><table class="rt">${kv('Admission Number:',esc(s.reg))}${kv('Gender:',esc(s.g||''))}${kv('Term:',T[C.t])}${kv('Grade:',k.b.g)}${kv('Position:',p.p?ord(p.p)+' of '+p.n:'—')}</table>${ST.some(x=>x.ph)?`<div class="pp">${s.ph?`<img src="${s.ph}" alt="">`:'PASSPORT<br>PHOTO'}</div>`:''}</div>
+<div class="inf"><table>${kv('Student Name:',esc(s.name))}${kv('Class:',esc(c))}${kv('Academic Session:',sesL(C.ses))}${kv('Days Present:',pres)}${kv('Attendance %:',pc)}</table><table class="rt">${kv('Admission Number:',esc(s.reg))}${kv('Gender:',esc(s.g||''))}${kv('Term:',T[C.t])}${kv('Grade:',k.b.g)}${kv('Class Type:',esc(s.type||'—'))}</table>${ST.some(x=>x.ph)?`<div class="pp">${s.ph?`<img src="${s.ph}" alt="">`:'PASSPORT<br>PHOTO'}</div>`:''}</div>
 <div class="bar">ACADEMIC PERFORMANCE</div><table class="ac"><tr><th>S/N</th><th>Subject</th><th>CA Score</th><th>Exam Score</th><th>Total (${C.ca+C.ex})</th><th>Grade</th><th>Remark</th></tr>${k.rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.s)}</td><td>${r.e?'':r.ca}</td><td>${r.e?'':r.ex}</td><td>${r.e?'':r.t}</td><td>${esc(r.b.g)}</td><td>${esc(r.b.r)}</td></tr>`).join('')}<tr class="tt"><td></td><td>Total</td><td>${ca}</td><td>${ex}</td><td>${k.tot}</td><td>${k.b.g}</td><td>${k.b.r}</td></tr></table>
 ${cum(s,k)}<div class="tri"><table><tr><th colspan=2 class="h">Summary</th></tr>${kv('Total Obtainable',subs.length*(C.ca+C.ex))}${kv('Marks Obtained',k.tot)}${kv('Average','<b>'+k.avg.toFixed(1)+'</b>')}${kv('Grade','<b>'+k.b.g+'</b>')}</table><table><tr><th colspan=3 class="h">Grade Equivalent</th></tr>${B.map((b,i)=>`<tr><td>${b.g}</td><td>${b.m}-${i?B[i-1].m-1:100}</td><td>${b.r}</td></tr>`).join('')}</table><table><tr><th colspan=2 class="h">ATTENDANCE</th></tr>${kv('Days Open',C.days)}${kv('Days Present',pres)}${kv('Days Absent',ab)}${kv('Attendance %',pc)}</table></div>
 <div class="bar m2">Domain (Affective/Psychomotor)</div><table class="dm">${dr(TR[0],TR[4])}${dr(TR[1],TR[5])}${dr(TR[2],TR[6])}${dr(TR[3],TR[7])}</table>
@@ -1075,7 +1093,7 @@ if(house&&oav!==null&&oav>=3.5)out.push(P([`${He} is a proud member of ${house} 
 if(pc!==null)out.push(pc>=95?P(['Attendance is excellent.',`${He} hardly ever misses school.`],'at'):pc>=85?P(['Attendance is good.',`${He} attends school regularly.`],'at'):pc>=70?`Attendance is fair; ${he} should come to school more regularly.`:`Poor attendance (${pc.toFixed(0)}%) is affecting ${his} progress.`);
 const ac2=[['An excellent academic result.','Outstanding classwork.'],['A very good academic result.','Very good work in class.'],['A good academic result.','A fair academic result.'],['A pass; more effort is needed.','Academic work needs improvement.'],['Academic work is weak and needs urgent attention.','Parents should help with studies at home.']],
 HC=[['We are proud of '+nm+'.','Well done, keep it up.'],['Aim for the top next term.','Keep up the good work.'],['More effort will bring better results.','Keep trying.'],['Greater commitment is needed next term.','Parents should supervise studies closely.'],['Parents are advised to meet the school.','Urgent improvement is needed.']];
-let q=out.join(' ');if(k.has){q+=(q?' ':'')+P(ac2[ti],'ac');if(p&&p.p&&p.n>1&&p.p<=3)q+=` Well done on finishing ${ord(p.p)} in class.`;q+=' '+P(HC[ti],'hc')}
+let q=out.join(' ');if(k.has){q+=(q?' ':'')+P(ac2[ti],'ac');q+=' '+P(HC[ti],'hc')}
 
 /* --- THIRD TERM: Promotion / Repeat remark --- */
 if(C.t==2){
