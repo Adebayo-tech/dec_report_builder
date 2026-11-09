@@ -360,6 +360,46 @@ input.bad{border-color:var(--danger)!important;background:var(--danger-soft)!imp
 .cg .box{margin:0}
 details>summary{cursor:pointer}
 @media print{#lockbar{display:none!important}}
+
+/* ---- class assignment + chat ---- */
+header a#chb{position:relative}
+#chn{font-style:normal;background:#e0473a;color:#fff;border-radius:999px;font-size:11px;font-weight:700;padding:1px 6px;margin-left:4px}
+.mdl{position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.mdb{background:var(--bg-elevated);color:var(--fg);border-radius:16px;padding:22px;max-width:560px;width:100%;max-height:90vh;overflow:auto;box-shadow:var(--shadow-xl)}
+.mdc{max-height:50vh;overflow:auto;border:1px solid var(--bd);border-radius:10px;padding:6px 12px}
+.asl{padding:8px 0;border-bottom:1px solid var(--bd)}.asl:last-child{border:0}
+.asl label,.chk{display:flex;gap:8px;align-items:center;font-weight:500;text-transform:none;letter-spacing:0;margin:0;font-size:14px}
+.asl input,.chk input{width:auto;margin:0}
+.asa{display:flex;flex-wrap:wrap;gap:6px 18px;margin:6px 0 0 26px}
+#chat{position:fixed;inset:0;z-index:9980;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:16px}
+#chat .chbox{background:var(--bg-elevated);color:var(--fg);border-radius:16px;width:100%;max-width:1000px;height:min(86vh,760px);display:flex;flex-direction:column;box-shadow:var(--shadow-xl);overflow:hidden}
+#chat.tch .chbox{max-width:640px}
+.chh{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--bd)}.chh b{font-size:16px}.chh button{margin-left:auto;border:0;background:none;font-size:18px;cursor:pointer;color:var(--fg-muted)}
+#chbody{flex:1;min-height:0;display:flex;flex-direction:column}
+.chtabs,.chf{display:flex;gap:6px;padding:8px 12px;flex-wrap:wrap}
+.chtabs button,.chf button{border:1px solid var(--bd);background:none;border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;color:var(--fg-muted)}
+.chtabs button.on,.chf button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e0473a;margin-left:6px}
+.chlist{padding:12px;overflow:auto;flex:1}
+.chi{padding:10px 12px;border:1px solid var(--bd);border-radius:10px;margin-bottom:8px;cursor:pointer}.chi:hover,.chi.cur{background:var(--ac-soft)}.chi.unr{border-left:4px solid var(--ac)}
+.chit{display:flex;justify-content:space-between;align-items:center;gap:8px}.sm{font-size:12px}
+.chip{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--ac-soft);color:var(--ac-ink)}.chip.resolved{background:rgba(127,127,127,.18);color:var(--fg-muted)}
+.chsplit{display:flex;flex:1;min-height:0}.chside{width:320px;border-right:1px solid var(--bd);display:flex;flex-direction:column;padding:10px;min-height:0}.chside input{margin-bottom:4px}#chlist{overflow:auto;flex:1}
+.chmain{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.chconvh{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bd);flex-wrap:wrap}.chconvh button{font-size:13px;padding:6px 12px}
+.chmsgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.chm{max-width:82%}.chm.me{align-self:flex-end}.chm.they{align-self:flex-start}
+.chw{font-size:11.5px;color:var(--fg-muted);margin:0 6px 2px}.chm.me .chw{text-align:right}
+.chb{white-space:pre-wrap;word-break:break-word;padding:9px 13px;border-radius:14px;background:var(--ac-soft);line-height:1.5}.chm.me .chb{background:var(--ac);color:#fff}.chm.ann .chb{border:2px solid #c9a45c}
+.chcomp{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--bd);align-items:flex-end}.chcomp textarea{flex:1;font-size:16px;resize:none;min-height:46px}
+.chnew{padding:16px;overflow:auto}.chnew input,.chnew textarea{width:100%;margin-bottom:8px;font-size:16px}.chsel{max-height:200px;overflow:auto;border:1px solid var(--bd);border-radius:10px;padding:6px 12px;display:flex;flex-direction:column;gap:6px}
+.chcomp textarea,.chnew textarea,.chnew input{font-family:inherit}
+@media(max-width:760px){
+  #chat{padding:0}#chat .chbox{height:100%;max-width:none;border-radius:0}
+  .chside{width:100%;border:0}.chmain{display:none}
+  #chat.inconv .chside{display:none}#chat.inconv .chmain{display:flex}
+}
+@media(min-width:761px){#chback{display:none}}
 </style>
 </head>
 <body>
@@ -471,7 +511,7 @@ function toast(msg, kind) {
   _toastT = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-let sb,ROLE=null,MYCLASSES=[],ME={id:'',email:''},AUD_BULK=0;
+let sb,ROLE=null,MYCLASSES=[],ME={id:'',email:''},AUD_BULK=0,RANK='teacher',SECT='',FORMC=[],FORMR=[],BASEC=[],EDITC=[];
 const Q=s=>document.querySelector(s);
 const rowDoc=r=>({id:r.id,exists:true,data:()=>r.data});
 /* ---- Efficient sync: live changes are applied straight from the realtime message, so the whole collection is never re-downloaded. A cheap catch-up check runs every 10 minutes and when the tab comes back. ---- */
@@ -613,7 +653,10 @@ const ready = (async () => {
       await showSignin(msg);
       overlay('Signing in…', 'Verifying your account.');
     }
-    const { data, error } = await sb.from('staff').select('role,classes,status').maybeSingle();
+    const _em = (((await sb.auth.getUser()).data || {}).user || {}).email || '', _lk = _em.replace(/[\\%_]/g, '\\$&');
+    let q1 = await sb.from('staff').select('role,classes,status,rank,section,formclasses').ilike('email', _lk).maybeSingle();
+    if (q1.error && /rank|section|formclasses/i.test(q1.error.message || '')) q1 = await sb.from('staff').select('role,classes,status').ilike('email', _lk).maybeSingle();
+    const { data, error } = q1;
     if (error) {
       overlayError('Could not read staff record', error.message);
       await new Promise(r => setTimeout(r, 400));
@@ -636,6 +679,8 @@ const ready = (async () => {
     }
     ROLE = data.role;
     MYCLASSES = Array.isArray(data.classes) ? data.classes : [];
+    RANK = data.rank || 'teacher'; SECT = data.section || ''; FORMR = Array.isArray(data.formclasses) ? data.formclasses : []; FORMC = [...new Set(FORMR.map(x => String(x).split('|')[0]))]; BASEC = MYCLASSES.slice();
+    EDITC = [...new Set([...MYCLASSES, ...FORMC])]; MYCLASSES = EDITC.slice();
     break;
   }
   overlayForceHide();
@@ -665,6 +710,17 @@ classes:['Creche','Pre Nursery 1','Pre Nursery 2','Nursery 1','Nursery 2','Basic
 let C=DEF,ST=[],SC={},db,user,admin=false,view='scores',sel={c:'',r:'ALL',ty:'ALL'},u2,key,promo={};
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pid=()=>C.ses+'_'+C.t,sesL=s=>s.replace('-','/'),cd=n=>C.classes.find(x=>x.n==n)||C.classes[0];
+/* ---- roles: admin / sub-admin / head (headmaster, principal) / teacher (form + subject) ---- */
+const isHead=()=>!admin&&(RANK=='head'||RANK=='subadmin'),canEditCls=c=>admin||EDITC.includes(c);
+const RPT=()=>admin||RANK=='subadmin',DASH=()=>admin||isHead()||FORMC.length>0,INFO=()=>admin||FORMC.length>0;
+const fcls=x=>String(x).split('|')[0],fpre=x=>{const p=String(x).split('|');return p[1]?p[0]+' ('+p[1]+')':p[0]};
+/* a form teacher of "Basic 7 | Gold" only sees and edits Gold students of Basic 7, unless they also teach a subject in that class */
+function typeOK(s){if(admin||BASEC.includes(s.cls)||!FORMR.some(x=>fcls(x)==s.cls)||FORMR.includes(s.cls))return true;return FORMR.includes(s.cls+'|'+(s.type||''))}
+const canEditStudent=s=>admin||(EDITC.includes(s.cls)&&typeOK(s));
+const secName=x=>x=='secondary'?'Secondary':'Primary';
+function applyScope(){if(admin)return;const sec=isHead()&&SECT?C.classes.map(x=>x.n).filter(n=>(isSec(n)?'secondary':'primary')==SECT):[];MYCLASSES=[...new Set([...EDITC,...sec])]}
+function roleOf(r){if(r.role=='admin')return'Admin';if(r.rank=='subadmin')return'Sub-admin ('+secName(r.section)+')';if(r.rank=='head')return r.section=='secondary'?'Principal':'Headmaster';const f=(r.formclasses||[]).length,c=(r.classes||[]).length;return f&&c?'Form + subject teacher':f?'Form teacher':'Subject teacher'}
+const accTxt=r=>[(r.rank=='head'||r.rank=='subadmin')?'All '+secName(r.section):'',(r.formclasses||[]).length?'Form: '+r.formclasses.map(fpre).join(', '):'',Array.isArray(r.classes)&&r.classes.length?(r.rank=='head'||r.rank=='subadmin'?'Also: ':'')+r.classes.join(', '):''].filter(Boolean).join(' · ');
 const allowedClasses=()=>{const all=C.classes.map(x=>x.n);if(admin)return all;return all.filter(n=>MYCLASSES.includes(n))};
 const curC=()=>{const a=allowedClasses();if(!a.length)return '';if(sel.c&&a.includes(sel.c))return sel.c;return a[0]};
 const gr=v=>C.bands.find(b=>v>=b.m)||C.bands[C.bands.length-1],ord=n=>n+(['th','st','nd','rd'][(n%100>>3^1&&n%10<4)?n%10:0]);
@@ -741,7 +797,7 @@ function save(reg,fn,kind){
   if(lockedForMe()){toast(LOCKMSG(),'err');return}
   const s=ST.find(x=>x.reg==reg);if(!s)return;
   if(!admin){
-    if(!MYCLASSES.includes(s.cls)){alert('You are not assigned to this class. Contact the administrator.');return}
+    if(!canEditStudent(s)){alert(isHead()?'Your account can view scores only. Ask the administrator if you need to edit.':'You are not assigned to this class. Contact the administrator.');return}
     if(!TF.includes(kind)){alert('Teachers can only edit scores, attendance and domain ratings.');return}
   }
   const k=pid();(PEND[reg]=PEND[reg]||[]).push(fn);
@@ -798,9 +854,10 @@ async function mvImages(){
 $('#m').addEventListener('click',e=>{if(e.target.dataset&&e.target.dataset.act=='mvimg'&&admin)mvImages()});
 function sub(){const k=pid();if(!db||k==key)return;key=k;SC={};u2&&u2();UP.forEach(f=>f());UP=[];PV={};for(let j=0;j<C.t;j++)UP.push(SCP(db.collection('scores').where('p','==',C.ses+'_'+j)).onSnapshot(q=>{PV[j]={};q.docs.forEach(d=>PV[j][d.data().reg]=d.data());draw(1)}));u2=SCP(db.collection('scores').where('p','==',k)).onSnapshot(q=>{SC={};q.docs.forEach(d=>SC[d.data().reg]=d.data());Object.keys(PEND).forEach(r=>{if((PEND[r]||[]).length||(INF[r]||[]).length)SC[r]=applyPend(r,{...(SC[r]||{p:pid(),reg:r,sc:{},dom:{}})})});draw(1)})}
 function nav(){
-  const t=[['scores','Score Entry'],['reports','Report Cards'],['board','Broadsheet'],['info','Class Info']];
-  if(admin)t.unshift(['dash','Dashboard']);
+  const t=[['scores','Score Entry']];if(RPT())t.push(['reports','Report Cards']);t.push(['board','Broadsheet']);if(INFO())t.push(['info','Class Info']);
+  if(DASH())t.unshift(['dash','Dashboard']);
   if(admin)t.push(['students','Students'],['past','Past Students'],['import','Import Data'],['admin','Settings & Promotion']);
+  if(!t.some(x=>x[0]==view))view=t[0][0];
   $('#nv').innerHTML=t.map(([k,l])=>`<button data-v="${k}" class="${view==k?'on':''}">${l}</button>`).join('')
 }
 let late=0;
@@ -809,7 +866,7 @@ function draw(soft){
   nav();
   $('#sn').innerHTML=(C.logo?`<img src="${C.logo}" style="height:26px;vertical-align:middle;margin-right:8px;background:#fff;border-radius:4px">`:'')+esc(C.name);
   $('#ps').textContent=sesL(C.ses)+' · '+T[C.t];
-  $('#rl').textContent=admin?'Administrator':('Teacher'+(MYCLASSES.length?' ('+MYCLASSES.join(', ')+')':''));
+  $('#rl').textContent=admin?'Administrator':(roleOf({rank:RANK,section:SECT,formclasses:FORMC,classes:EDITC.filter(c=>!FORMC.includes(c))})+(!isHead()&&MYCLASSES.length?' ('+MYCLASSES.join(', ')+')':isHead()&&SECT?' ('+secName(SECT)+')':''));
   const allowed=allowedClasses();
   if(!allowed.length && !admin){
     $('#m').innerHTML='<div class="warn"><b>No classes assigned.</b><br>You are signed in as a teacher but have not been assigned to any class. Please contact the administrator. If your class was recently renamed, the administrator also needs to update your assignment.</div>';
@@ -834,7 +891,7 @@ const tySelAdd=()=>{
   return `<label>Filter Type<select data-sel="ty"><option value="ALL">All types</option>${tys.map(n=>`<option ${n==sel.ty?'selected':''}>${esc(n)}</option>`).join('')}</select></label>`;
 }
 function vScores(){
-  const c=curC(),subs=cd(c).s,L=act(c).filter(s=>sel.ty=='ALL'||(s.type||'')==sel.ty);
+  const c=curC(),subs=cd(c).s,L=act(c).filter(s=>typeOK(s)&&(sel.ty=='ALL'||(s.type||'')==sel.ty));
   if(!subs||!subs.length)return `<div class="warn">The class <b>${esc(c)}</b> has no subjects yet. Go to Settings to add subjects for this class.</div>`;
   const pm=posMap(c);
   let h=`<div class="box"><div class="row">${clsSel()}${tySel()}<span class="mu">CA max ${C.ca} · Exam max ${C.ex} · Press Enter / arrows to move down a column. Use the Save button (or leave Auto-save on).</span><button class="b" data-act="csv">Export CSV</button></div><div class="sc scs"><div class="tb"><button class="b" id="svbtn" data-act="savenow">Save</button><label class="tg"><input type="checkbox" id="autosv" ${autoOn()?'checked':''}> Auto-save</label><span id="svst" class="svst"></span></div><table><thead><tr class="r1"><th rowspan=2 class="sk k1">Reg No.</th><th rowspan=2 class="sk k2">Name</th>${subs.map(s=>`<th class="c" colspan=2>${esc(s)}</th>`).join('')}<th rowspan=2 class="c">Total</th><th rowspan=2 class="c">Avg</th><th rowspan=2 class="c">Grade</th><th rowspan=2 class="c">Pos.</th></tr><tr class="r2">${subs.map(()=>`<th class="c">CA</th><th class="c">Exam</th>`).join('')}</tr></thead><tbody>`;
@@ -867,7 +924,7 @@ function vReports(){
   return h
 }
 async function hist(s){const el=$('#hist');if(!db||!el)return;try{const q=await db.collection('scores').where('reg','==',s.reg).get();const rows=q.docs.map(x=>x.data()).filter(x=>x.p!==pid()).sort((a,b)=>a.p<b.p?-1:1);el.innerHTML='<b>Previous terms</b><table><tr><th>Session</th><th>Term</th><th>Class</th><th>Total</th><th>Average</th><th>Grade</th></tr>'+rows.map(r=>{const[se,t]=r.p.split('_'),k=calc(r,r.subs||Object.keys(r.sc||{}));return`<tr><td>${sesL(se)}</td><td>${T[t]}</td><td>${esc(r.cls)}</td><td>${k.tot}</td><td>${k.avg.toFixed(1)}</td><td>${k.b.g}</td></tr>`}).join('')+'</table>'}catch(e){el.innerHTML='History unavailable.'}}
-function vBoard(){const c=curC(),subs=cd(c).s;if(!subs||!subs.length)return `<div class="warn">The class <b>${esc(c)}</b> has no subjects yet.</div>`;const pm=posMap(c),L=act(c).map(s=>({s,k:calc(SC[s.reg],subs)})).sort((a,b)=>b.k.tot-a.k.tot);const W=L.filter(x=>x.k.has),cnt={};L.forEach(x=>cnt[x.k.b.g]=(cnt[x.k.b.g]||0)+1);
+function vBoard(){const c=curC(),subs=cd(c).s;if(!subs||!subs.length)return `<div class="warn">The class <b>${esc(c)}</b> has no subjects yet.</div>`;const pm=posMap(c),L=act(c).filter(typeOK).map(s=>({s,k:calc(SC[s.reg],subs)})).sort((a,b)=>b.k.tot-a.k.tot);const W=L.filter(x=>x.k.has),cnt={};L.forEach(x=>cnt[x.k.b.g]=(cnt[x.k.b.g]||0)+1);
 return`<div class="box"><div class="row">${clsSel()}<span class="mu">Class average ${W.length?(W.reduce((a,x)=>a+x.k.avg,0)/W.length).toFixed(1):0}% · ${C.bands.map(b=>b.g+': '+(cnt[b.g]||0)).join(' · ')}</span><button class="b" data-act="bprint">Print</button><button class="b" data-act="bxl">Export Excel</button></div><div class="po"><b>${esc(C.name)}</b><br>${esc(c)} broadsheet · ${sesL(C.ses)} · ${T[C.t]}</div><div class="sc"><table><tr><th>Pos.</th><th>Name</th>${subs.map(s=>`<th class="c">${esc(s)}</th>`).join('')}<th class="c">Total</th><th class="c">Avg</th><th class="c">Grade</th></tr>${L.map(x=>`<tr><td>${ordp(pm[x.s.reg]||{p:0})}</td><td>${esc(x.s.name)}</td>${x.k.rows.map(r=>`<td class="c">${r.e?'':r.t}</td>`).join('')}<td class="c">${x.k.has?x.k.tot:''}</td><td class="c">${x.k.has?x.k.avg.toFixed(1):''}</td><td class="c">${x.k.b.g}</td></tr>`).join('')}</table></div></div>`}
 function vPast(){const grads=ST.filter(s=>s.on===false);return`<div class="box"><b>Past students (${grads.length})</b><p class="mu">Graduated or withdrawn. Records are still in the database; reactivate a student to edit them or print an old report card.</p><div class="sc"><table><tr><th>Reg No.</th><th>Name</th><th>Last class</th><th>Last session</th><th>Outcome</th><th></th></tr>${grads.map(s=>{const h=(s.hist||[]).slice(-1)[0]||{};return`<tr><td>${esc(s.reg)}</td><td>${esc(s.name)}</td><td>${esc(h.cls||s.cls)}</td><td>${esc(h.ses||'')}</td><td>${esc(h.out||'—')}</td><td><button data-act="rea" data-r="${esc(s.reg)}">Reactivate</button></td></tr>`}).join('')}</table></div>${grads.length?'':'<p class="mu">No past students yet.</p>'}</div>`}
 function vStudents(){const c=curC(),all=ST.filter(s=>s.cls==c&&(sel.ty=='ALL'||(s.type||'')==sel.ty));return`<div class="box"><b>Add student <span class="tag">ADMIN</span></b><div class="row"><label>Full name<input id="an"></label>${clsSel()}<label>Gender<select id="ag"><option>Male</option><option>Female</option></select></label><label>Class Type<select id="at"><option value="">— None —</option>${(C.types||['Day','Boarding']).map(t=>`<option>${esc(t)}</option>`).join('')}</select></label><label>House<input id="ah" size=8></label><label>Parent phone<input id="ap" size=12></label><label>Parent email<input id="ae"></label><button class="b" data-act="add">Add</button></div>
@@ -980,10 +1037,10 @@ if(a=='imp'){let n=0;const lines=$('#bi').value.split('\n').filter(l=>l.trim());
 if(a=='tog'){const s=ST.find(x=>x.reg==e.target.dataset.r);if(!s)return;s.on=(s.on===false)?true:false;try{await db.doc('students/'+s.reg).update({on:s.on});draw();toast(s.on?'Reactivated':'Withdrawn','ok')}catch(x){s.on=!s.on;toast('Failed to update: '+x.message,'err')}}
 if(a=='rea'){const s=ST.find(x=>x.reg==e.target.dataset.r);if(!s)return;const last=((s.hist||[]).slice(-1)[0]||{}).cls,u={on:true};if(!C.classes.some(x=>x.n==s.cls))u.cls=last&&C.classes.some(x=>x.n==last)?last:C.classes[C.classes.length-1].n;try{await db.doc('students/'+s.reg).update(u);Object.assign(s,u);draw();toast('Student reactivated','ok')}catch(x){toast('Could not reactivate: '+(x.message||x),'err')}}
 if(a=='del'){const r=e.target.dataset.r,s=ST.find(x=>x.reg==r);if(!s||!confirm('Permanently delete '+s.name+' and ALL their scores? This cannot be undone. (Use Withdraw to keep the records.)'))return;overlay('Deleting student…','Removing records from the database.');try{const{error}=await sb.from('docs').delete().eq('col','scores').eq('data->>reg',r);if(error)throw error;await db.doc('students/'+r).delete();ST=ST.filter(x=>x.reg!=r);delete SC[r];draw();toast('Student deleted','ok')}catch(x){toast('Delete failed: '+(x.message||x),'err')}finally{overlayHide()}}
-if(a=='addcls'){const lv=$('#cl_l').value.trim(),arms=$('#cl_a').value.split(',').map(z=>z.trim()).filter(Boolean),subs=$('#cl_s').value.split(',').map(z=>z.trim()).filter(Boolean),after=$('#cl_p').value;if(!lv)return toast('Enter the level, e.g. Basic 1 or SS1.','err');if(!subs.length)return toast('Enter at least one subject.','err');const add=(arms.length?arms:['']).map(ar=>({n:(lv+' '+ar).trim(),s:[...subs],lv,arm:ar})),have=new Set(C.classes.map(x=>x.n.toLowerCase())),dup=add.find(x=>have.has(x.n.toLowerCase()));if(dup)return toast(dup.n+' already exists.','err');const cls=[...C.classes],lvl=after||lv;let at=cls.length;cls.forEach((x,i)=>{if(lvOf(x)==lvl)at=i+1});cls.splice(at,0,...add);const o={...C,classes:cls};try{await db.doc('cfg/school').set(o);C=o;sub();draw();toast(add.map(x=>x.n).join(', ')+' added','ok')}catch(x){toast('Could not add: '+(x.message||x),'err')}}
+if(a=='addcls'){const lv=$('#cl_l').value.trim(),arms=$('#cl_a').value.split(',').map(z=>z.trim()).filter(Boolean),subs=$('#cl_s').value.split(',').map(z=>z.trim()).filter(Boolean),after=$('#cl_p').value;if(!lv)return toast('Enter the level, e.g. Basic 1 or SS1.','err');if(!subs.length)return toast('Enter at least one subject.','err');const add=(arms.length?arms:['']).map(ar=>({n:(lv+' '+ar).trim(),s:[...subs],lv,arm:ar})),have=new Set(C.classes.map(x=>x.n.toLowerCase())),dup=add.find(x=>have.has(x.n.toLowerCase()));if(dup)return toast(dup.n+' already exists.','err');const cls=[...C.classes],lvl=after||lv;let at=cls.length;cls.forEach((x,i)=>{if(lvOf(x)==lvl)at=i+1});cls.splice(at,0,...add);const o={...C,classes:cls};try{await db.doc('cfg/school').set(o);C=o;sub();draw();toast(add.map(x=>x.n).join(', ')+' added','ok');staffAutoArms(lv,add.map(x=>x.n))}catch(x){toast('Could not add: '+(x.message||x),'err')}}
 if(a=='lvup'||a=='lvdn'){const x=C.classes[+e.target.dataset.i];if(!x)return;const L=levels(),li=L.indexOf(lvOf(x)),lj=a=='lvup'?li-1:li+1;if(lj<0||lj>=L.length)return;[L[li],L[lj]]=[L[lj],L[li]];const cls=[];L.forEach(l=>C.classes.filter(y=>lvOf(y)==l).forEach(y=>cls.push(y)));const o={...C,classes:cls};try{await db.doc('cfg/school').set(o);C=o;draw()}catch(y){toast('Could not reorder: '+(y.message||y),'err')}}
-if(a=='rncls'){const i=+e.target.dataset.i,x=C.classes[i];if(!x)return;const lv=lvOf(x),ar=prompt('Arm / stream name for '+lv+' (e.g. White, Blue, Science). Leave empty for none:',x.arm||'');if(ar===null)return;const arm=ar.trim(),nn=(lv+' '+arm).trim();if(nn==x.n)return;if(C.classes.some((y,j)=>j!=i&&y.n.toLowerCase()==nn.toLowerCase()))return toast(nn+' already exists.','err');if(!confirm('Rename '+x.n+' to '+nn+'? Its students and current scores move with it. If teachers are assigned to "'+x.n+'", update their assignment too.'))return;overlay('Renaming class…','Moving students and scores.');try{for(const s of ST.filter(s=>s.cls==x.n))await db.doc('students/'+s.reg).update({cls:nn});for(let f=0;;f+=1000){const{data,error}=await sb.from('docs').select('col,id,data').eq('col','scores').eq('data->>cls',x.n).order('id').range(f,f+999);if(error)throw error;for(let j=0;j<data.length;j+=200){const{error:e2}=await sb.from('docs').upsert(data.slice(j,j+200).map(r=>({col:r.col,id:r.id,data:{...r.data,cls:nn},updated_at:new Date().toISOString()})));if(e2)throw e2}if(data.length<1000)break}const o={...C,classes:C.classes.map((y,j)=>j==i?{...y,n:nn,lv,arm}:y)};await db.doc('cfg/school').set(o);C=o;ST.forEach(s=>{if(s.cls==x.n)s.cls=nn});sub();draw();toast('Class renamed','ok')}catch(y){toast('Rename failed: '+(y.message||y),'err')}finally{overlayHide()}}
-if(a=='rmcls'){const i=+e.target.dataset.i,x=C.classes[i];if(!x)return;if(ST.some(s=>s.cls==x.n))return toast('Move or delete the students in '+x.n+' first.','err');if(C.classes.length<2)return toast('At least one class is required.','err');if(!confirm('Remove the class '+x.n+'?'))return;const o={...C,classes:C.classes.filter((_,j)=>j!=i)};try{await db.doc('cfg/school').set(o);C=o;sub();draw();toast('Class removed','ok')}catch(y){toast('Could not remove class: '+(y.message||y),'err')}}
+if(a=='rncls'){const i=+e.target.dataset.i,x=C.classes[i];if(!x)return;const lv=lvOf(x),ar=prompt('Arm / stream name for '+lv+' (e.g. White, Blue, Science). Leave empty for none:',x.arm||'');if(ar===null)return;const arm=ar.trim(),nn=(lv+' '+arm).trim();if(nn==x.n)return;if(C.classes.some((y,j)=>j!=i&&y.n.toLowerCase()==nn.toLowerCase()))return toast(nn+' already exists.','err');if(!confirm('Rename '+x.n+' to '+nn+'? Its students and current scores move with it. If teachers are assigned to "'+x.n+'", update their assignment too.'))return;overlay('Renaming class…','Moving students and scores.');try{for(const s of ST.filter(s=>s.cls==x.n))await db.doc('students/'+s.reg).update({cls:nn});for(let f=0;;f+=1000){const{data,error}=await sb.from('docs').select('col,id,data').eq('col','scores').eq('data->>cls',x.n).order('id').range(f,f+999);if(error)throw error;for(let j=0;j<data.length;j+=200){const{error:e2}=await sb.from('docs').upsert(data.slice(j,j+200).map(r=>({col:r.col,id:r.id,data:{...r.data,cls:nn},updated_at:new Date().toISOString()})));if(e2)throw e2}if(data.length<1000)break}const o={...C,classes:C.classes.map((y,j)=>j==i?{...y,n:nn,lv,arm}:y)};await db.doc('cfg/school').set(o);C=o;ST.forEach(s=>{if(s.cls==x.n)s.cls=nn});sub();draw();toast('Class renamed','ok');staffRenameClass(x.n,nn)}catch(y){toast('Rename failed: '+(y.message||y),'err')}finally{overlayHide()}}
+if(a=='rmcls'){const i=+e.target.dataset.i,x=C.classes[i];if(!x)return;if(ST.some(s=>s.cls==x.n))return toast('Move or delete the students in '+x.n+' first.','err');if(C.classes.length<2)return toast('At least one class is required.','err');if(!confirm('Remove the class '+x.n+'?'))return;const o={...C,classes:C.classes.filter((_,j)=>j!=i)};try{await db.doc('cfg/school').set(o);C=o;sub();draw();toast('Class removed','ok');staffDropClass(x.n)}catch(y){toast('Could not remove class: '+(y.message||y),'err')}}
 if(a=='bak'){overlay('Preparing backup…','Collecting every record.');try{const rows=[];for(let f=0;;f+=1000){const{data,error}=await sb.from('docs').select('col,id,data').order('col').order('id').range(f,f+999);if(error)throw error;rows.push(...data);if(data.length<1000)break}const b=new Blob([JSON.stringify({v:1,rows})],{type:'application/json'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='report-builder-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),5000);toast('Backup downloaded','ok')}catch(x){toast('Backup failed: '+(x.message||x),'err')}finally{overlayHide()}}
 if(a=='rst'){const f=$('#rf').files[0];if(!f)return toast('Choose a backup file first.','err');try{const j=JSON.parse(await f.text());const rows=(j.rows||[]).filter(r=>r&&typeof r.col=='string'&&typeof r.id=='string'&&r.data);if(!rows.length)throw new Error('This is not a backup file');if(!confirm('Restore '+rows.length+' records? Matching records will be overwritten.'))return;overlay('Restoring…','Writing ' + rows.length + ' records.');const now=new Date().toISOString();for(let i=0;i<rows.length;i+=200){const{error}=await sb.from('docs').upsert(rows.slice(i,i+200).map(r=>({col:r.col,id:r.id,data:r.data,updated_at:now})));if(error)throw error}audLog('Restored a backup','',rows.length+' records');toast('Restore complete. Reloading…','ok');setTimeout(()=>location.reload(),900)}catch(x){overlayForceHide();toast('Restore failed: '+(x.message||x),'err')}}
 if(a=='cfg'){const o={...C};document.querySelectorAll('[data-cfg]').forEach(i=>{const k=i.dataset.cfg;if(k==='types')o.types=i.value.split(',').map(x=>x.trim()).filter(Boolean);else o[k]=['t','days','ca','ex'].includes(k)?+i.value:i.value.trim()});if(document.querySelector('[data-fee]')){o.fees={};document.querySelectorAll('[data-fee]').forEach(i=>{if(i.value.trim())o.fees[i.dataset.fee]=i.value.trim()})}if(!o.types||!o.types.length)o.types=['Day','Boarding'];if($('#bd'))o.bands=$('#bd').value.split('\n').map(l=>l.split(',').map(x=>x.trim())).filter(p=>p[1]).map(p=>({m:+p[0],g:p[1],r:p[2]||''})).sort((a,b)=>b.m-a.m);if(document.querySelector('[data-sj]'))o.classes=C.classes.map((x,i)=>({...x,s:document.querySelector(`[data-sj="${i}"]`).value.split(',').map(z=>z.trim()).filter(Boolean)}));if(!/^\d{4}-\d{4}$/.test(o.ses))return toast('Session must look like 2025-2026.','err');if(!(o.days>0)||!(o.ca>=0)||!(o.ex>=0)||o.ca+o.ex!==100)return toast('CA max + Exam max must equal 100, and school days must be more than 0.','err');if(!o.bands.length||o.bands.some(b=>isNaN(b.m))||!o.bands.some(b=>b.m<=0))return toast('Grading: each line needs "min, grade, remark", and one band must start at 0.','err');if(o.classes.some(x=>!x.s.length))return toast('Every class needs at least one subject.','err');overlay('Saving settings…','Writing to the database.');try{await db.doc('cfg/school').set(o);C=o;sub();draw();toast('Settings saved','ok')}catch(x){toast('Could not save settings: '+(x.message||x),'err')}finally{overlayHide()}}
@@ -993,7 +1050,7 @@ $('#m').addEventListener('change',e=>{const t=e.target;if(t.id!='lg'||!db||!admi
 $('#m').addEventListener('click',async e=>{if(e.target.dataset.act=='rmlogo'&&db&&admin){const o={...C},old=C.logo;delete o.logo;await db.doc('cfg/school').set(o);C=o;dropImage(old);draw();toast('Logo removed','ok')}});
 const nz=s=>String(s??'').toLowerCase().replace(/[^a-z0-9]/g,'');
 function vInfo(){
-  const c=curC(),L=act(c).filter(s=>sel.ty=='ALL'||(s.type||'')==sel.ty);
+  const c=curC(),L=act(c).filter(s=>typeOK(s)&&(sel.ty=='ALL'||(s.type||'')==sel.ty));
   const bio=admin?(s,k,w)=>{
     if(k==='type') return `<td><select data-st="${k}" data-r="${esc(s.reg)}"><option value="" ${s[k]?'':'selected'}>— None —</option>${(C.types||['Day','Boarding']).map(t=>`<option ${s[k]==t?'selected':''}>${esc(t)}</option>`).join('')}</select></td>`;
     return `<td><input data-st="${k}" data-r="${esc(s.reg)}" value="${esc(s[k]||'')}" size="${w}"></td>`;
@@ -1126,7 +1183,7 @@ $('#m').addEventListener('click',async e=>{const a0=e.target.dataset.act;if((a0=
 let PV={},UP=[];
 function cum(s,k){if(!C.t)return'';let sum=k.tot,av=k.avg,n=1;const row=(a,b,c,e)=>`<tr><td>${a}</td><td>${b}</td><td>${c}</td><td>${e}</td></tr>`,R=[];for(let j=0;j<C.t;j++){const d=(PV[j]||{})[s.reg],x=d?calc(d,d.subs||Object.keys(d.sc||{})):null;R.push(row(T[j],x?x.tot:'—',x?x.avg.toFixed(1):'—',x?x.b.g:'—'));if(x){sum+=x.tot;av+=x.avg;n++}}R.push(row(T[C.t]+' (this term)',k.tot,k.avg.toFixed(1),k.b.g));if(C.t==2)R.push(row('Cumulative ('+n+' terms)',sum,(av/n).toFixed(1),gr(av/n).g));return`<div class="bar m2">TERMLY RECORD</div><table class="cm"><tr><th>Term</th><th>Total Score</th><th>Average</th><th>Grade</th></tr>${R.join('')}</table>`}
 function bprint(){let st=document.getElementById('pg');if(!st){st=document.createElement('style');st.id='pg';document.head.append(st)}st.textContent='@media print{@page{size:A4 landscape;margin:10mm}}';const off=()=>{st.textContent='';window.removeEventListener('afterprint',off)};window.addEventListener('afterprint',off);try{window.print()}catch(x){}}
-function bxl(){if(!window.XLSX)return toast('The spreadsheet library did not load.','err');const c=curC(),subs=cd(c).s,pm=posMap(c),L=act(c).map(s=>({s,k:calc(SC[s.reg],subs)})).sort((a,b)=>b.k.tot-a.k.tot),rows=[['Pos.','Reg No.','Name',...subs,'Total','Average','Grade']];L.forEach(x=>rows.push([(pm[x.s.reg]||{p:0}).p||'',x.s.reg,x.s.name,...x.k.rows.map(r=>r.e?'':r.t),x.k.has?x.k.tot:'',x.k.has?+x.k.avg.toFixed(1):'',x.k.b.g]));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),c.replace(/[\\\/?*\[\]:]/g,'').slice(0,31)||'Class');const b=new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/octet-stream'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='Broadsheet_'+c+'_'+pid()+'.xlsx';document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),5000);toast('Broadsheet exported','ok')}
+function bxl(){if(!window.XLSX)return toast('The spreadsheet library did not load.','err');const c=curC(),subs=cd(c).s,pm=posMap(c),L=act(c).filter(typeOK).map(s=>({s,k:calc(SC[s.reg],subs)})).sort((a,b)=>b.k.tot-a.k.tot),rows=[['Pos.','Reg No.','Name',...subs,'Total','Average','Grade']];L.forEach(x=>rows.push([(pm[x.s.reg]||{p:0}).p||'',x.s.reg,x.s.name,...x.k.rows.map(r=>r.e?'':r.t),x.k.has?x.k.tot:'',x.k.has?+x.k.avg.toFixed(1):'',x.k.b.g]));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),c.replace(/[\\\/?*\[\]:]/g,'').slice(0,31)||'Class');const b=new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/octet-stream'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='Broadsheet_'+c+'_'+pid()+'.xlsx';document.body.append(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),5000);toast('Broadsheet exported','ok')}
 /* ===== DANGER ZONE: delete all students / all scores, re-checks the admin password first ===== */
 function dangerBox(){return`<div class="box" style="border-color:var(--danger)"><b style="color:var(--danger)">Danger zone</b><p class="mu">Permanently deletes data for every class and every term. School settings, logo, signatures and staff logins are kept. You will be asked to enter your password again.</p><label style="display:block;margin:4px 0"><input type="checkbox" id="dz-s"> Delete all students (names, bio-data, promotion history)</label><label style="display:block;margin:4px 0"><input type="checkbox" id="dz-c"> Delete all scores, attendance, ratings and remarks (all terms)</label><button class="w" data-act="wipe" style="margin-top:10px">Delete selected records…</button></div>`}
 async function wipe(){const s=$('#dz-s').checked,c=$('#dz-c').checked;if(!s&&!c)return toast('Tick what you want to delete first.','err');if(!db||!admin)return;
@@ -1214,7 +1271,7 @@ function usrUI(){const el=$('#usrbox');if(!el)return;
   if(STAFF_ERR){el.innerHTML='<p class="mu">Could not read the staff table: '+esc(STAFF_ERR)+'</p>';return}
   if(!STAFF.length){el.innerHTML='<p class="mu">No staff records found.</p>';return}
   const on=new Set(onlList().map(u=>String(u.email).toLowerCase()));
-  el.innerHTML=`<div class="sc"><table><tr><th>User</th><th>Role</th><th>Classes</th><th>Status</th><th>Online</th><th>Last activity</th></tr>${STAFF.slice().sort((a,b)=>stfEm(a).localeCompare(stfEm(b))).map(r=>{const em=stfEm(r),la=ACT.find(x=>String(x.email).toLowerCase()==em.toLowerCase());return`<tr><td><b>${esc(em)}</b></td><td>${r.role=='admin'?'Admin':'Teacher'}</td><td>${esc(Array.isArray(r.classes)?r.classes.join(', '):'')||'—'}</td><td>${r.status&&r.status!='active'?'<span style="color:var(--danger)">'+esc(r.status)+'</span>':'Active'}</td><td>${on.has(em.toLowerCase())?'<span style="color:#2e8b57">● Online</span>':'<span class="mu">Offline</span>'}</td><td>${la?esc(la.action)+' <span class="mu">'+ago(la.at)+'</span>':'<span class="mu">—</span>'}</td></tr>`}).join('')}</table></div>`}
+  el.innerHTML=`<div class="sc"><table><tr><th>User</th><th>Role</th><th>Classes</th><th>Status</th><th>Online</th><th>Last activity</th><th></th></tr>${STAFF.slice().sort((a,b)=>stfEm(a).localeCompare(stfEm(b))).map(r=>{const em=stfEm(r),la=ACT.find(x=>String(x.email).toLowerCase()==em.toLowerCase());return`<tr><td><b>${esc(em)}</b></td><td>${roleOf(r)}</td><td>${esc(accTxt(r))||'—'}</td><td>${r.status&&r.status!='active'?'<span style="color:var(--danger)">'+esc(r.status)+'</span>':'Active'}</td><td>${on.has(em.toLowerCase())?'<span style="color:#2e8b57">● Online</span>':'<span class="mu">Offline</span>'}</td><td>${la?esc(la.action)+' <span class="mu">'+ago(la.at)+'</span>':'<span class="mu">—</span>'}</td><td>${r.role=='admin'||!stfUid(r)?'':'<button data-act="asg" data-u="'+esc(stfUid(r))+'">Assign access</button>'}</td></tr>`}).join('')}</table></div>`}
 
 /* ---------- editing lock ---------- */
 let LOCKU=null;
@@ -1339,11 +1396,11 @@ const lineChart=pts=>{const W=380,H=160,pad=28,ok=pts.filter(p=>p.v!==null);if(!
 const dcard=(t,sub,body)=>`<div class="box"><b>${t}</b>${sub?` <span class="mu">${sub}</span>`:''}<div style="margin-top:10px">${body}</div></div>`;
 const kpi=(l,v,s)=>`<div class="kpi"><div class="kl">${l}</div><div class="kv">${v}</div><div class="ks">${s||'&nbsp;'}</div></div>`;
 function vDash(){
-  if(!admin)return '<div class="warn">The dashboard is for the administrator only.</div>';
-  const ty=C.types||['Day','Boarding'],names=C.classes.map(x=>x.n),pass=passMk();
+  if(!DASH())return '<div class="warn">The dashboard is not available for your account.</div>';
+  const ty=C.types||['Day','Boarding'],names=allowedClasses(),pass=passMk();
   if(dsh.c!='ALL'&&!names.includes(dsh.c))dsh.c='ALL';
   const known=s=>names.includes(s.cls),inT=s=>dsh.t=='ALL'||(s.type||'')==dsh.t,inC=s=>dsh.c=='ALL'||s.cls==dsh.c;
-  const A=ST.filter(s=>s.on!==false&&known(s)),F=A.filter(s=>inT(s)&&inC(s));
+  const A=ST.filter(s=>s.on!==false&&known(s)&&typeOK(s)),F=A.filter(s=>inT(s)&&inC(s));
   const perf=s=>{const subs=cd(s.cls).s,d=SC[s.reg];let avg=null;
     if(dsh.b=='cum'){const c=cumAvgOf(s);avg=c?c.avg:null}else{const k=calc(d,subs);avg=k.has?k.avg:null}
     const filled=subs.reduce((n,j)=>{const v=(d&&d.sc&&d.sc[j])||[];return n+(bl(v[0])?0:1)+(bl(v[1])?0:1)},0);
@@ -1370,8 +1427,8 @@ function vDash(){
   return `<div class="box np"><div class="row" style="margin:0"><label>Class<select data-dsh="c"><option value="ALL">All classes</option>${names.map(n=>`<option ${n==dsh.c?'selected':''}>${esc(n)}</option>`).join('')}</select></label><label>Class type<select data-dsh="t"><option value="ALL">All types</option>${ty.map(n=>`<option ${n==dsh.t?'selected':''}>${esc(n)}</option>`).join('')}</select></label><label>Performance basis<select data-dsh="b"><option value="term" ${dsh.b=='term'?'selected':''}>This term (${esc(T[C.t])})</option><option value="cum" ${dsh.b=='cum'?'selected':''}>Session cumulative</option></select></label><span class="mu" style="margin-left:auto">${esc(sesL(C.ses))} · ${esc(cur)}</span><button class="b" data-act="cc-dshxl">Export dashboard (XLSX)</button></div></div>
 <div class="kpis">
 ${kpi('Total students',F.length,wd?wd+' withdrawn / graduated':'active students')}
-${kpi('Total users',STAFF_ERR?'—':staff.length,STAFF_ERR?'staff list unavailable':(nAdm+' admin · '+(staff.length-nAdm)+' teacher'+(nOff?' · '+nOff+' disabled':'')))}
-${kpi('Currently online','<span class="js-onl-n">'+nOn+'</span>','signed in right now')}
+${!admin?'':kpi('Total users',STAFF_ERR?'—':staff.length,STAFF_ERR?'staff list unavailable':(nAdm+' admin · '+(staff.length-nAdm)+' teacher'+(nOff?' · '+nOff+' disabled':'')))}
+${!admin?'':kpi('Currently online','<span class="js-onl-n">'+nOn+'</span>','signed in right now')}
 ${kpi('Average score',f1(avgAll),sc.length+' student'+(sc.length==1?'':'s')+' with scores')}
 ${kpi('Pass rate',sc.length?pc(passN/sc.length*100):'—','average ≥ '+pass)}
 ${kpi('Score entry',expN?pc(fillN/expN*100):'—','completed · '+nm+' student'+(nm==1?'':'s')+' with none')}
@@ -1453,18 +1510,242 @@ document.addEventListener('change',e=>{const t=e.target,d=t.dataset||{};
   if(d.actf&&admin&&d.actf!='q'){ACTF[d.actf]=t.value;if(d.actf=='p')loadAct();else{draw()}}});
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.actf=='q'&&admin){ACTF.q=t.value;actUI()}});
 let _lv='';$('#nv').addEventListener('click',e=>{const v=e.target.dataset&&e.target.dataset.v;if(v&&v!=_lv){_lv=v;audLog('Opened '+(VL[v]||v),'','')}});
+function roUI(){
+  const ro=!admin&&(view=='reports'||((view=='scores'||view=='info')&&!canEditCls(curC())));if(!ro)return;
+  document.querySelectorAll('#m [data-f],#m [data-sc]').forEach(i=>i.disabled=true);document.querySelectorAll('#m .tb').forEach(e=>e.style.display='none');
+  if(!$('#rolbl'))$('#m').insertAdjacentHTML('afterbegin','<div class="warn" id="rolbl">View only. Your account cannot edit on this screen.</div>')}
 function postDraw(){
-  lockUI();
+  lockUI();roUI();
   if(admin){const el=$('#rl');if(el&&!el.querySelector('.js-onl-n'))el.innerHTML=esc(el.textContent)+' · <span class="js-onl-n">'+onlList().length+'</span> online'}
   const sg=view+'|'+(['scores','reports','board','info','students'].includes(view)?curC():'');if(sg!=_psig){_psig=sg;presDirty()}
   if(admin&&view=='admin'&&asub=='activity'){actUI();onlUI()}
   if(admin&&view=='admin'&&asub=='control'){if(!_ctl){_ctl=1;ctlInit()}else{const s=$('#ctlstat');if(s)s.innerHTML=_ctlHTML;const b=$('#sqlbox');if(b&&window._sql)b.textContent=window._sql}}else _ctl=0;
   if(admin&&view=='dash')onlUI()}
-function ctrlBoot(){try{lockBoot()}catch(e){}presBoot();audLog('Session started','','Role: '+(ROLE=='admin'?'Administrator':'Teacher')+(MYCLASSES.length?' · Classes: '+MYCLASSES.join(', '):''));if(admin){actBoot();loadStaff()}}
+
+/* ============ ASSIGN BY CLASS ARM + CHAT / TICKETS ============
+   Needs chat-and-assign-setup.sql (run once). Without it the rest of the app works as before. */
+const setupMissing=e=>/schema cache|PGRST202|42883|42P01|does not exist|Could not find/i.test(String((e&&e.message)||e)+String((e&&e.code)||''));
+const SETUP_MSG='This feature is not set up yet. Run chat-and-assign-setup.sql once in the Supabase SQL Editor, then reload.';
+const isAdm=()=>ROLE==='admin';
+
+/* ---------- staff helpers ---------- */
+let STAFFKEY=null;
+/* a staff column whose values are filled in and different on every row: used only to tell WHICH row to update */
+function staffKey(){
+  if(STAFFKEY&&STAFF.length&&STAFF.every(r=>r[STAFFKEY]!=null))return STAFFKEY;
+  if(!STAFF.length)return null;
+  const ok=k=>STAFF.every(r=>r[k]!=null&&r[k]!=='')&&new Set(STAFF.map(r=>String(r[k]))).size===STAFF.length;
+  STAFFKEY=['id','user_id','uid','email','user_email'].find(k=>k in STAFF[0]&&ok(k))||Object.keys(STAFF[0]).find(k=>typeof STAFF[0][k]!=='object'&&ok(k))||null;
+  return STAFFKEY}
+const stfUid=r=>{const k=staffKey();return k?r[k]:null};
+async function staffSave(r,classes,levels,form,rank,section){
+  const k=staffKey();if(!k)throw new Error('Could not tell which column identifies a user in the staff table.');
+  form=form??(r.formclasses||[]);rank=rank??(r.rank||'teacher');section=section??(r.section||'');
+  const{error}=await sb.rpc('admin_set_staff_access',{p_col:k,p_val:String(r[k]),p_classes:classes,p_levels:levels,p_form:form,p_rank:rank,p_section:section});
+  if(error)throw error;Object.assign(r,{classes,levels,formclasses:form,rank,section})}
+async function staffAutoArms(lv,names){
+  try{await loadStaff();let n=0;
+    for(const r of STAFF.filter(x=>x.role!=='admin'&&Array.isArray(x.levels)&&x.levels.includes(lv))){
+      await staffSave(r,[...new Set([...(r.classes||[]),...names])],r.levels);n++}
+    if(n)toast(n+' teacher'+(n==1?'':'s')+' with the whole of '+lv+' now also have '+names.join(', '),'ok');usrUI()}
+  catch(e){toast('Class added, but teacher assignments were not updated: '+(setupMissing(e)?SETUP_MSG:(e.message||e)),'err')}}
+async function staffRenameClass(a,b){
+  try{await loadStaff();for(const r of STAFF.filter(x=>x.role!=='admin'&&((x.classes||[]).includes(a)||(x.formclasses||[]).some(c=>fcls(c)==a))))await staffSave(r,(r.classes||[]).map(c=>c==a?b:c),r.levels||[],(r.formclasses||[]).map(c=>fcls(c)==a?b+c.slice(a.length):c));usrUI()}
+  catch(e){toast('Class renamed, but teacher assignments were not updated: '+(setupMissing(e)?SETUP_MSG:(e.message||e)),'err')}}
+async function staffDropClass(a){
+  try{await loadStaff();for(const r of STAFF.filter(x=>x.role!=='admin'&&((x.classes||[]).includes(a)||(x.formclasses||[]).some(c=>fcls(c)==a))))await staffSave(r,(r.classes||[]).filter(c=>c!=a),r.levels||[],(r.formclasses||[]).filter(c=>fcls(c)!=a));usrUI()}
+  catch(e){toast('Class removed, but teacher assignments were not updated: '+(setupMissing(e)?SETUP_MSG:(e.message||e)),'err')}}
+
+function asgOpen(uid){
+  const r=STAFF.find(x=>String(stfUid(x))===String(uid));if(!r)return;
+  const have=new Set(Array.isArray(r.classes)?r.classes:[]),whole=new Set(Array.isArray(r.levels)?r.levels:[]),known=new Set(C.classes.map(c=>c.n));
+  const rows=levels().map(lv=>{const cl=C.classes.filter(c=>lvOf(c)==lv),arms=cl.length>1||cl.some(c=>armOf(c));
+    if(!arms)return `<div class="asl"><label><input type="checkbox" data-c="${esc(cl[0].n)}" ${have.has(cl[0].n)?'checked':''}> <b>${esc(cl[0].n)}</b></label></div>`;
+    const w=whole.has(lv);
+    return `<div class="asl"><label><input type="checkbox" data-w="${esc(lv)}" ${w?'checked':''}> <b>${esc(lv)}</b> <span class="mu">whole level: all arms, including arms added later</span></label>
+      <div class="asa">${cl.map(c=>`<label><input type="checkbox" data-c="${esc(c.n)}" data-l="${esc(lv)}" ${w||have.has(c.n)?'checked':''} ${w?'disabled':''}> ${esc(armOf(c)||c.n)}</label>`).join('')}</div></div>`}).join('');
+  const stale=[...have].filter(n=>!known.has(n));
+  const fm=new Set(Array.isArray(r.formclasses)?r.formclasses:[]),frm=`<div class="asl"><b>Form teacher of</b> <span class="mu">gets the dashboard and can edit. Tick a class type (arm) to limit them to that arm only</span>${C.classes.map(c=>`<div class="asa" style="margin:4px 0"><label><input type="checkbox" data-fm="${esc(c.n)}" ${fm.has(c.n)?'checked':''}> <b>${esc(c.n)}</b> <span class="mu">whole class</span></label>${(C.types||[]).map(t=>`<label><input type="checkbox" data-fm="${esc(c.n+'|'+t)}" ${fm.has(c.n+'|'+t)?'checked':''}> ${esc(t)}</label>`).join('')}</div>`).join('')}</div><b class="mu" style="display:block;margin:10px 0 4px">Subject teacher in (score entry and broadsheet)</b>`;
+  const el=document.createElement('div');el.id='asg';el.className='mdl';
+  el.innerHTML=`<div class="mdb"><h3 style="margin:0 0 4px">Assign access</h3><div class="mu" style="margin-bottom:12px">${esc(stfEm(r))}</div>
+    <div class="row" style="margin:0 0 10px"><label>Role<select id="asr"><option value="teacher">Teacher (form and/or subject)</option><option value="head">Headmaster / Principal (view only)</option><option value="subadmin">Sub-admin (view only + report cards)</option></select></label><label id="asw">Section<select id="ass"><option value="primary">Primary</option><option value="secondary">Secondary</option></select></label></div>
+    <div class="mdc">${frm}${rows}${stale.length?`<div class="asl"><b class="mu">Not a current class (untick to remove)</b><div class="asa">${stale.map(n=>`<label><input type="checkbox" data-c="${esc(n)}" checked> ${esc(n)}</label>`).join('')}</div></div>`:''}</div>
+    <p class="mu" style="margin:12px 0 0">Tick a level to give the teacher every arm of it (Gold and Silver). Untick it and tick single arms to give only those. The teacher sees the change the next time they sign in.</p>
+    <p id="asm" class="fail" style="margin:8px 0 0"></p>
+    <div class="row" style="margin-top:12px;gap:10px"><button class="b" id="asv">Save</button><button id="asx">Cancel</button></div></div>`;
+  document.body.appendChild(el);
+  { const rk=$('#asr'),tg=()=>{$('#asw').style.display=rk.value=='teacher'?'none':''};rk.value=r.rank||'teacher';$('#ass').value=r.section||'primary';rk.onchange=tg;tg() }
+  const close=()=>el.remove();$('#asx').onclick=close;el.addEventListener('mousedown',e=>{if(e.target===el)close()});
+  el.addEventListener('change',e=>{const w=e.target.dataset&&e.target.dataset.w;if(w===undefined)return;
+    el.querySelectorAll(`[data-l="${CSS.escape(w)}"]`).forEach(b=>{b.checked=e.target.checked?true:b.checked;b.disabled=e.target.checked})});
+  $('#asv').onclick=async()=>{
+    const classes=[],lv=[];
+    levels().forEach(l=>{const wb=el.querySelector(`[data-w="${CSS.escape(l)}"]`);
+      if(wb&&wb.checked){lv.push(l);C.classes.filter(c=>lvOf(c)==l).forEach(c=>classes.push(c.n))}
+      else el.querySelectorAll(`[data-c]`).forEach(b=>{const c=C.classes.find(x=>x.n==b.dataset.c);if(c&&lvOf(c)==l&&b.checked&&!classes.includes(c.n))classes.push(c.n)})});
+    el.querySelectorAll('[data-c]').forEach(b=>{if(!known.has(b.dataset.c)&&b.checked)classes.push(b.dataset.c)});
+    const btn=$('#asv');btn.disabled=true;$('#asm').textContent='';
+    try{const rank=$('#asr').value;let form=[...el.querySelectorAll('[data-fm]')].filter(b=>b.checked).map(b=>b.dataset.fm);form=form.filter(x=>!x.includes('|')||!form.includes(fcls(x)));await staffSave(r,classes,lv,form,rank,rank=='teacher'?'':$('#ass').value);close();usrUI();toast('Classes updated for '+stfEm(r),'ok');try{audLog('Assigned classes',stfEm(r),classes.join(', ')||'none')}catch(x){}}
+    catch(x){btn.disabled=false;$('#asm').textContent=setupMissing(x)?SETUP_MSG:'Not saved: '+(x.message||x)}}}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-act="asg"]');if(b&&isAdm())asgOpen(b.dataset.u)});
+
+/* ---------- chat ---------- */
+const CH={teachers:null,open:false,tab:'direct',tid:null,filter:'all',q:'',threads:[],msgs:[],lastId:0,since:'',unread:0,err:'',compose:null,busy:false,t1:null,t2:null,pend:0};
+const chT=s=>{const d=new Date(s),n=new Date();return d.toDateString()==n.toDateString()?d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):d.toLocaleDateString([],{day:'numeric',month:'short'})+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
+const chBadge=n=>{CH.unread=n;const b=$('#chn');if(b){b.textContent=n>99?'99+':n;b.style.display=n?'':'none'}};
+async function chUnread(){if(document.hidden)return;try{const{data,error}=await sb.rpc('chat_unread');if(!error)chBadge(+data||0)}catch(e){}}
+function chatBoot(){
+  const so=$('#so');if(!so||$('#chb'))return;
+  so.insertAdjacentHTML('beforebegin',`<a href="#" id="chb">💬 ${isAdm()?'Messages':'Support'} <i id="chn" style="display:none"></i></a>`);
+  $('#chb').onclick=e=>{e.preventDefault();CH.open?chClose():chOpen()};
+  chUnread();setInterval(chUnread,45000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){chUnread();if(CH.open)chPoll()}})}
+function chOpen(){
+  CH.teachers=null;CH.open=true;CH.tid=null;CH.compose=null;CH.err='';CH.tab='direct';CH.since='';CH.threads=[];
+  let el=$('#chat');if(!el){el=document.createElement('div');el.id='chat';document.body.appendChild(el)}
+  el.className=isAdm()?'adm':'tch';el.style.display='flex';document.body.classList.add('chopen');
+  el.innerHTML=`<div class="chbox"><div class="chh"><b>${isAdm()?'Messages':'Support'}</b><span class="mu" id="chsub"></span><button id="chx" aria-label="Close">✕</button></div><div id="cht"></div><div id="chbody"><div class="mu" style="padding:30px;text-align:center">Loading…</div></div></div>`;
+  $('#chx').onclick=chClose;
+  clearInterval(CH.t1);CH.t1=setInterval(()=>{if(!document.hidden)chPoll()},8000);
+  (isAdm()&&!STAFF.length?loadStaff():Promise.resolve()).then(()=>chLoad(true))}
+function chClose(){CH.open=false;const el=$('#chat');if(el)el.style.display='none';document.body.classList.remove('chopen');clearInterval(CH.t1);chUnread()}
+const chErr=e=>setupMissing(e)?SETUP_MSG:String((e&&e.message)||e);
+async function chLoad(full){
+  try{
+    let q=sb.from('chat_threads').select('*').order('last_at',{ascending:false});
+    if(!full&&CH.since)q=q.gt('last_at',CH.since);else q=q.limit(400);
+    const{data,error}=await q;if(error)throw error;
+    const by=new Map(CH.threads.map(t=>[t.id,t]));(data||[]).forEach(t=>by.set(t.id,t));
+    CH.threads=[...by.values()].sort((a,b)=>String(b.last_at).localeCompare(String(a.last_at)));
+    CH.since=CH.threads[0]?CH.threads[0].last_at:CH.since;CH.err='';
+  }catch(e){CH.err=chErr(e);if(!CH.threads.length)CH.threads=[]}
+  chRender()}
+async function chPoll(){if(!CH.open)return;await chLoad(false);
+  if(CH.tid)await chMsgs(false);
+  chUnread()}
+
+/* ----- rendering ----- */
+function chRender(){
+  const body=$('#chbody');if(!body||!CH.open)return;
+  const sub=$('#chsub');if(sub)sub.textContent=CH.err?'':'';
+  if(CH.err){body.innerHTML=`<div class="box fail" style="margin:16px">${esc(CH.err)}</div>`;$('#cht').innerHTML='';return}
+  isAdm()?chRenderAdmin(body):chRenderTeacher(body)}
+function thTitle(t){return t.kind=='ticket'?(t.subject||'Ticket'):'General messages'}
+
+function chRenderTeacher(body){
+  const direct=CH.threads.find(t=>t.kind=='direct'),tickets=CH.threads.filter(t=>t.kind=='ticket');
+  const dU=direct&&direct.teacher_unread,tU=tickets.filter(t=>t.teacher_unread).length;
+  $('#cht').innerHTML=`<div class="chtabs"><button data-tab="direct" class="${CH.tab=='direct'?'on':''}">Messages from admin ${dU?'<i class="dot"></i>':''}</button><button data-tab="tickets" class="${CH.tab=='tickets'?'on':''}">My tickets ${tU?'<i class="dot"></i>':''}</button></div>`;
+  $('#cht').querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{CH.tab=b.dataset.tab;CH.tid=null;CH.compose=null;CH.msgs=[];CH.lastId=0;CH.msgsFor=null;body.dataset.view='';chRender()});
+  const key=CH.tab=='direct'?'conv:'+(direct?direct.id:'none'):CH.compose==='ticket'?'new':(CH.tid&&tickets.some(t=>t.id==CH.tid))?'conv:'+CH.tid:'list';
+  if(body.dataset.view===key&&(key[0]=='c'||key=='new'))return;
+  body.dataset.view=key;
+  if(CH.tab=='direct'){
+    if(direct&&CH.tid!==direct.id){CH.tid=direct.id;CH.msgs=[];CH.lastId=0;CH.msgsFor=null}
+    body.innerHTML=chConvHtml(direct?null:'No messages yet. Write to the administrator below.');chWireConv(direct||null);return}
+  if(CH.compose==='ticket'){
+    body.innerHTML=`<div class="chnew"><b>New ticket</b><p class="mu" style="margin:4px 0 10px">Describe the problem or question. The administrator will reply here.</p>
+      <input id="tsub" maxlength="120" placeholder="Subject, e.g. Cannot save scores for Basic 7 Gold"><textarea id="tbod" maxlength="2000" rows="5" placeholder="Explain what happened…"></textarea>
+      <p id="terr" class="fail"></p><div class="row" style="gap:10px"><button class="b" id="tgo">Send ticket</button><button id="tno">Cancel</button></div></div>`;
+    $('#tno').onclick=()=>{CH.compose=null;chRender()};
+    $('#tgo').onclick=async()=>{const s=$('#tsub').value.trim(),m=$('#tbod').value.trim();if(!s||!m)return $('#terr').textContent='Write a subject and a message.';
+      $('#tgo').disabled=true;try{const{data,error}=await sb.rpc('chat_open_ticket',{p_subject:s,p_body:m});if(error)throw error;CH.compose=null;await chLoad(true);chOpenThread(data)}catch(e){$('#tgo').disabled=false;$('#terr').textContent=chErr(e)}};return}
+  if(CH.tid&&tickets.some(t=>t.id==CH.tid)){const t=tickets.find(t=>t.id==CH.tid);
+    body.innerHTML=`<div class="chconvh"><button id="chback">← Tickets</button><b>${esc(t.subject)}</b><span class="chip ${t.status}">${t.status=='open'?'Open':'Resolved'}</span></div>`+chConvHtml();chWireConv(t);
+    $('#chback').onclick=()=>{CH.tid=null;chRender()};return}
+  body.innerHTML=`<div class="chlist"><div class="row" style="justify-content:space-between;margin:0 0 10px"><span class="mu">Need help? Raise a ticket and the administrator will reply here.</span><button class="b" id="tnew">+ New ticket</button></div>
+    ${tickets.length?tickets.map(t=>`<div class="chi ${t.teacher_unread?'unr':''}" data-t="${t.id}"><div class="chit"><b>${esc(t.subject)}</b><span class="chip ${t.status}">${t.status=='open'?'Open':'Resolved'}</span></div><div class="mu">${esc(t.last_text||'')}</div><div class="mu sm">${chT(t.last_at)}</div></div>`).join(''):'<p class="mu" style="text-align:center;padding:24px">You have no tickets yet.</p>'}</div>`;
+  $('#tnew').onclick=()=>{CH.compose='ticket';chRender()};
+  body.querySelectorAll('[data-t]').forEach(d=>d.onclick=()=>chOpenThread(d.dataset.t))}
+
+function chRenderAdmin(body){
+  const f=CH.filter,q=CH.q.toLowerCase();
+  const list=CH.threads.filter(t=>(f=='all'||(f=='unread'&&t.admin_unread)||(f=='tickets'&&t.kind=='ticket'&&t.status=='open')||(f=='direct'&&t.kind=='direct'))&&(!q||((t.teacher_email||'')+' '+(t.subject||'')+' '+(t.last_text||'')).toLowerCase().includes(q)));
+  const nU=CH.threads.filter(t=>t.admin_unread).length;
+  $('#cht').innerHTML='';
+  if(!body.querySelector('.chsplit')){
+    body.innerHTML=`<div class="chsplit"><div class="chside"><div class="row" style="margin:0 0 8px"><button class="b" id="cnew" style="flex:1">📢 New message</button></div>
+      <input id="chq" placeholder="Search…" value="${esc(CH.q)}"><div class="chf" id="chf"></div><div id="chlist"></div></div><div class="chmain" id="chmain"></div></div>`;
+    $('#cnew').onclick=()=>{CH.compose={sel:[],all:true,announce:true};CH.tid=null;chRender()};
+    $('#chq').oninput=e=>{CH.q=e.target.value;chRender()}}
+  const side=$('.chside');
+  $('#chf').innerHTML=[['all','All'],['unread','Unread'+(nU?' ('+nU+')':'')],['tickets','Open tickets'],['direct','Messages']].map(([k,l])=>`<button data-f="${k}" class="${f==k?'on':''}">${l}</button>`).join('');
+  $('#chf').querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{CH.filter=b.dataset.f;chRender()});
+  $('#chlist').innerHTML=list.map(t=>`<div class="chi ${t.admin_unread?'unr':''} ${t.id==CH.tid?'cur':''}" data-t="${t.id}"><div class="chit"><b>${esc(t.teacher_email||'Teacher')}</b>${t.admin_unread?'<i class="dot"></i>':''}</div>
+    <div class="mu">${t.kind=='ticket'?'<span class="chip '+t.status+'">'+(t.status=='open'?'Ticket':'Resolved')+'</span> '+esc(t.subject||''):'Messages'}</div><div class="mu sm">${esc(t.last_text||'')} · ${chT(t.last_at)}</div></div>`).join('')||'<p class="mu" style="padding:16px;text-align:center">Nothing here.</p>';
+  $('#chlist').querySelectorAll('[data-t]').forEach(d=>d.onclick=()=>chOpenThread(d.dataset.t));
+  const main=$('#chmain');document.querySelector('#chat').classList.toggle('inconv',!!(CH.tid||CH.compose));
+  if(CH.compose){if(!main.querySelector('.chnew'))chComposeAdmin(main);return}
+  const t=CH.threads.find(t=>t.id==CH.tid);
+  if(!t){main.innerHTML='<div class="mu" style="padding:40px;text-align:center">Select a conversation, or start a new message to one or all teachers.</div>';return}
+  const head=`<div class="chconvh"><button id="chback">←</button><b>${esc(t.teacher_email||'Teacher')}</b><span class="mu">${t.kind=='ticket'?esc(t.subject||''):'Messages'}</span>
+    ${t.kind=='ticket'?`<span class="chip ${t.status}">${t.status=='open'?'Open':'Resolved'}</span><button id="chst">${t.status=='open'?'Mark resolved':'Reopen'}</button>`:''}<button id="chdel" class="w">Delete</button></div>`;
+  if(main.dataset.tid!==t.id){main.dataset.tid=t.id;main.innerHTML=head+chConvHtml();chWireConv(t)}
+  else{const h=main.querySelector('.chconvh');if(h&&h.outerHTML!==head){h.outerHTML=head}}
+  $('#chback').onclick=()=>{CH.tid=null;main.dataset.tid='';chRender()};
+  const st=$('#chst');if(st)st.onclick=async()=>{try{const{error}=await sb.rpc('chat_set_status',{p_thread:t.id,p_status:t.status=='open'?'resolved':'open'});if(error)throw error;await chLoad(true)}catch(e){toast(chErr(e),'err')}};
+  $('#chdel').onclick=async()=>{if(!confirm('Delete this whole conversation for everyone? This cannot be undone.'))return;try{const{error}=await sb.rpc('chat_delete_thread',{p_thread:t.id});if(error)throw error;CH.threads=CH.threads.filter(x=>x.id!=t.id);CH.tid=null;main.dataset.tid='';chRender()}catch(e){toast(chErr(e),'err')}}}
+
+async function chTeachers(){
+  const{data,error}=await sb.rpc('chat_teachers');if(error)throw error;CH.teachers=Array.isArray(data)?data:[];return CH.teachers}
+function chComposeAdmin(main){
+  const C0=CH.compose;main.dataset.tid='';
+  main.innerHTML=`<div class="chnew"><div class="row" style="justify-content:space-between;margin:0 0 8px"><b>New message</b><button id="cc0">Cancel</button></div>
+    <div class="row" style="gap:16px;margin:0 0 8px"><label class="chk"><input type="radio" name="cto" value="all" ${C0.all?'checked':''}> <span>All teachers <span id="call" class="mu"></span></span></label><label class="chk"><input type="radio" name="cto" value="sel" ${C0.all?'':'checked'}> Choose teachers</label></div>
+    <div id="csel" class="chsel" style="${C0.all?'display:none':''}"><span class="mu">Loading teachers…</span></div>
+    <label class="chk" style="margin:8px 0"><input type="checkbox" id="cann" ${C0.announce?'checked':''}> Show as an announcement 📢</label>
+    <textarea id="cbod" maxlength="2000" rows="5" placeholder="Write your message…"></textarea><p id="cerr" class="fail"></p>
+    <div class="row" style="gap:10px"><button class="b" id="cgo">Send</button><span class="mu" id="chint">Teachers can reply; replies reach you privately.</span></div></div>`;
+  const draw=()=>{const tch=CH.teachers||[];
+    $('#call').textContent=tch.length?'('+tch.length+')':'';
+    $('#csel').innerHTML=tch.map(r=>`<label class="chk"><input type="checkbox" data-u="${esc(r.uid)}" ${C0.sel.includes(String(r.uid))?'checked':''}> ${esc(r.email)} <span class="mu">${esc((r.classes||[]).join(', '))}</span></label>`).join('')||'<span class="mu">No teachers found.</span>'};
+  (CH.teachers?Promise.resolve(CH.teachers):chTeachers()).then(draw,e=>{$('#csel').innerHTML='<span class="fail">'+esc(chErr(e))+'</span>'});
+  $('#cc0').onclick=()=>{CH.compose=null;chRender()};
+  main.querySelectorAll('[name="cto"]').forEach(r=>r.onchange=()=>{if(!r.checked)return;C0.all=r.value=='all';$('#csel').style.display=C0.all?'none':'';if(C0.all)$('#cann').checked=true});
+  $('#cgo').onclick=async()=>{
+    const all=main.querySelector('[name="cto"][value="all"]').checked,body=$('#cbod').value.trim(),ann=$('#cann').checked;
+    if(!body)return $('#cerr').textContent='Write a message.';
+    let ids=[];if(!all){ids=[...main.querySelectorAll('#csel [data-u]')].filter(b=>b.checked).map(b=>(CH.teachers||[]).find(t=>String(t.uid)==b.dataset.u)).filter(Boolean);if(!ids.length)return $('#cerr').textContent='Tick at least one teacher.'}
+    $('#cerr').textContent='';$('#cgo').disabled=true;
+    try{const r=all?await sb.rpc('chat_to_all',{p_body:body,p_announce:ann}):await sb.rpc('chat_to_teachers',{p_uids:ids.map(t=>String(t.uid)),p_emails:ids.map(t=>t.email),p_body:body,p_announce:ann});
+      if(r.error)throw r.error;toast('Sent to '+r.data+' teacher'+(r.data==1?'':'s'),'ok');CH.compose=null;await chLoad(true)}
+    catch(e){$('#cgo').disabled=false;$('#cerr').textContent=chErr(e)}}}
+
+function chConvHtml(empty){return `<div class="chmsgs" id="chm">${empty?`<div class="mu" style="text-align:center;padding:30px">${esc(empty)}</div>`:''}</div>
+  <div class="chcomp"><textarea id="chtx" maxlength="2000" rows="2" placeholder="Type a message…"></textarea><button class="b" id="chsend">Send</button></div>`}
+function chWireConv(t){
+  const tx=$('#chtx'),send=$('#chsend');if(!tx)return;
+  const go=async()=>{const v=tx.value.trim();if(!v||CH.busy)return;CH.busy=true;send.disabled=true;
+    try{const{error}=await sb.rpc('chat_send',{p_thread:t?t.id:null,p_body:v});if(error)throw error;tx.value='';
+      if(!t){await chLoad(true);const d=CH.threads.find(x=>x.kind=='direct');if(d){CH.tid=d.id;CH.msgs=[];CH.lastId=0;chRender();return}}
+      await chMsgs(false);chLoad(false)}
+    catch(e){toast(chErr(e),'err')}finally{CH.busy=false;send.disabled=false;tx.focus()}};
+  send.onclick=go;tx.onkeydown=e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();go()}};
+  if(t&&CH.msgsFor!==t.id){CH.msgs=[];CH.lastId=0;CH.msgsFor=t.id;chMsgs(true)}else if(t)chDrawMsgs(true)}
+function chOpenThread(id){CH.tid=id;CH.compose=null;CH.msgs=[];CH.lastId=0;CH.msgsFor=null;chRender()}
+
+async function chMsgs(reset){
+  const id=CH.tid;if(!id)return;
+  try{let q=sb.from('chat_messages').select('*').eq('thread_id',id);
+    if(reset||!CH.lastId){const r=await q.order('id',{ascending:false}).limit(200);if(r.error)throw r.error;CH.msgs=(r.data||[]).slice().reverse();CH.msgsFor=id}
+    else{const r=await q.gt('id',CH.lastId).order('id');if(r.error)throw r.error;if(CH.tid!==id)return;if(!(r.data||[]).length)return;CH.msgs=CH.msgs.concat(r.data)}
+    if(CH.tid!==id)return;CH.lastId=CH.msgs.length?CH.msgs[CH.msgs.length-1].id:0;chDrawMsgs(reset);
+    const t=CH.threads.find(x=>x.id==id);if(t&&(isAdm()?t.admin_unread:t.teacher_unread)){const{error}=await sb.rpc('chat_mark_read',{p_thread:id});if(!error){if(isAdm())t.admin_unread=false;else t.teacher_unread=false;chUnread();if(isAdm()){const li=$('#chlist');if(li)chRender()}}}
+  }catch(e){}}
+function chBubble(m){
+  const me=isAdm()?m.from_admin:!m.from_admin,ann=m.kind=='announce';
+  const who=ann?'📢 Announcement':(isAdm()?(m.from_admin?(m.sender_uid===ME.id?'You':(m.sender_email||'Admin')):(m.sender_email||'Teacher')):(m.from_admin?'Administrator':'You'));
+  return `<div class="chm ${me?'me':'they'} ${ann?'ann':''}"><div class="chw">${esc(who)} · ${chT(m.created_at)}</div><div class="chb">${esc(m.body)}</div></div>`}
+function chDrawMsgs(scroll){const box=$('#chm');if(!box)return;
+  const near=box.scrollHeight-box.scrollTop-box.clientHeight<80;
+  box.innerHTML=CH.msgs.length?CH.msgs.map(chBubble).join(''):'<div class="mu" style="text-align:center;padding:30px">No messages yet.</div>';
+  if(scroll||near)box.scrollTop=box.scrollHeight}
+
+function ctrlBoot(){try{lockBoot()}catch(e){}presBoot();audLog('Session started','','Role: '+(ROLE=='admin'?'Administrator':'Teacher')+(MYCLASSES.length?' · Classes: '+MYCLASSES.join(', '):''));if(admin){actBoot();loadStaff()}try{chatBoot()}catch(e){}}
 
 (async()=>{try{draw();db=await claude.use('db');user=await claude.use('user');admin=!!(user&&user.canEdit());if(!db){draw();return}
 ctrlBoot();
-db.doc('cfg/school').onSnapshot(s=>{C=s.exists?{...DEF,...s.data()}:DEF;sub();draw(1)});SCP(db.collection('students')).onSnapshot(q=>{ST=q.docs.map(d=>d.data()).sort((a,b)=>String(a.name).localeCompare(String(b.name)));draw(1)});sub();draw()}catch(e){$('#m').innerHTML='<div class="warn">Could not start: '+esc(e.message||e)+'. Reload the page.</div>'}})();
+try{const g0=await db.doc('cfg/school').get();if(g0.exists)C={...DEF,...g0.data()}}catch(e){}applyScope();if(!admin&&DASH())view='dash';
+db.doc('cfg/school').onSnapshot(s=>{C=s.exists?{...DEF,...s.data()}:DEF;applyScope();sub();draw(1)});SCP(db.collection('students')).onSnapshot(q=>{ST=q.docs.map(d=>d.data()).sort((a,b)=>String(a.name).localeCompare(String(b.name)));draw(1)});sub();draw()}catch(e){$('#m').innerHTML='<div class="warn">Could not start: '+esc(e.message||e)+'. Reload the page.</div>'}})();
 </script>
 </body>
 </html>
