@@ -80,6 +80,7 @@ body{
   letter-spacing:-.005em;
 }
 
+#me{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.18);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 header{
   background:linear-gradient(135deg,var(--ac-ink) 0%,var(--ac) 100%);
   color:#fff;
@@ -160,12 +161,24 @@ td.c,th.c{text-align:center}
 .scs th.sk{z-index:5}
 .scs td.k1{white-space:normal;overflow-wrap:anywhere;word-break:break-all;line-height:1.25}
 .scs td.k2{font-weight:600}
+.scs .rg{display:none}
 .scs tbody tr:hover td.sk{background-image:linear-gradient(var(--ac-soft),var(--ac-soft))}
 @media (max-width:640px){
   .sc.scs{max-height:calc(100vh - 190px);max-height:calc(100dvh - 190px)}
   .scs .sk{--w1:106px;--w2:104px}
   .scs td.k1,.scs th.k1{font-size:10.5px;padding-left:5px;padding-right:5px}
   .scs td.k2,.scs th.k2{font-size:12px;padding-left:6px;padding-right:6px;white-space:normal;line-height:1.25}
+  /* phone: one frozen Name column (reg no. shown under the name) so at least one whole subject (CA + Exam) fits beside it */
+  .scs.rgm .k1{display:none}
+  .scs.rgm .sk{--w1:0px;--w2:122px}
+  .scs.rgm td.k2 .rg{display:block;font-size:10px;font-weight:500;color:var(--fg-muted);margin-top:2px;overflow-wrap:anywhere;line-height:1.2}
+  .scs.rgm td.k2 textarea{font-size:12px;padding:4px 6px}
+  .scs.rgm th.c,.scs.rgm td.c{padding-left:3px;padding-right:3px}
+  .scs.rgm input[type=number]{width:50px;padding:7px 2px;font-size:14px;border-radius:8px}
+  .scs.rgm thead th.sh{font-size:12px;padding-left:4px;padding-right:4px}
+  .ins{display:none}
+  main:has(.scs.rgm){padding:10px 6px}
+  .box:has(.scs.rgm){padding:10px 8px;border-radius:12px}
 }
 
 input,select,textarea,button{
@@ -351,7 +364,17 @@ input.bad{border-color:var(--danger)!important;background:var(--danger-soft)!imp
   .box{padding:18px;border-radius:14px}
   nav{padding:8px 10px}
   nav button{padding:8px 12px;font-size:13px}
-  header{padding:14px 16px}
+  header{padding:10px 14px;gap:4px 10px}
+  header #sn{font-size:15px;flex:1 1 100%;line-height:1.25}
+  header #sn img{height:22px!important;margin-right:6px!important}
+  header #ps{font-size:11.5px;opacity:.9}
+  header #rl{font-size:11.5px;line-height:1.3;flex:1 1 100%}
+  header #me{font-size:11px;padding:2px 9px;max-width:62%}
+  header #sstat{font-size:11px!important;padding:2px 8px!important}
+  header #so{padding:5px 12px;font-size:12px}
+  nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:6px 10px}
+  nav::-webkit-scrollbar{display:none}
+  nav button{flex:0 0 auto;white-space:nowrap;padding:8px 12px}
   .row{gap:10px}
   .row label{flex:1;min-width:140px}
   th,td{padding:8px 10px;font-size:13px}
@@ -412,7 +435,7 @@ header a#chb{position:relative}
 </style>
 </head>
 <body>
-<header><b id="sn">Smart Report Builder</b><span id="ps"></span><span id="rl"></span><span id="sstat" style="margin-left:auto;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;transition:all .2s ease"></span></header>
+<header><b id="sn">Smart Report Builder</b><span id="ps"></span><span id="rl"></span><span id="me" title="Signed in as"></span><span id="sstat" style="margin-left:auto;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;transition:all .2s ease"></span></header>
 <nav class="np" id="nv"></nav>
 <main id="m"></main>
 
@@ -520,11 +543,11 @@ function toast(msg, kind) {
   _toastT = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-let sb,ROLE=null,MYCLASSES=[],ME={id:'',email:''},AUD_BULK=0,RANK='teacher',SECT='',FORMC=[],FORMR=[],BASEC=[],EDITC=[];
+let sb,ROLE=null,MYCLASSES=[],ME={id:'',email:''},AUD_BULK=0,RANK='teacher',SECT='',FORMC=[],FORMR=[],BASEC=[],EDITC=[],RAWB=[],RAWF=[];
 const Q=s=>document.querySelector(s);
 const rowDoc=r=>({id:r.id,exists:true,data:()=>r.data});
 /* ---- Efficient sync: live changes are applied straight from the realtime message, so the whole collection is never re-downloaded. A cheap catch-up check runs every 10 minutes and when the tab comes back. ---- */
-const SYNC_POLL=600000,SYNC_POLL_T=300000,SYNC_OVERLAP=120000,SYNC_MIN=30000;
+const SYNC_POLL=1800000,SYNC_POLL_T=600000,SYNC_OVERLAP=120000,SYNC_MIN=30000;
 const _ts=v=>{const n=Date.parse(v);return isNaN(n)?0:n},_same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 /* ---- Browser memory: the last student/score data is kept on the device (per signed-in user), shown at once on open, and only changes are fetched. Cleared on sign-out. ---- */
 const CACHE_VER='v1',CACHE_TTL=14*864e5,FULL_EVERY=20*36e5;
@@ -689,7 +712,7 @@ const ready = (async () => {
     ROLE = data.role;
     MYCLASSES = Array.isArray(data.classes) ? data.classes : [];
     RANK = data.rank || 'teacher'; SECT = data.section || ''; FORMR = Array.isArray(data.formclasses) ? data.formclasses : []; FORMC = [...new Set(FORMR.map(x => String(x).split('|')[0]))]; BASEC = MYCLASSES.slice();
-    EDITC = [...new Set([...MYCLASSES, ...FORMC])]; MYCLASSES = EDITC.slice();
+    RAWB = BASEC.slice(); RAWF = FORMR.slice(); EDITC = [...new Set([...MYCLASSES, ...FORMC])]; MYCLASSES = EDITC.slice();
     break;
   }
   overlayForceHide();
@@ -734,7 +757,11 @@ const canScoreCls=c=>admin||BASEC.includes(c)||(FORMC.includes(c)&&String(C.form
 function mySubs(cls){if(admin||isHead()||!BASEC.includes(cls))return null;const m=((C.subjMap||{})[String(ME.email||'').toLowerCase()]||{})[cls];return Array.isArray(m)&&m.length?m:null}
 const canEditSubj=(cls,sj)=>{if(admin)return true;if(!canScoreCls(cls)||isHead())return false;const a=mySubs(cls);return !a||a.includes(sj)};
 const secName=x=>x=='secondary'?'Secondary':'Primary';
-function applyScope(){if(admin)return;const sec=isHead()&&SECT?C.classes.map(x=>x.n).filter(n=>(isSec(n)?'secondary':'primary')==SECT):[];MYCLASSES=[...new Set([...EDITC,...sec])]}
+/* A sub-admin, headmaster or principal only ever sees the classes of their own section (Primary or Secondary), whatever classes are also ticked on their account. */
+function applyScope(){if(admin)return;const inSec=n=>(isSec(n)?'secondary':'primary')==SECT,lim=isHead()&&SECT;
+  let b=RAWB.slice(),f=RAWF.slice();if(lim){b=b.filter(inSec);f=f.filter(x=>inSec(String(x).split('|')[0]))}
+  BASEC=b;FORMR=f;FORMC=[...new Set(f.map(x=>String(x).split('|')[0]))];EDITC=[...new Set([...b,...FORMC])];
+  const sec=lim?C.classes.map(x=>x.n).filter(inSec):[];MYCLASSES=[...new Set([...EDITC,...sec])]}
 function roleOf(r){if(r.role=='admin')return'Admin';if(r.rank=='subadmin')return'Sub-admin ('+secName(r.section)+')';if(r.rank=='head')return r.section=='secondary'?'Principal':'Headmaster';const f=(r.formclasses||[]).length,c=(r.classes||[]).length;return f&&c?'Form + subject teacher':f?'Form teacher':'Subject teacher'}
 const accTxt=r=>[(r.rank=='head'||r.rank=='subadmin')?'All '+secName(r.section):'',(r.formclasses||[]).length?'Form: '+r.formclasses.map(fpre).join(', '):'',Array.isArray(r.classes)&&r.classes.length?(r.rank=='head'||r.rank=='subadmin'?'Also: ':'Subject: ')+r.classes.map(n=>{const a=((C.subjArms||{})[stfEm(r).toLowerCase()]||{})[n];return a&&a.length?n+' ('+a.join(', ')+')':n}).join(', '):''].filter(Boolean).join(' · ');
 /* Dashboard, Broadsheet and Class Info are for the form class only. A form teacher's subject classes appear in Score Entry only. */
@@ -886,6 +913,7 @@ function draw(soft){
   nav();
   $('#sn').innerHTML=(C.logo?`<img src="${C.logo}" style="height:26px;vertical-align:middle;margin-right:8px;background:#fff;border-radius:4px">`:'')+esc(C.name);
   $('#ps').textContent=sesL(C.ses)+' · '+T[C.t];
+  {const me=$('#me');if(me){me.textContent=ME.email?'👤 '+ME.email:'';me.title='Signed in as '+(ME.email||'')}}
   if(!admin&&!isHead()&&(FORMR.length||BASEC.length)){$('#rl').innerHTML=[FORMR.length?'Form teacher of '+FORMR.map(fpre).join(', '):'',BASEC.length?'Subject teacher of '+BASEC.map(n=>mySubArms(n)?n+' ('+mySubArms(n).join(', ')+')':n).join(', '):''].filter(Boolean).map(t=>`<span style="display:block;line-height:1.3">${esc(t)}</span>`).join('')}else
   $('#rl').textContent=admin?'Administrator':(roleOf({rank:RANK,section:SECT,formclasses:FORMC,classes:EDITC.filter(c=>!FORMC.includes(c))})+(!isHead()&&MYCLASSES.length?' ('+MYCLASSES.join(', ')+')':isHead()&&SECT?' ('+secName(SECT)+')':''));
   const allowed=allowedClasses();
@@ -915,8 +943,8 @@ function vScores(){
   const c=curC(),subs=cd(c).s,L=act(c).filter(s=>typeOK(s)&&(sel.ty=='ALL'||(s.type||'')==sel.ty));
   if(!subs||!subs.length)return `<div class="warn">The class <b>${esc(c)}</b> has no subjects yet. Go to Settings to add subjects for this class.</div>`;
   const pm=posMap(c);
-  let h=`<div class="box"><div class="row">${clsSel()}${tySel()}<span class="mu">CA max ${C.ca} · Exam max ${C.ex} · Press Enter / arrows to move down a column. Use the Save button (or leave Auto-save on).</span><button class="b" data-act="csv">Export CSV</button>${!admin&&!isHead()&&!canScoreCls(c)?`<span class="mu"><b>View only.</b> You are the form teacher of this class. Scores are entered by the subject teachers.</span>`:''}${mySubs(c)?`<span class="mu"><b>You can edit:</b> ${esc(mySubs(c).join(', '))}. Other subjects are view only.</span>`:''}</div><div class="sc scs"><div class="tb"><button class="b" id="svbtn" data-act="savenow">Save</button><label class="tg"><input type="checkbox" id="autosv" ${autoOn()?'checked':''}> Auto-save</label><span id="svst" class="svst"></span></div><table><thead><tr class="r1"><th rowspan=2 class="sk k1">Reg No.</th><th rowspan=2 class="sk k2">Name</th>${subs.map((s,i)=>`<th class="c sb sh${i%2?' sa':''}${mySubs(c)?(canEditSubj(c,s)?' mine':' lock'):''}" colspan=2${mySubs(c)&&canEditSubj(c,s)?' title="Your subject"':''}>${esc(s)}</th>`).join('')}<th rowspan=2 class="c sb">Total</th><th rowspan=2 class="c">Avg</th><th rowspan=2 class="c">Grade</th><th rowspan=2 class="c">Pos.</th></tr><tr class="r2">${subs.map(()=>`<th class="c sb">CA</th><th class="c">Exam</th>`).join('')}</tr></thead><tbody>`;
-  for(const s of L){const d=SC[s.reg],k=calc(d,subs),p=pm[s.reg]||{p:0,n:0};h+=`<tr data-r="${esc(s.reg)}"><td class="sk k1">${esc(s.reg)}</td><td class="sk k2">${esc(s.name)}</td>${subs.map(j=>{const v=(d&&d.sc&&d.sc[j])||[];const si=subs.indexOf(j);return[0,1].map(i=>`<td class="c${i?'':' sb'}${si%2?' sa':''}"><input type="number" min="0" step="0.5" max="${i?C.ex:C.ca}" data-sc="${esc(j)}" data-k="${i}" value="${v[i]??''}" ${canEditSubj(c,j)?'':'readonly tabindex="-1" title="View only" style="background:#f1f1f1;color:#777"'}></td>`).join('')}).join('')}<td class="c tot sb">${k.tot}</td><td class="c avg">${k.avg.toFixed(1)}</td><td class="c gd">${k.b.g}</td><td class="c ps">${ordp(p)}</td></tr>`}
+  let h=`<div class="box"><div class="row">${clsSel()}${tySel()}<span class="mu">CA max ${C.ca} · Exam max ${C.ex}<span class="ins"> · Press Enter / arrows to move down a column. Use the Save button (or leave Auto-save on).</span></span><button class="b" data-act="csv">Export CSV</button>${!admin&&!isHead()&&!canScoreCls(c)?`<span class="mu"><b>View only.</b> You are the form teacher of this class. Scores are entered by the subject teachers.</span>`:''}${mySubs(c)?`<span class="mu"><b>You can edit:</b> ${esc(mySubs(c).join(', '))}. Other subjects are view only.</span>`:''}</div><div class="sc scs rgm"><div class="tb"><button class="b" id="svbtn" data-act="savenow">Save</button><label class="tg"><input type="checkbox" id="autosv" ${autoOn()?'checked':''}> Auto-save</label><span id="svst" class="svst"></span></div><table><thead><tr class="r1"><th rowspan=2 class="sk k1">Reg No.</th><th rowspan=2 class="sk k2">Name</th>${subs.map((s,i)=>`<th class="c sb sh${i%2?' sa':''}${mySubs(c)?(canEditSubj(c,s)?' mine':' lock'):''}" colspan=2${mySubs(c)&&canEditSubj(c,s)?' title="Your subject"':''}>${esc(s)}</th>`).join('')}<th rowspan=2 class="c sb">Total</th><th rowspan=2 class="c">Avg</th><th rowspan=2 class="c">Grade</th><th rowspan=2 class="c">Pos.</th></tr><tr class="r2">${subs.map(()=>`<th class="c sb">CA</th><th class="c">Exam</th>`).join('')}</tr></thead><tbody>`;
+  for(const s of L){const d=SC[s.reg],k=calc(d,subs),p=pm[s.reg]||{p:0,n:0};h+=`<tr data-r="${esc(s.reg)}"><td class="sk k1">${esc(s.reg)}</td><td class="sk k2">${esc(s.name)}<small class="rg">${esc(s.reg)}</small></td>${subs.map(j=>{const v=(d&&d.sc&&d.sc[j])||[];const si=subs.indexOf(j);return[0,1].map(i=>`<td class="c${i?'':' sb'}${si%2?' sa':''}"><input type="number" min="0" step="0.5" max="${i?C.ex:C.ca}" data-sc="${esc(j)}" data-k="${i}" value="${v[i]??''}" ${canEditSubj(c,j)?'':'readonly tabindex="-1" title="View only" style="background:#f1f1f1;color:#777"'}></td>`).join('')}).join('')}<td class="c tot sb">${k.tot}</td><td class="c avg">${k.avg.toFixed(1)}</td><td class="c gd">${k.b.g}</td><td class="c ps">${ordp(p)}</td></tr>`}
   return h+`</tbody></table></div>${L.length?'':'<p class="mu">No students in this class yet.</p>'}</div>`
 }
 const isSec=n=>{const N=String(n).replace(/[\s.]/g,'').toUpperCase().replace(/^SSS(?=\d)/,'SS'),b=/^BASIC(\d+)/.exec(N);if(b&&+b[1]>=7)return true;return String(C.secPfx??'JSS, SS').split(',').map(x=>x.replace(/[\s.]/g,'').toUpperCase()).filter(Boolean).some(p=>N.startsWith(p)&&/\d/.test(N[p.length]||''))};
@@ -1081,7 +1109,7 @@ function vInfo(){
   }:(s,k,w)=>`<td>${esc(s[k]||'')}</td>`;
   return`<div class="box"><div class="row">${clsSel()}${tySel()}<span class="mu">${admin
     ?'Bio-data, attendance and ratings (1-5). Everything saves automatically.'
-    :'Bio-data is view-only for teachers. Attendance and domain ratings are editable for your assigned classes.'}</span></div><div class="sc scs notb"><table><thead><tr class="r1"><th class="sk k1">Reg No.</th><th class="sk k2">Full Name</th><th>Class Type</th><th>Gender</th><th>Days Present</th><th>Days Absent</th><th>House</th><th>Parent Phone</th><th>Parents Email</th>${TR.map(t=>`<th>${t}</th>`).join('')}</tr></thead><tbody>${L.map(s=>{const d=SC[s.reg]||{},dm=d.dom||{},p=d.pres??'';return`<tr><td class="sk k1">${esc(s.reg)}</td>${admin?`<td class="sk k2"><textarea data-st="name" data-r="${esc(s.reg)}" rows="3">${esc(s.name||'')}</textarea></td>`:`<td class="sk k2">${esc(s.name||'')}</td>`}${bio(s,'type',8)}${bio(s,'g',8)}<td><input type="number" data-f="pres" data-r="${esc(s.reg)}" value="${p}" min="0" max="${C.days}"></td><td class="c">${p===''?'':Math.max(0,C.days-p)}</td>${bio(s,'house',8)}${bio(s,'phone',12)}${bio(s,'email',22)}${TR.map(t=>`<td><input type="number" min="1" max="5" data-f="dom" data-t="${t}" data-r="${esc(s.reg)}" value="${dm[t]??''}"></td>`).join('')}</tr>`}).join('')}</tbody></table></div>${L.length?'':'<p class="mu">No students in this class yet.</p>'}</div>`
+    :'Bio-data is view-only for teachers. Attendance and domain ratings are editable for your assigned classes.'}</span></div><div class="sc scs notb rgm"><table><thead><tr class="r1"><th class="sk k1">Reg No.</th><th class="sk k2">Full Name</th><th>Class Type</th><th>Gender</th><th>Days Present</th><th>Days Absent</th><th>House</th><th>Parent Phone</th><th>Parents Email</th>${TR.map(t=>`<th>${t}</th>`).join('')}</tr></thead><tbody>${L.map(s=>{const d=SC[s.reg]||{},dm=d.dom||{},p=d.pres??'';return`<tr><td class="sk k1">${esc(s.reg)}</td>${admin?`<td class="sk k2"><textarea data-st="name" data-r="${esc(s.reg)}" rows="3">${esc(s.name||'')}</textarea><small class="rg">${esc(s.reg)}</small></td>`:`<td class="sk k2">${esc(s.name||'')}<small class="rg">${esc(s.reg)}</small></td>`}${bio(s,'type',8)}${bio(s,'g',8)}<td><input type="number" data-f="pres" data-r="${esc(s.reg)}" value="${p}" min="0" max="${C.days}"></td><td class="c">${p===''?'':Math.max(0,C.days-p)}</td>${bio(s,'house',8)}${bio(s,'phone',12)}${bio(s,'email',22)}${TR.map(t=>`<td><input type="number" min="1" max="5" data-f="dom" data-t="${t}" data-r="${esc(s.reg)}" value="${dm[t]??''}"></td>`).join('')}</tr>`}).join('')}</tbody></table></div>${L.length?'':'<p class="mu">No students in this class yet.</p>'}</div>`
 }
 function vImport(){return`<div class="box"><b>Import from Excel <span class="tag">ADMIN</span></b><p class="mu">In Google Sheets choose File → Download → Microsoft Excel (.xlsx), then upload it here. Sheets named "Info <Class>" and "Score_<Class>" (or just "<Class>") are read. Students are matched by Reg No., scores and attendance go into ${sesL(C.ses)} · ${T[C.t]}. Re-import updates instead of duplicating.</p><div class="row"><input type="file" id="xf" accept=".xlsx,.xlsm,.xls"><button class="b" data-act="xl">Import</button></div><label class="mu"><input type="checkbox" id="xs"> Also import school details, term and class subjects from the Settings sheet</label><div id="xst" class="mu" style="white-space:pre-wrap;margin-top:8px"></div></div>`}
 
@@ -1593,7 +1621,7 @@ function asgOpen(uid){
   const fm=new Set(Array.isArray(r.formclasses)?r.formclasses:[]),frm=`<div><b style="display:block;margin:0 0 2px">Form teacher of</b><span class="mu">Gets the dashboard, broadsheet and class info of the class. Tick a class (whole class) or tick one or more class types (Gold, Silver...) to limit them to those students only. Ticking a type clears the whole class tick, and the other way round.</span>${C.classes.map(c=>`<div class="asl"><label><input type="checkbox" data-fm="${esc(c.n)}" ${fm.has(c.n)?'checked':''}> <b>${esc(c.n)}</b> <span class="mu">whole class</span></label>${(C.types||[]).length?`<div class="asa" style="margin:4px 0 0 26px">${(C.types||[]).map(t=>`<label><input type="checkbox" data-fm="${esc(c.n+'|'+t)}" ${fm.has(c.n+'|'+t)?'checked':''}> ${esc(t)}</label>`).join('')}</div>`:''}</div>`).join('')}</div><b style="display:block;margin:14px 0 2px">Subject teacher for</b><span class="mu">Tick a class (whole class) or tick one or more class types (Gold, Silver...) to limit them to those students only. Ticking a type clears the whole class tick, and the other way round. They see every subject in the class. Further below, choose the subjects they can edit.</span>`;
   const el=document.createElement('div');el.id='asg';el.className='mdl';
   el.innerHTML=`<div class="mdb"><h3 style="margin:0 0 4px">Assign access</h3><div class="mu" style="margin-bottom:4px">${esc(stfEm(r))}</div><div style="margin-bottom:12px"><b>Form teacher of a class</b> and <b>subject teacher for a class</b></div>
-    <div class="row" style="margin:0 0 10px"><label>Role<select id="asr"><option value="teacher">Teacher (form teacher of a class and/or subject teacher for a class)</option><option value="head">Headmaster / Principal (view only)</option><option value="subadmin">Sub-admin (view only + report cards)</option></select></label><label id="asw">Section<select id="ass"><option value="primary">Primary</option><option value="secondary">Secondary</option></select></label></div>
+    <div class="row" style="margin:0 0 10px"><label>Role<select id="asr"><option value="teacher">Teacher (form teacher of a class and/or subject teacher for a class)</option><option value="headp">Headmaster: Primary section (view only)</option><option value="heads">Principal: Secondary section (view only)</option><option value="subadmin">Sub-admin (view only + report cards)</option></select></label><label id="asw">Section<select id="ass"><option value="primary">Primary</option><option value="secondary">Secondary</option></select></label></div>
     <div class="mdc">${frm}${rows}<div id="asjw"><b style="display:block;margin:14px 0 2px">Subjects they can edit</b><span class="mu">Open a class and tick the subjects this teacher may edit. Leave all unticked to let them edit every subject in that class.</span><div id="asj"></div></div>${stale.length?`<div class="asl"><b class="mu">Not a current class (untick to remove)</b><div class="asa">${stale.map(n=>`<label><input type="checkbox" data-c="${esc(n)}" checked> ${esc(n)}</label>`).join('')}</div></div>`:''}</div>
     <p class="mu" style="margin:12px 0 0">Tick a level to give the teacher every arm of it (Gold and Silver). Untick it and tick single arms to give only those. The teacher sees the change the next time they sign in.</p>
     <p id="asm" class="fail" style="margin:8px 0 0"></p>
@@ -1607,7 +1635,7 @@ function asgOpen(uid){
   el.addEventListener('change',e=>{const d=e.target.dataset||{};if(d.sjx!==undefined){const a=new Set(SJ[d.sjx]||[]);e.target.checked?a.add(d.s):a.delete(d.s);SJ[d.sjx]=[...a];if(!SJ[d.sjx].length)delete SJ[d.sjx];const sm=e.target.closest('details').querySelector('summary .mu');if(sm)sm.textContent=sjTxt(d.sjx);return}if(d.ct!==undefined&&e.target.checked){const wb=el.querySelector(`[data-c="${CSS.escape(d.ct.split('|')[0])}"]`);if(wb&&!wb.disabled)wb.checked=false}
     if(d.c!==undefined&&e.target.checked)el.querySelectorAll('[data-ct]').forEach(b=>{if(b.dataset.ct.startsWith(d.c+'|'))b.checked=false});
     if(d.c!==undefined||d.w!==undefined||d.ct!==undefined)setTimeout(renderSj,0)});
-  { const rk=$('#asr'),tg=()=>{$('#asw').style.display=rk.value=='teacher'?'none':''};rk.value=r.rank||'teacher';$('#ass').value=r.section||'primary';rk.onchange=tg;tg() }
+  { const rk=$('#asr'),tg=()=>{$('#asw').style.display=rk.value=='subadmin'?'':'none'};rk.value=r.rank=='head'?(r.section=='secondary'?'heads':'headp'):(r.rank||'teacher');$('#ass').value=r.section||'primary';rk.onchange=tg;tg() }
   const close=()=>el.remove();$('#asx').onclick=close;el.addEventListener('mousedown',e=>{if(e.target===el)close()});
   el.addEventListener('change',e=>{const fv=e.target.dataset&&e.target.dataset.fm;if(fv!==undefined&&e.target.checked){if(fv.includes('|')){const wb=el.querySelector(`[data-fm="${CSS.escape(fcls(fv))}"]`);if(wb)wb.checked=false}else el.querySelectorAll('[data-fm]').forEach(b=>{if(b!==e.target&&b.dataset.fm.startsWith(fv+'|'))b.checked=false})}const w=e.target.dataset&&e.target.dataset.w;if(w===undefined)return;
     el.querySelectorAll(`[data-l="${CSS.escape(w)}"]`).forEach(b=>{b.checked=e.target.checked?true:b.checked;b.disabled=e.target.checked;el.querySelectorAll('[data-ct]').forEach(x=>{if(x.dataset.ct.startsWith(b.dataset.c+'|')){if(e.target.checked)x.checked=false;x.disabled=e.target.checked}})})});
@@ -1619,8 +1647,10 @@ function asgOpen(uid){
     el.querySelectorAll('[data-c]').forEach(b=>{if(!known.has(b.dataset.c)&&b.checked)classes.push(b.dataset.c)});
     el.querySelectorAll('[data-ct]:checked').forEach(b=>{const n=b.dataset.ct.split('|')[0];if(!classes.includes(n))classes.push(n)});
     const btn=$('#asv');btn.disabled=true;$('#asm').textContent='';
-    try{const rank=$('#asr').value;let form=[...el.querySelectorAll('[data-fm]')].filter(b=>b.checked).map(b=>b.dataset.fm);form=form.filter(x=>!x.includes('|')||!form.includes(fcls(x)));await staffSave(r,classes,lv,form,rank,rank=='teacher'?'':$('#ass').value);{const kk=staffKey(),{data:chk}=await sb.from('staff').select('formclasses').eq(kk,String(r[kk])).maybeSingle();if(chk){const got=Array.isArray(chk.formclasses)?chk.formclasses:[];r.formclasses=got;if(JSON.stringify([...got].sort())!==JSON.stringify([...form].sort())){const lost=form.filter(x=>!got.includes(x));throw new Error('The database did not keep the form class type ('+lost.map(fpre).join(', ')+'). Run the latest roles-setup.sql in Supabase, then try again.')}}}{const cl={},sa={};curCls().forEach(n=>{if((SJ[n]||[]).length)cl[n]=SJ[n]});el.querySelectorAll('[data-ct]:checked').forEach(b=>{const i=b.dataset.ct.indexOf('|'),n=b.dataset.ct.slice(0,i),t=b.dataset.ct.slice(i+1);(sa[n]=sa[n]||[]).push(t)});const c1=JSON.stringify(cl)!==JSON.stringify((C.subjMap||{})[emk]||{}),c2=JSON.stringify(sa)!==JSON.stringify((C.subjArms||{})[emk]||{});if(c1||c2){const nm={...(C.subjMap||{})},na={...(C.subjArms||{})};if(Object.keys(cl).length)nm[emk]=cl;else delete nm[emk];if(Object.keys(sa).length)na[emk]=sa;else delete na[emk];const o={...C,subjMap:nm,subjArms:na};await db.doc('cfg/school').set(o);C=o}}close();usrUI();toast('Saved for '+stfEm(r)+(form.length?' · Form teacher: '+form.map(fpre).join(', '):''),'ok');try{audLog('Assigned classes',stfEm(r),classes.join(', ')||'none')}catch(x){}}
+    try{const rv=$('#asr').value,rank=rv=='headp'||rv=='heads'?'head':rv,sect=rank=='teacher'?'':rv=='headp'?'primary':rv=='heads'?'secondary':$('#ass').value;let form=[...el.querySelectorAll('[data-fm]')].filter(b=>b.checked).map(b=>b.dataset.fm);form=form.filter(x=>!x.includes('|')||!form.includes(fcls(x)));if(rank!='teacher'){const sc=sect,ins=n=>(isSec(n)?'secondary':'primary')==sc;for(let i=classes.length-1;i>=0;i--)if(!ins(classes[i]))classes.splice(i,1);for(let i=lv.length-1;i>=0;i--)if(!ins(lv[i]))lv.splice(i,1);form=form.filter(x=>ins(fcls(x)))}await staffSave(r,classes,lv,form,rank,sect);{const kk=staffKey(),{data:chk}=await sb.from('staff').select('formclasses').eq(kk,String(r[kk])).maybeSingle();if(chk){const got=Array.isArray(chk.formclasses)?chk.formclasses:[];r.formclasses=got;if(JSON.stringify([...got].sort())!==JSON.stringify([...form].sort())){const lost=form.filter(x=>!got.includes(x));throw new Error('The database did not keep the form class type ('+lost.map(fpre).join(', ')+'). Run the latest roles-setup.sql in Supabase, then try again.')}}}{const cl={},sa={};curCls().forEach(n=>{if((SJ[n]||[]).length)cl[n]=SJ[n]});el.querySelectorAll('[data-ct]:checked').forEach(b=>{const i=b.dataset.ct.indexOf('|'),n=b.dataset.ct.slice(0,i),t=b.dataset.ct.slice(i+1);(sa[n]=sa[n]||[]).push(t)});const c1=JSON.stringify(cl)!==JSON.stringify((C.subjMap||{})[emk]||{}),c2=JSON.stringify(sa)!==JSON.stringify((C.subjArms||{})[emk]||{});if(c1||c2){const nm={...(C.subjMap||{})},na={...(C.subjArms||{})};if(Object.keys(cl).length)nm[emk]=cl;else delete nm[emk];if(Object.keys(sa).length)na[emk]=sa;else delete na[emk];const o={...C,subjMap:nm,subjArms:na};await db.doc('cfg/school').set(o);C=o}}close();usrUI();toast('Saved for '+stfEm(r)+(form.length?' · Form teacher: '+form.map(fpre).join(', '):''),'ok');try{audLog('Assigned classes',stfEm(r),classes.join(', ')||'none')}catch(x){}}
     catch(x){btn.disabled=false;$('#asm').textContent=setupMissing(x)?SETUP_MSG:'Not saved: '+(x.message||x)}}}
+/* photos in lists load only when scrolled to (report cards are left alone so printing and PDF stay complete) */
+new MutationObserver(()=>document.querySelectorAll('#m img:not([loading])').forEach(i=>{if(!i.closest('.rc')){i.loading='lazy';i.decoding='async'}})).observe($('#m'),{childList:true,subtree:true});
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-act="asg"]');if(b&&isAdm())asgOpen(b.dataset.u)});
 
 /* ---------- chat ---------- */
@@ -1632,7 +1662,7 @@ function chatBoot(){
   const so=$('#so');if(!so||$('#chb'))return;
   so.insertAdjacentHTML('beforebegin',`<a href="#" id="chb">💬 ${isAdm()?'Messages':'Support'} <i id="chn" style="display:none"></i></a>`);
   $('#chb').onclick=e=>{e.preventDefault();CH.open?chClose():chOpen()};
-  chUnread();setInterval(chUnread,45000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){chUnread();if(CH.open)chPoll()}})}
+  chUnread();setInterval(chUnread,180000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){chUnread();if(CH.open)chPoll()}})}
 function chOpen(){
   CH.teachers=null;CH.open=true;CH.tid=null;CH.compose=null;CH.err='';CH.tab='direct';CH.since='';CH.threads=[];
   let el=$('#chat');if(!el){el=document.createElement('div');el.id='chat';document.body.appendChild(el)}
